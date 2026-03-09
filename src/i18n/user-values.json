@@ -1,0 +1,1747 @@
+[
+  {
+    "constant": "appName",
+    "value": "Cruizzy",
+    "label": "App name"
+  },
+  {
+    "constant": "bottomTab.Trips",
+    "value": "Trips",
+    "label": "Bottom tab: Trips"
+  },
+  {
+    "constant": "bottomTab.Home",
+    "value": "Home",
+    "label": "Bottom tab: Home"
+  },
+  {
+    "constant": "bottomTab.Profile",
+    "value": "Profile",
+    "label": "Bottom tab: Profile"
+  },
+  {
+    "constant": "walkthrough.first",
+    "value": "Cruising Toward a More Sustainable Future",
+    "label": "Walkthrough: First"
+  },
+  {
+    "constant": "walkthrough.firstSubtitle",
+    "value": "We keep it green with all-electric rides that cut down on traffic, free up parking, and celebrate Bend, without polluting the vibe. Clean, easy, and way more fun than circling for a spot.",
+    "label": "Walkthrough: First subtitle"
+  },
+  {
+    "constant": "walkthrough.firstButton",
+    "value": "LET’S CRUIZZY SUSTAINABLY",
+    "label": "Walkthrough: First button"
+  },
+  {
+    "constant": "walkthrough.second",
+    "value": "Local Guides and Good Vibes",
+    "label": "Walkthrough: Second"
+  },
+  {
+    "constant": "walkthrough.secondSubtitle",
+    "value": "At Cruizzy, every ride is an adventure! Cruise with us to Bend’s best views, eats, shopping, and events with local guides who know where all the good stuff’s happening.",
+    "label": "Walkthrough: Second subtitle"
+  },
+  {
+    "constant": "walkthrough.secondButton",
+    "value": "I’M READY TO CRUIZZY!",
+    "label": "Walkthrough: Second button"
+  },
+  {
+    "constant": "common.noDataAvailable",
+    "value": "No data available",
+    "label": "Common: No data available"
+  },
+  {
+    "constant": "common.ok",
+    "value": "OK",
+    "label": "Common: Ok"
+  },
+  {
+    "constant": "common.cancel",
+    "value": "Cancel",
+    "label": "Common: Cancel"
+  },
+  {
+    "constant": "common.camera",
+    "value": "Camera",
+    "label": "Common: Camera"
+  },
+  {
+    "constant": "common.gallery",
+    "value": "Gallery",
+    "label": "Common: Gallery"
+  },
+  {
+    "constant": "common.delete",
+    "value": "Delete",
+    "label": "Common: Delete"
+  },
+  {
+    "constant": "common.view",
+    "value": "View",
+    "label": "Common: View"
+  },
+  {
+    "constant": "common.edit",
+    "value": "Edit",
+    "label": "Common: Edit"
+  },
+  {
+    "constant": "common.noInternet",
+    "value": "No Internet Connection Available",
+    "label": "Common: No internet"
+  },
+  {
+    "constant": "forgotPassword.forgotPassword",
+    "value": "Forgot Password",
+    "label": "Forgot password: Forgot password"
+  },
+  {
+    "constant": "forgotPassword.forgotPasswordNote",
+    "value": "Please enter the mobile number to continue a verify your account",
+    "label": "Forgot password: Forgot password note"
+  },
+  {
+    "constant": "forgotPassword.send",
+    "value": "SEND",
+    "label": "Forgot password: Send"
+  },
+  {
+    "constant": "forgotPassword.mobileNumber",
+    "value": "MOBILE NUMBER",
+    "label": "Forgot password: Mobile number"
+  },
+  {
+    "constant": "verification.verify",
+    "value": "VERIFY",
+    "label": "Verification: Verify"
+  },
+  {
+    "constant": "verification.verificationCode",
+    "value": "Verification Code",
+    "label": "Verification: Verification code"
+  },
+  {
+    "constant": "verification.enterOptCode",
+    "value": "Please enter the 4 digit code sent to your mobile number {{mobile}}",
+    "label": "Verification: Enter opt code"
+  },
+  {
+    "constant": "verification.resendCode",
+    "value": "Resend code",
+    "label": "Verification: Resend code"
+  },
+  {
+    "constant": "createNewPassword.heading",
+    "value": "Create New Password",
+    "label": "Create new password: Heading"
+  },
+  {
+    "constant": "createNewPassword.newPassPlaceholder",
+    "value": "New Password",
+    "label": "Create new password: New pass placeholder"
+  },
+  {
+    "constant": "createNewPassword.confirmPassPlaceholder",
+    "value": "Confirm Password",
+    "label": "Create new password: Confirm pass placeholder"
+  },
+  {
+    "constant": "createNewPassword.continue",
+    "value": "CONTINUE",
+    "label": "Create new password: Continue"
+  },
+  {
+    "constant": "createNewPassword.successHeading",
+    "value": "Congratulations!",
+    "label": "Create new password: Success heading"
+  },
+  {
+    "constant": "createNewPassword.successMessage",
+    "value": "Your account is ready to use. You will be redirected to the login page in a few seconds.",
+    "label": "Create new password: Success message"
+  },
+  {
+    "constant": "login.login",
+    "value": "LOGIN",
+    "label": "Login: Login"
+  },
+  {
+    "constant": "login.signIn",
+    "value": "Sign In",
+    "label": "Login: Sign in"
+  },
+  {
+    "constant": "login.accessYourAccount",
+    "value": "Access to your account",
+    "label": "Login: Access your account"
+  },
+  {
+    "constant": "login.phoneNumber",
+    "value": "PHONE NUMBER",
+    "label": "Login: Phone number"
+  },
+  {
+    "constant": "login.phonePlaceholder",
+    "value": "Enter Phone Number",
+    "label": "Login: Phone placeholder"
+  },
+  {
+    "constant": "login.passwordPlaceholder",
+    "value": "Enter Password",
+    "label": "Login: Password placeholder"
+  },
+  {
+    "constant": "login.rememberMe",
+    "value": "Remember Me",
+    "label": "Login: Remember me"
+  },
+  {
+    "constant": "login.or",
+    "value": "Or",
+    "label": "Login: Or"
+  },
+  {
+    "constant": "login.signInWithGoogle",
+    "value": "Sign in with Google",
+    "label": "Login: Sign in with google"
+  },
+  {
+    "constant": "login.signInWithApple",
+    "value": "Sign in with Apple",
+    "label": "Login: Sign in with apple"
+  },
+  {
+    "constant": "login.signUpWithGoogle",
+    "value": "Sign up with Google",
+    "label": "Login: Sign up with google"
+  },
+  {
+    "constant": "login.signUpWithApple",
+    "value": "Sign up with Apple",
+    "label": "Login: Sign up with apple"
+  },
+  {
+    "constant": "login.signInWithFacebook",
+    "value": "Sign in with Facebook",
+    "label": "Login: Sign in with facebook"
+  },
+  {
+    "constant": "login.dontHaveAnAccount",
+    "value": "Don't have an account? ",
+    "label": "Login: Dont have an account"
+  },
+  {
+    "constant": "login.signUp",
+    "value": "Sign Up",
+    "label": "Login: Sign up"
+  },
+  {
+    "constant": "login.password",
+    "value": "PASSWORD",
+    "label": "Login: Password"
+  },
+  {
+    "constant": "login.forgotPassword",
+    "value": "Forgot Password?",
+    "label": "Login: Forgot password"
+  },
+  {
+    "constant": "loaderText.default",
+    "value": "Loading...",
+    "label": "Loader text: Default"
+  },
+  {
+    "constant": "loaderText.signing",
+    "value": "Signing...",
+    "label": "Loader text: Signing"
+  },
+  {
+    "constant": "loaderText.logging",
+    "value": "Logging...",
+    "label": "Loader text: Logging"
+  },
+  {
+    "constant": "loaderText.deleting",
+    "value": "Deleting...",
+    "label": "Loader text: Deleting"
+  },
+  {
+    "constant": "loaderText.processing",
+    "value": "Processing...",
+    "label": "Loader text: Processing"
+  },
+  {
+    "constant": "countries.heading",
+    "value": "Country Listing",
+    "label": "Countries: Heading"
+  },
+  {
+    "constant": "countries.search",
+    "value": "Search",
+    "label": "Countries: Search"
+  },
+  {
+    "constant": "countries.countries",
+    "value": "Countries",
+    "label": "Countries: Countries"
+  },
+  {
+    "constant": "support.emailPlaceHolder",
+    "value": "Email",
+    "label": "Support: Email place holder"
+  },
+  {
+    "constant": "support.messagePlaceholder",
+    "value": "How can we help?",
+    "label": "Support: Message placeholder"
+  },
+  {
+    "constant": "support.submitButton",
+    "value": "SUBMIT",
+    "label": "Support: Submit button"
+  },
+  {
+    "constant": "editProfile.heading",
+    "value": "Edit Profile",
+    "label": "Edit profile: Heading"
+  },
+  {
+    "constant": "editProfile.addCard",
+    "value": "Add Card",
+    "label": "Edit profile: Add card"
+  },
+  {
+    "constant": "editProfile.cardAdded",
+    "value": "Card Added",
+    "label": "Edit profile: Card added"
+  },
+  {
+    "constant": "editProfile.deleteAccount",
+    "value": "Delete Your Account",
+    "label": "Edit profile: Delete account"
+  },
+  {
+    "constant": "editProfile.update",
+    "value": "UPDATE",
+    "label": "Edit profile: Update"
+  },
+  {
+    "constant": "editProfile.changePassword",
+    "value": "CHANGE PASSWORD",
+    "label": "Edit profile: Change password"
+  },
+  {
+    "constant": "editProfile.deleteMessage",
+    "value": "Are you sure you want to Delete Your Account?",
+    "label": "Edit profile: Delete message"
+  },
+  {
+    "constant": "changePassword.heading",
+    "value": "Change Password",
+    "label": "Change password: Heading"
+  },
+  {
+    "constant": "changePassword.oldPass",
+    "value": "CURRENT PASSWORD",
+    "label": "Change password: Old pass"
+  },
+  {
+    "constant": "changePassword.newPass",
+    "value": "PASSWORD",
+    "label": "Change password: New pass"
+  },
+  {
+    "constant": "changePassword.confirmNewPass",
+    "value": "CONFIRM PASSWORD",
+    "label": "Change password: Confirm new pass"
+  },
+  {
+    "constant": "changePassword.oldPassPlaceholder",
+    "value": "Current password",
+    "label": "Change password: Old pass placeholder"
+  },
+  {
+    "constant": "changePassword.newPassPlaceholder",
+    "value": "New password",
+    "label": "Change password: New pass placeholder"
+  },
+  {
+    "constant": "changePassword.confirmNewPassPlaceholder",
+    "value": "Confirm new password",
+    "label": "Change password: Confirm new pass placeholder"
+  },
+  {
+    "constant": "changePassword.update",
+    "value": "UPDATE",
+    "label": "Change password: Update"
+  },
+  {
+    "constant": "driverDetails.information",
+    "value": "Driver Information",
+    "label": "Driver details: Information"
+  },
+  {
+    "constant": "driverDetails.carInformation",
+    "value": "Car Information",
+    "label": "Driver details: Car information"
+  },
+  {
+    "constant": "driverDetails.notLinkedText",
+    "value": "Not Linked",
+    "label": "Driver details: Not linked text"
+  },
+  {
+    "constant": "driverDetails.availableText",
+    "value": "Available",
+    "label": "Driver details: Available text"
+  },
+  {
+    "constant": "driverDetails.notAvailableText",
+    "value": "Not Available",
+    "label": "Driver details: Not available text"
+  },
+  {
+    "constant": "driverDetails.add",
+    "value": "Add Preferred Driver",
+    "label": "Driver details: Add"
+  },
+  {
+    "constant": "driverDetails.already",
+    "value": "Already Added",
+    "label": "Driver details: Already"
+  },
+  {
+    "constant": "preferredDriver.confirmation",
+    "value": "Confirmation",
+    "label": "Preferred driver: Confirmation"
+  },
+  {
+    "constant": "preferredDriver.confirmationNote",
+    "value": "Are you sure you want to remove this driver?",
+    "label": "Preferred driver: Confirmation note"
+  },
+  {
+    "constant": "preferredDriver.preferredDriver",
+    "value": "Preferred Driver",
+    "label": "Preferred driver: Preferred driver"
+  },
+  {
+    "constant": "preferredDriver.vehicleName",
+    "value": "Vehicle Name",
+    "label": "Preferred driver: Vehicle name"
+  },
+  {
+    "constant": "preferredDriver.vehicleNo",
+    "value": "Vehicle No.",
+    "label": "Preferred driver: Vehicle no"
+  },
+  {
+    "constant": "preferredDriver.vehicleColor",
+    "value": "Vehicle Color",
+    "label": "Preferred driver: Vehicle color"
+  },
+  {
+    "constant": "preferredDriver.primary",
+    "value": "Primary",
+    "label": "Preferred driver: Primary"
+  },
+  {
+    "constant": "preferredDriver.delete",
+    "value": "Delete",
+    "label": "Preferred driver: Delete"
+  },
+  {
+    "constant": "preferredDriver.bookRide",
+    "value": "Book Ride",
+    "label": "Preferred driver: Book ride"
+  },
+  {
+    "constant": "preferredDriver.alert",
+    "value": "ALERT",
+    "label": "Preferred driver: Alert"
+  },
+  {
+    "constant": "preferredDriver.deletePrimaryMessage",
+    "value": "If you would like to change your favorite driver, please contact us at:",
+    "label": "Preferred driver: Delete primary message"
+  },
+  {
+    "constant": "profile.editProfile",
+    "value": "Edit Profile",
+    "label": "Profile: Edit profile"
+  },
+  {
+    "constant": "profile.myWallet",
+    "value": "My Wallet",
+    "label": "Profile: My wallet"
+  },
+  {
+    "constant": "profile.paymentMethod",
+    "value": "Payment Method",
+    "label": "Profile: Payment method"
+  },
+  {
+    "constant": "profile.preferredDriver",
+    "value": "Preferred Driver",
+    "label": "Profile: Preferred driver"
+  },
+  {
+    "constant": "profile.inviteFriends",
+    "value": "Invite Friends",
+    "label": "Profile: Invite friends"
+  },
+  {
+    "constant": "profile.helpAndSupport",
+    "value": "Help and Support",
+    "label": "Profile: Help and support"
+  },
+  {
+    "constant": "profile.emergency",
+    "value": "Emergency",
+    "label": "Profile: Emergency"
+  },
+  {
+    "constant": "profile.logout",
+    "value": "Logout",
+    "label": "Profile: Logout"
+  },
+  {
+    "constant": "profile.verified",
+    "value": "Verified",
+    "label": "Profile: Verified"
+  },
+  {
+    "constant": "profile.profile",
+    "value": "Profile",
+    "label": "Profile: Profile"
+  },
+  {
+    "constant": "profile.loyaltyPoints",
+    "value": "Loyalty Points",
+    "label": "Profile: Loyalty points"
+  },
+  {
+    "constant": "profile.myAddresses",
+    "value": "My Addresses",
+    "label": "Profile: My addresses"
+  },
+  {
+    "constant": "profile.emergencyContacts",
+    "value": "Emergency Contacts",
+    "label": "Profile: Emergency contacts"
+  },
+  {
+    "constant": "profile.faq",
+    "value": "FAQ",
+    "label": "Profile: Faq"
+  },
+  {
+    "constant": "profile.documents",
+    "value": "Documents",
+    "label": "Profile: Documents"
+  },
+  {
+    "constant": "profile.version",
+    "value": "Version",
+    "label": "Profile: Version"
+  },
+  {
+    "constant": "profile.user",
+    "value": "User",
+    "label": "Profile: User"
+  },
+  {
+    "constant": "profile.logoutNote",
+    "value": "Are you sure you want to Logout?",
+    "label": "Profile: Logout note"
+  },
+  {
+    "constant": "invite.heading",
+    "value": "Invite Friend",
+    "label": "Invite: Heading"
+  },
+  {
+    "constant": "invite.inviteFriends",
+    "value": "Invite Friends",
+    "label": "Invite: Invite friends"
+  },
+  {
+    "constant": "invite.userName",
+    "value": "User Name: {{userName}}",
+    "label": "Invite: User name"
+  },
+  {
+    "constant": "invite.phoneNumber",
+    "value": "Phone Number: {{mobileNumber}}",
+    "label": "Invite: Phone number"
+  },
+  {
+    "constant": "invite.message",
+    "value": "When your friends sign up this referral code, you can received a free ride",
+    "label": "Invite: Message"
+  },
+  {
+    "constant": "invite.inputLabel",
+    "value": "Share your invite code",
+    "label": "Invite: Input label"
+  },
+  {
+    "constant": "invite.button",
+    "value": "Invite",
+    "label": "Invite: Button"
+  },
+  {
+    "constant": "invite.inviteMessage",
+    "value": "You are invited to install Cruizzy app and your invitation code is {{code}}. App download from {{url}}",
+    "label": "Invite: Invite message"
+  },
+  {
+    "constant": "validation.required",
+    "value": "Required",
+    "label": "Validation: Required"
+  },
+  {
+    "constant": "validation.minEmail",
+    "value": "Must be at least 3 characters long",
+    "label": "Validation: Min email"
+  },
+  {
+    "constant": "validation.minMessage",
+    "value": "Must be at least 10 characters long",
+    "label": "Validation: Min message"
+  },
+  {
+    "constant": "validation.invalidEmail",
+    "value": "Invalid email address",
+    "label": "Validation: Invalid email"
+  },
+  {
+    "constant": "validation.minMobileNo",
+    "value": "Must be 6 digit",
+    "label": "Validation: Min mobile no"
+  },
+  {
+    "constant": "validation.maxMobile",
+    "value": "Not more then 15 digit",
+    "label": "Validation: Max mobile"
+  },
+  {
+    "constant": "validation.invalidMobile",
+    "value": "Invalid mobile number",
+    "label": "Validation: Invalid mobile"
+  },
+  {
+    "constant": "validation.shortPassword",
+    "value": "Too Short!",
+    "label": "Validation: Short password"
+  },
+  {
+    "constant": "validation.longPassword",
+    "value": "Too Long!",
+    "label": "Validation: Long password"
+  },
+  {
+    "constant": "validation.passwordsNotMatched",
+    "value": "Passwords must match",
+    "label": "Validation: Passwords not matched"
+  },
+  {
+    "constant": "validation.otpRequired",
+    "value": "OTP is required",
+    "label": "Validation: Otp required"
+  },
+  {
+    "constant": "validation.vehicleType",
+    "value": "Please select vehicle type.",
+    "label": "Validation: Vehicle type"
+  },
+  {
+    "constant": "validation.acceptTnc",
+    "value": "Please accept terms & conditions, privacy policy and refund policy.",
+    "label": "Validation: Accept tnc"
+  },
+  {
+    "constant": "home.rideNow",
+    "value": "Ride Now",
+    "label": "Home: Ride now"
+  },
+  {
+    "constant": "home.rideNowDesc",
+    "value": "Get a ride instantly",
+    "label": "Home: Ride now desc"
+  },
+  {
+    "constant": "home.hourlyRide",
+    "value": "Hourly Ride",
+    "label": "Home: Hourly ride"
+  },
+  {
+    "constant": "home.hourlyRideDesc",
+    "value": "Ride by the hour",
+    "label": "Home: Hourly ride desc"
+  },
+  {
+    "constant": "ride.heading",
+    "value": "Ride Options",
+    "label": "Ride: Heading"
+  },
+  {
+    "constant": "ride.searchingHeading",
+    "value": "Searching",
+    "label": "Ride: Searching heading"
+  },
+  {
+    "constant": "ride.scheduledUpHeading",
+    "value": "Waiting for driver to start ride",
+    "label": "Ride: Scheduled up heading"
+  },
+  {
+    "constant": "ride.scheduledUpDetails",
+    "value": "Waiting for driver to start ride\nScheduled Time: {{time}}",
+    "label": "Ride: Scheduled up details"
+  },
+  {
+    "constant": "ride.pickUpHeading",
+    "value": "On its way to you",
+    "label": "Ride: Pick up heading"
+  },
+  {
+    "constant": "ride.dropOffHeading",
+    "value": "Drop off",
+    "label": "Ride: Drop off heading"
+  },
+  {
+    "constant": "ride.returnHeading",
+    "value": "Returning",
+    "label": "Ride: Return heading"
+  },
+  {
+    "constant": "ride.requsetRide",
+    "value": "Book Now",
+    "label": "Ride: Requset ride"
+  },
+  {
+    "constant": "ride.schedule",
+    "value": "Schedule",
+    "label": "Ride: Schedule"
+  },
+  {
+    "constant": "ride.hour",
+    "value": "Hour",
+    "label": "Ride: Hour"
+  },
+  {
+    "constant": "ride.hours",
+    "value": "Hours",
+    "label": "Ride: Hours"
+  },
+  {
+    "constant": "ride.cancelRide",
+    "value": "Cancel Ride",
+    "label": "Ride: Cancel ride"
+  },
+  {
+    "constant": "ride.arriving",
+    "value": "Your ride is arriving in {{time}}.",
+    "label": "Ride: Arriving"
+  },
+  {
+    "constant": "ride.arrived",
+    "value": "Your ride has arrived.",
+    "label": "Ride: Arrived"
+  },
+  {
+    "constant": "ride.estimatedDropoff",
+    "value": "ETA\n{{time}}",
+    "label": "Ride: Estimated dropoff"
+  },
+  {
+    "constant": "ride.otp",
+    "value": "OTP",
+    "label": "Ride: Otp"
+  },
+  {
+    "constant": "ride.cancel",
+    "value": "Cancel",
+    "label": "Ride: Cancel"
+  },
+  {
+    "constant": "ride.orderCanceled",
+    "value": "Ride cancelled",
+    "label": "Ride: Order canceled"
+  },
+  {
+    "constant": "ride.scheduleARide",
+    "value": "Schedule a Ride",
+    "label": "Ride: Schedule aride"
+  },
+  {
+    "constant": "ride.scheduleARideNotice",
+    "value": "Driver will pick you up at your scheduled time",
+    "label": "Ride: Schedule aride notice"
+  },
+  {
+    "constant": "ride.confirm",
+    "value": "Confirm",
+    "label": "Ride: Confirm"
+  },
+  {
+    "constant": "ride.rating",
+    "value": "Rating",
+    "label": "Ride: Rating"
+  },
+  {
+    "constant": "ride.feedbackHeading",
+    "value": "Thank you for your ride",
+    "label": "Ride: Feedback heading"
+  },
+  {
+    "constant": "ride.feedbackPlaceholder",
+    "value": "Describe your experience",
+    "label": "Ride: Feedback placeholder"
+  },
+  {
+    "constant": "ride.feedbackSubmit",
+    "value": "Submit Review",
+    "label": "Ride: Feedback submit"
+  },
+  {
+    "constant": "ride.tipPlaceholder",
+    "value": "Custom Tip Field",
+    "label": "Ride: Tip placeholder"
+  },
+  {
+    "constant": "ride.totalTip",
+    "value": "Total Tip: {{sign}}{{value}}",
+    "label": "Ride: Total tip"
+  },
+  {
+    "constant": "ride.tip",
+    "value": "Tip",
+    "label": "Ride: Tip"
+  },
+  {
+    "constant": "ride.leaveTip",
+    "value": "Leave a Tip",
+    "label": "Ride: Leave tip"
+  },
+  {
+    "constant": "ride.optionalTip",
+    "value": "Tipping is optional!\nWe prioritize fair compensation for our drivers.",
+    "label": "Ride: Optional tip"
+  },
+  {
+    "constant": "ride.proceed",
+    "value": "Proceed",
+    "label": "Ride: Proceed"
+  },
+  {
+    "constant": "ride.skip",
+    "value": "Skip",
+    "label": "Ride: Skip"
+  },
+  {
+    "constant": "ride.addressesRequires",
+    "value": "Please add pickup and drop address to continue!",
+    "label": "Ride: Addresses requires"
+  },
+  {
+    "constant": "ride.pickupAddressRequired",
+    "value": "Please select pickup address.",
+    "label": "Ride: Pickup address required"
+  },
+  {
+    "constant": "ride.pickupHeading",
+    "value": "Pickup Location",
+    "label": "Ride: Pickup heading"
+  },
+  {
+    "constant": "ride.dropHeading",
+    "value": "Search Destination",
+    "label": "Ride: Drop heading"
+  },
+  {
+    "constant": "ride.estimatedDropupTime",
+    "value": "Estimated drop off: {{time}} min",
+    "label": "Ride: Estimated dropup time"
+  },
+  {
+    "constant": "ride.perUnit",
+    "value": "Per {{unit}}",
+    "label": "Ride: Per unit"
+  },
+  {
+    "constant": "ride.baseFare",
+    "value": "Base Fare",
+    "label": "Ride: Base fare"
+  },
+  {
+    "constant": "ride.savedAddress",
+    "value": "Saved Address",
+    "label": "Ride: Saved address"
+  },
+  {
+    "constant": "ride.addresses",
+    "value": "Addresses",
+    "label": "Ride: Addresses"
+  },
+  {
+    "constant": "ride.noAddresses",
+    "value": "No suggested address(es) found",
+    "label": "Ride: No addresses"
+  },
+  {
+    "constant": "ride.noSavedAddresses",
+    "value": "No saved address(es) found",
+    "label": "Ride: No saved addresses"
+  },
+  {
+    "constant": "ride.currentAddress",
+    "value": "Current Address",
+    "label": "Ride: Current address"
+  },
+  {
+    "constant": "ride.chooseAddress",
+    "value": "Confirm Location",
+    "label": "Ride: Choose address"
+  },
+  {
+    "constant": "ride.scheduleAlertMessage",
+    "value": "Your ride has been successfully scheduled. We will notify you when a driver is assigned.",
+    "label": "Ride: Schedule alert message"
+  },
+  {
+    "constant": "ride.cancelTrip",
+    "value": "Do you want to cancel this trip?",
+    "label": "Ride: Cancel trip"
+  },
+  {
+    "constant": "ride.min",
+    "value": "Min",
+    "label": "Ride: Min"
+  },
+  {
+    "constant": "ride.searching",
+    "value": "Searching...",
+    "label": "Ride: Searching"
+  },
+  {
+    "constant": "ride.searchingDrivers",
+    "value": "Please hold! we are searching for nearby driver for you",
+    "label": "Ride: Searching drivers"
+  },
+  {
+    "constant": "ride.searchingPreffered",
+    "value": "Please hold. We are searching for your preferred driver.",
+    "label": "Ride: Searching preffered"
+  },
+  {
+    "constant": "ride.driverCanceled",
+    "value": "The driver has cancelled your ride.",
+    "label": "Ride: Driver canceled"
+  },
+  {
+    "constant": "ride.ratingRequired",
+    "value": "Please rate this ride.",
+    "label": "Ride: Rating required"
+  },
+  {
+    "constant": "ride.congratulatios",
+    "value": "Congratulations!",
+    "label": "Ride: Congratulatios"
+  },
+  {
+    "constant": "ride.couponMessage",
+    "value": "You've received an offer. Enjoy the ride!",
+    "label": "Ride: Coupon message"
+  },
+  {
+    "constant": "ride.promoCode",
+    "value": "Promo Code",
+    "label": "Ride: Promo code"
+  },
+  {
+    "constant": "ride.enterCode",
+    "value": "Enter Code",
+    "label": "Ride: Enter code"
+  },
+  {
+    "constant": "ride.apply",
+    "value": "Apply",
+    "label": "Ride: Apply"
+  },
+  {
+    "constant": "ride.remove",
+    "value": "Remove",
+    "label": "Ride: Remove"
+  },
+  {
+    "constant": "ride.codeRequire",
+    "value": "Please enter valid code.",
+    "label": "Ride: Code require"
+  },
+  {
+    "constant": "ride.autoPromoCode",
+    "value": "Auto-apply code changes are not permitted.",
+    "label": "Ride: Auto promo code"
+  },
+  {
+    "constant": "ride.bookRide",
+    "value": "Book a ride for now or later",
+    "label": "Ride: Book ride"
+  },
+  {
+    "constant": "ride.bookRoundRide",
+    "value": "Book round trip",
+    "label": "Ride: Book round ride"
+  },
+  {
+    "constant": "ride.roundTrip",
+    "value": "Round Trip",
+    "label": "Ride: Round trip"
+  },
+  {
+    "constant": "ride.normalRide",
+    "value": "Normal Ride",
+    "label": "Ride: Normal ride"
+  },
+  {
+    "constant": "ride.rideType",
+    "value": "Ride Type",
+    "label": "Ride: Ride type"
+  },
+  {
+    "constant": "ride.save",
+    "value": "Save",
+    "label": "Ride: Save"
+  },
+  {
+    "constant": "ride.confirmPickup",
+    "value": "Confirm Pickup location",
+    "label": "Ride: Confirm pickup"
+  },
+  {
+    "constant": "ride.currentLocation",
+    "value": "Current location",
+    "label": "Ride: Current location"
+  },
+  {
+    "constant": "ride.unableTogetLocation",
+    "value": "Unable to retrieve your location. Please try disabling and re-enabling location services, or try again later.",
+    "label": "Ride: Unable toget location"
+  },
+  {
+    "constant": "ride.selectVehicleFirst",
+    "value": "Please select vehicle type first.",
+    "label": "Ride: Select vehicle first"
+  },
+  {
+    "constant": "ride.waitMessage",
+    "value": "Your ride will be waiting for you at drop-off\n\nPlease tell your driver how long you will be",
+    "label": "Ride: Wait message"
+  },
+  {
+    "constant": "ride.callDriver",
+    "value": "Call Driver",
+    "label": "Ride: Call driver"
+  },
+  {
+    "constant": "trip.heading",
+    "value": "Trips",
+    "label": "Trip: Heading"
+  },
+  {
+    "constant": "trip.upcoming",
+    "value": "UPCOMING",
+    "label": "Trip: Upcoming"
+  },
+  {
+    "constant": "trip.past",
+    "value": "PAST",
+    "label": "Trip: Past"
+  },
+  {
+    "constant": "trip.noUpcoming",
+    "value": "No upcoming ride(s).",
+    "label": "Trip: No upcoming"
+  },
+  {
+    "constant": "trip.noPast",
+    "value": "No past ride(s).",
+    "label": "Trip: No past"
+  },
+  {
+    "constant": "trip.waitingForDriver",
+    "value": "Your request is under process, we are searching for driver.",
+    "label": "Trip: Waiting for driver"
+  },
+  {
+    "constant": "trip.scheduleNotice",
+    "value": "A driver will pick you up at your scheduled time",
+    "label": "Trip: Schedule notice"
+  },
+  {
+    "constant": "trip.yourScheduledTrips",
+    "value": "You have a scheduled ride for ",
+    "label": "Trip: Your scheduled trips"
+  },
+  {
+    "constant": "trip.perhour",
+    "value": "/per hour",
+    "label": "Trip: Perhour"
+  },
+  {
+    "constant": "trip.viewDetails",
+    "value": "View Details",
+    "label": "Trip: View details"
+  },
+  {
+    "constant": "trip.date",
+    "value": "Date",
+    "label": "Trip: Date"
+  },
+  {
+    "constant": "trip.total",
+    "value": "Total",
+    "label": "Trip: Total"
+  },
+  {
+    "constant": "trip.cancelled",
+    "value": "Canceled",
+    "label": "Trip: Cancelled"
+  },
+  {
+    "constant": "trip.completed",
+    "value": "Complete",
+    "label": "Trip: Completed"
+  },
+  {
+    "constant": "trip.cancel",
+    "value": "Cancel",
+    "label": "Trip: Cancel"
+  },
+  {
+    "constant": "trip.orderHistory",
+    "value": "Booking Details",
+    "label": "Trip: Order history"
+  },
+  {
+    "constant": "trip.rideId",
+    "value": "Ride ID",
+    "label": "Trip: Ride id"
+  },
+  {
+    "constant": "trip.fare",
+    "value": "Fare",
+    "label": "Trip: Fare"
+  },
+  {
+    "constant": "trip.miles",
+    "value": "Miles",
+    "label": "Trip: Miles"
+  },
+  {
+    "constant": "trip.minutes",
+    "value": "Minutes",
+    "label": "Trip: Minutes"
+  },
+  {
+    "constant": "trip.distance",
+    "value": "Distance",
+    "label": "Trip: Distance"
+  },
+  {
+    "constant": "trip.duration",
+    "value": "Duration",
+    "label": "Trip: Duration"
+  },
+  {
+    "constant": "trip.tollCharge",
+    "value": "Toll Charge",
+    "label": "Trip: Toll charge"
+  },
+  {
+    "constant": "trip.tollDetails",
+    "value": "Toll Details",
+    "label": "Trip: Toll details"
+  },
+  {
+    "constant": "trip.bestFare",
+    "value": "Best Fare",
+    "label": "Trip: Best fare"
+  },
+  {
+    "constant": "trip.perMiles",
+    "value": "Per Miles",
+    "label": "Trip: Per miles"
+  },
+  {
+    "constant": "trip.perMinutes",
+    "value": "Per minutes",
+    "label": "Trip: Per minutes"
+  },
+  {
+    "constant": "trip.status",
+    "value": "Status",
+    "label": "Trip: Status"
+  },
+  {
+    "constant": "trip.discount",
+    "value": "Discount",
+    "label": "Trip: Discount"
+  },
+  {
+    "constant": "trip.tip",
+    "value": "Tip",
+    "label": "Trip: Tip"
+  },
+  {
+    "constant": "trip.feedback",
+    "value": "Feedback",
+    "label": "Trip: Feedback"
+  },
+  {
+    "constant": "trip.details",
+    "value": "Details",
+    "label": "Trip: Details"
+  },
+  {
+    "constant": "trip.perMins",
+    "value": "Per Minutes",
+    "label": "Trip: Per mins"
+  },
+  {
+    "constant": "trip.acceptedBy",
+    "value": "Accepted by: {{name}}",
+    "label": "Trip: Accepted by"
+  },
+  {
+    "constant": "trip.type",
+    "value": "Type",
+    "label": "Trip: Type"
+  },
+  {
+    "constant": "payment.heading",
+    "value": "Payment Method",
+    "label": "Payment: Heading"
+  },
+  {
+    "constant": "payment.savedCard",
+    "value": "Saved Card",
+    "label": "Payment: Saved card"
+  },
+  {
+    "constant": "payment.addNewCard",
+    "value": "Add New Card",
+    "label": "Payment: Add new card"
+  },
+  {
+    "constant": "payment.saveCard",
+    "value": "SAVE CARD",
+    "label": "Payment: Save card"
+  },
+  {
+    "constant": "payment.add",
+    "value": "ADD CARD",
+    "label": "Payment: Add"
+  },
+  {
+    "constant": "payment.change",
+    "value": "Change",
+    "label": "Payment: Change"
+  },
+  {
+    "constant": "payment.fare",
+    "value": "Fare",
+    "label": "Payment: Fare"
+  },
+  {
+    "constant": "payment.selectPayment",
+    "value": "Please select payment method",
+    "label": "Payment: Select payment"
+  },
+  {
+    "constant": "payment.paymentMethod",
+    "value": "Payment Method",
+    "label": "Payment: Payment method"
+  },
+  {
+    "constant": "payment.cardInformation",
+    "value": "Card Information",
+    "label": "Payment: Card information"
+  },
+  {
+    "constant": "payment.cardHolder",
+    "value": "Card Holder Name",
+    "label": "Payment: Card holder"
+  },
+  {
+    "constant": "payment.cardHolderPlaceholder",
+    "value": "Enter Name on Card",
+    "label": "Payment: Card holder placeholder"
+  },
+  {
+    "constant": "paymentMethod.heading",
+    "value": "Payment Method",
+    "label": "Payment method: Heading"
+  },
+  {
+    "constant": "paymentMethod.empty",
+    "value": "Payment method(s) not added.",
+    "label": "Payment method: Empty"
+  },
+  {
+    "constant": "paymentMethod.deleteMessage",
+    "value": "Are you sure want to delete {{card}} card?",
+    "label": "Payment method: Delete message"
+  },
+  {
+    "constant": "wallet.heading",
+    "value": "Wallet",
+    "label": "Wallet: Heading"
+  },
+  {
+    "constant": "wallet.btn",
+    "value": "ADD MONEY",
+    "label": "Wallet: Btn"
+  },
+  {
+    "constant": "wallet.totalBalance",
+    "value": "Total Balance",
+    "label": "Wallet: Total balance"
+  },
+  {
+    "constant": "wallet.minimum",
+    "value": "Please add minimum 1{{currency}}.",
+    "label": "Wallet: Minimum"
+  },
+  {
+    "constant": "wallet.addAmount",
+    "value": "Amount to Add",
+    "label": "Wallet: Add amount"
+  },
+  {
+    "constant": "auth.submit",
+    "value": "Submit",
+    "label": "Auth: Submit"
+  },
+  {
+    "constant": "auth.signin",
+    "value": "Sign in",
+    "label": "Auth: Signin"
+  },
+  {
+    "constant": "auth.signinDesc",
+    "value": "Access to your account",
+    "label": "Auth: Signin desc"
+  },
+  {
+    "constant": "auth.signup",
+    "value": "Sign Up",
+    "label": "Auth: Signup"
+  },
+  {
+    "constant": "auth.signupDesc",
+    "value": "Access to your account",
+    "label": "Auth: Signup desc"
+  },
+  {
+    "constant": "auth.phoneNumber",
+    "value": "PHONE NUMBER",
+    "label": "Auth: Phone number"
+  },
+  {
+    "constant": "auth.firstName",
+    "value": "FIRST NAME",
+    "label": "Auth: First name"
+  },
+  {
+    "constant": "auth.lastName",
+    "value": "LAST NAME",
+    "label": "Auth: Last name"
+  },
+  {
+    "constant": "auth.emailAddress",
+    "value": "EMAIL ADDRESS",
+    "label": "Auth: Email address"
+  },
+  {
+    "constant": "auth.mobileNumber",
+    "value": "MOBILE NUMBER",
+    "label": "Auth: Mobile number"
+  },
+  {
+    "constant": "auth.password",
+    "value": "PASSWORD",
+    "label": "Auth: Password"
+  },
+  {
+    "constant": "auth.confirmPassword",
+    "value": "CONFIRM PASSWORD",
+    "label": "Auth: Confirm password"
+  },
+  {
+    "constant": "auth.referralCode",
+    "value": "ENTER REFERRAL CODE",
+    "label": "Auth: Referral code"
+  },
+  {
+    "constant": "auth.forgotPassword",
+    "value": "FORGOT PASSWORD?",
+    "label": "Auth: Forgot password"
+  },
+  {
+    "constant": "auth.signinButton",
+    "value": "LOGIN",
+    "label": "Auth: Signin button"
+  },
+  {
+    "constant": "auth.signupButton",
+    "value": "SIGN UP",
+    "label": "Auth: Signup button"
+  },
+  {
+    "constant": "auth.or",
+    "value": "or",
+    "label": "Auth: Or"
+  },
+  {
+    "constant": "auth.appleLoginButton",
+    "value": "Sign in with Apple",
+    "label": "Auth: Apple login button"
+  },
+  {
+    "constant": "auth.googleLoginButton",
+    "value": "Sign in with Google",
+    "label": "Auth: Google login button"
+  },
+  {
+    "constant": "auth.facebookLoginButton",
+    "value": "Sign in with Facebook",
+    "label": "Auth: Facebook login button"
+  },
+  {
+    "constant": "auth.alreadyHaveAccount",
+    "value": "Already have an account? ",
+    "label": "Auth: Already have account"
+  },
+  {
+    "constant": "auth.alreadyHaveAccountButton",
+    "value": "Login",
+    "label": "Auth: Already have account button"
+  },
+  {
+    "constant": "auth.notHaveAccount",
+    "value": "Don’t have an account? ",
+    "label": "Auth: Not have account"
+  },
+  {
+    "constant": "auth.notHaveAccountButton",
+    "value": "Signup",
+    "label": "Auth: Not have account button"
+  },
+  {
+    "constant": "auth.noDocumentAvailable",
+    "value": "No documentation available yet!",
+    "label": "Auth: No document available"
+  },
+  {
+    "constant": "auth.agree",
+    "value": "I agree to the ",
+    "label": "Auth: Agree"
+  },
+  {
+    "constant": "auth.termsAndConditions",
+    "value": "Terms & Conditions",
+    "label": "Auth: Terms and conditions"
+  },
+  {
+    "constant": "auth.comma",
+    "value": ", ",
+    "label": "Auth: Comma"
+  },
+  {
+    "constant": "auth.privacyPolicy",
+    "value": "Privacy Policy",
+    "label": "Auth: Privacy policy"
+  },
+  {
+    "constant": "auth.and",
+    "value": "and ",
+    "label": "Auth: And"
+  },
+  {
+    "constant": "auth.refundPolicy",
+    "value": "Refund Policy",
+    "label": "Auth: Refund policy"
+  },
+  {
+    "constant": "auth.dot",
+    "value": ".",
+    "label": "Auth: Dot"
+  },
+  {
+    "constant": "emergency.heading",
+    "value": "SOS",
+    "label": "Emergency: Heading"
+  },
+  {
+    "constant": "emergency.addNew",
+    "value": "ADD NEW CONTACT",
+    "label": "Emergency: Add new"
+  },
+  {
+    "constant": "emergency.addLabel",
+    "value": "Add Trusted Contact",
+    "label": "Emergency: Add label"
+  },
+  {
+    "constant": "emergency.save",
+    "value": "SAVE",
+    "label": "Emergency: Save"
+  },
+  {
+    "constant": "emergency.fullNamePlaceholder",
+    "value": "Full Name",
+    "label": "Emergency: Full name placeholder"
+  },
+  {
+    "constant": "emergency.numberPlaceholder",
+    "value": "Mobile Number",
+    "label": "Emergency: Number placeholder"
+  },
+  {
+    "constant": "emergency.noContacts",
+    "value": "No sos contact(s) found.\nPlease add your first trusted contact.",
+    "label": "Emergency: No contacts"
+  },
+  {
+    "constant": "emergency.deleteMessage",
+    "value": "Are you sure want to delete {{name}} from your emergency contact?",
+    "label": "Emergency: Delete message"
+  },
+  {
+    "constant": "emergency.shareLocation",
+    "value": "Always share trip location",
+    "label": "Emergency: Share location"
+  },
+  {
+    "constant": "address.addNew",
+    "value": "ADD NEW ADDRESS",
+    "label": "Address: Add new"
+  },
+  {
+    "constant": "address.placeholder",
+    "value": "Address",
+    "label": "Address: Placeholder"
+  },
+  {
+    "constant": "address.confirmationNote",
+    "value": "Are you sure you want to remove this address?",
+    "label": "Address: Confirmation note"
+  },
+  {
+    "constant": "address.houseNumber",
+    "value": "House Number",
+    "label": "Address: House number"
+  },
+  {
+    "constant": "address.landmark",
+    "value": "Landmark",
+    "label": "Address: Landmark"
+  },
+  {
+    "constant": "address.selectAddress",
+    "value": "Select Address",
+    "label": "Address: Select address"
+  },
+  {
+    "constant": "address.home",
+    "value": "Home",
+    "label": "Address: Home"
+  },
+  {
+    "constant": "address.office",
+    "value": "Office",
+    "label": "Address: Office"
+  },
+  {
+    "constant": "address.other",
+    "value": "Other",
+    "label": "Address: Other"
+  },
+  {
+    "constant": "address.defaultAddress",
+    "value": "Default Address",
+    "label": "Address: Default address"
+  },
+  {
+    "constant": "address.save",
+    "value": "SAVE",
+    "label": "Address: Save"
+  },
+  {
+    "constant": "address.airport",
+    "value": "Airport Address",
+    "label": "Address: Airport"
+  },
+  {
+    "constant": "address.airportNote",
+    "value": "We noticed that your {{type}} location is an airport. To ensure a smooth pickup/dropoff experience, please provide the following details.",
+    "label": "Address: Airport note"
+  },
+  {
+    "constant": "address.terminal",
+    "value": "Terminal",
+    "label": "Address: Terminal"
+  },
+  {
+    "constant": "address.zone",
+    "value": "Zone",
+    "label": "Address: Zone"
+  },
+  {
+    "constant": "address.notApplicable",
+    "value": "Not Applicable",
+    "label": "Address: Not applicable"
+  },
+  {
+    "constant": "address.submit",
+    "value": "Submit",
+    "label": "Address: Submit"
+  },
+  {
+    "constant": "address.pick",
+    "value": "pickup",
+    "label": "Address: Pick"
+  },
+  {
+    "constant": "address.drop",
+    "value": "dropoff",
+    "label": "Address: Drop"
+  },
+  {
+    "constant": "address.where",
+    "value": "Where to?",
+    "label": "Address: Where"
+  },
+  {
+    "constant": "user.actionRequired",
+    "value": "Action Required",
+    "label": "User: Action required"
+  },
+  {
+    "constant": "user.addPhone",
+    "value": "Please update your Phone number to continue",
+    "label": "User: Add phone"
+  },
+  {
+    "constant": "user.updateProfile",
+    "value": "Please update your profile photo and credit card details to continue",
+    "label": "User: Update profile"
+  },
+  {
+    "constant": "user.pendingVerification",
+    "value": "Please submit some necessary documents for verification purposes.",
+    "label": "User: Pending verification"
+  },
+  {
+    "constant": "user.rejectedVerification",
+    "value": "Your provided document is rejected please submit valid document.",
+    "label": "User: Rejected verification"
+  },
+  {
+    "constant": "user.updateNow",
+    "value": "Update now",
+    "label": "User: Update now"
+  },
+  {
+    "constant": "user.important",
+    "value": "Important",
+    "label": "User: Important"
+  },
+  {
+    "constant": "user.submitNow",
+    "value": "SUBMIT NOW",
+    "label": "User: Submit now"
+  },
+  {
+    "constant": "user.note",
+    "value": "Note",
+    "label": "User: Note"
+  },
+  {
+    "constant": "user.verificationMessage",
+    "value": "Document verification in progress (2-4 hours). You will be notified upon completion, and a verified badge will appear on your profile.",
+    "label": "User: Verification message"
+  },
+  {
+    "constant": "user.alert",
+    "value": "Alert",
+    "label": "User: Alert"
+  },
+  {
+    "constant": "user.verificationAlert",
+    "value": "Your account is not verified yet. We will notify you after verification.",
+    "label": "User: Verification alert"
+  },
+  {
+    "constant": "user.ok",
+    "value": "OK",
+    "label": "User: Ok"
+  },
+  {
+    "constant": "user.validate",
+    "value": "Please upload all documents",
+    "label": "User: Validate"
+  },
+  {
+    "constant": "update.new",
+    "value": "NEW UPDATE",
+    "label": "Update: New"
+  },
+  {
+    "constant": "update.newFeature",
+    "value": "We're better than ever",
+    "label": "Update: New feature"
+  },
+  {
+    "constant": "update.description",
+    "value": "To enjoy our newest features tap the button below",
+    "label": "Update: Description"
+  },
+  {
+    "constant": "update.update",
+    "value": "UPDATE NOW",
+    "label": "Update: Update"
+  },
+  {
+    "constant": "chat.validation",
+    "value": "Please type your message before sending.",
+    "label": "Chat: Validation"
+  },
+  {
+    "constant": "chat.messagePlaceholder",
+    "value": "Start typing here...",
+    "label": "Chat: Message placeholder"
+  },
+  {
+    "constant": "chat.noChatMessage",
+    "value": "No Messages yet",
+    "label": "Chat: No chat message"
+  },
+  {
+    "constant": "chat.error",
+    "value": "Error",
+    "label": "Chat: Error"
+  },
+  {
+    "constant": "chat.errorMessage",
+    "value": "We couldn't send your message because the trip was canceled or no driver was found.",
+    "label": "Chat: Error message"
+  }
+]

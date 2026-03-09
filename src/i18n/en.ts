@@ -1,0 +1,77 @@
+const en = {
+  // bottomTab: {
+  //   Home: 'Home',
+  //   Search: 'Search',
+  //   ProductList: 'Shop',
+  //   Sip: 'Sip',
+  //   Profile: 'Profile',
+  // },
+  walkthrough: {
+    first: 'Hire Trusted Local Professionals',
+    firstSubtitle: 'all in one place.',
+    second: 'Work Smart. Paid Securely',
+    secondSubtitle: 'when the work is done.',
+    third: 'The Easiest way to post Jobs',
+    thirdSubtitle: 'grow your freelance business',
+  },
+  login: {
+    title: 'Welcome back',
+    description: 'sign in to access your account',
+    email: 'Enter your email',
+    password: 'Enter your password',
+    forgotPassword: 'Forgot Password?',
+    signIn: 'Sign In',
+    newUser: 'New to Bezzie? ',
+    signUp: 'Sign up now',
+  },
+  validation: {
+    required: 'Required',
+    minEmail: 'Must be at least 3 characters long',
+    minMessage: 'Must be at least 10 characters long',
+    invalidEmail: 'Invalid email address',
+    minMobileNo: 'Must be 6 digit',
+    maxMobile: 'Not more then 15 digit',
+    invalidMobile: 'Invalid mobile number',
+    shortPassword: 'Too Short!',
+    longPassword: 'Too Long!',
+    passwordsNotMatched: 'Passwords must match',
+    otpRequired: 'OTP is required',
+    acceptTnc:
+      'Please accept terms & conditions, privacy policy and refund policy.',
+  },
+  common: {
+    noDataAvailable: 'No data available',
+    ok: 'OK',
+    cancel: 'Cancel',
+    camera: 'Camera',
+    gallery: 'Gallery',
+    delete: 'Delete',
+    view: 'View',
+    edit: 'Edit',
+    noInternet: 'No Internet Connection Available',
+    apply: 'Apply',
+    noDataFound: 'No results found',
+    confirm: 'Confirm',
+  },
+  update: {
+    new: 'NEW UPDATE',
+    newFeature: "We're better than ever",
+    description: 'To enjoy our newest features tap the button below',
+    update: 'UPDATE NOW',
+  },
+  loaderText: {
+    default: 'Loading...',
+    signing: 'Signing...',
+    logging: 'Logging...',
+    deleting: 'Deleting...',
+    processing: 'Processing...',
+  },
+  countries: {
+    heading: 'Country Listing',
+    search: 'Search',
+    countries: 'Countries',
+  },
+};
+
+export default en;
+export type Translations = typeof en;
