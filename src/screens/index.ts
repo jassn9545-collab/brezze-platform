@@ -5,6 +5,10 @@ export * from './LoginScreen';
 // export * from './ForgotPasswordScreen';
 // export * from './ResetPasswordScreen';
 
+
+
+export * from './HomeScreen';
+
 // export * from './NotificationScreen';
 // export * from './ProfileScreen';
 // export * from './FAQScreen';

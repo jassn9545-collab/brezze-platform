@@ -1,11 +1,11 @@
 const en = {
-  // bottomTab: {
-  //   Home: 'Home',
-  //   Search: 'Search',
-  //   ProductList: 'Shop',
-  //   Sip: 'Sip',
-  //   Profile: 'Profile',
-  // },
+  bottomTab: {
+    Home: 'Home',
+    // Search: 'Search',
+    // ProductList: 'Shop',
+    // Sip: 'Sip',
+    // Profile: 'Profile',
+  },
   walkthrough: {
     first: 'Hire Trusted Local Professionals',
     firstSubtitle: 'all in one place.',
