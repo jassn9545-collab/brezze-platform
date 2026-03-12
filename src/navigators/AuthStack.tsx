@@ -25,10 +25,14 @@ import { colors } from '../theme';
 export type AuthStackParamList = {
   Walkthrough: undefined;
   Login: undefined;
-  // Signup: { verifiedPhone?: string } | undefined;
-  // Verification: Screens.VerificationParams;
-  // ForgotPassword: undefined;
-  // ResetPassword: Screens.ResetParams;
+  Signup: undefined;
+  Verification: Screens.VerificationParams;
+  ForgotPassword: undefined;
+  ResetPassword: Screens.ResetParams;
+  CommonSucess: Screens.CommonSucessParams;
+  MyDocuments: undefined
+  UploadUserDetail: undefined
+  UploadDocument: undefined
   // PrivacyPolicy: { title: TxKeyPath; type: Screens.StaticType } | undefined;
   // TermsCondition: { title: TxKeyPath; type: Screens.StaticType } | undefined;
 };
@@ -68,29 +72,36 @@ export const AuthStack: FC<AuthStackProps> = () => {
         name="Login"
         component={Screens.LoginScreen}
       />
-      {/* 
       <Stack.Screen name="Signup" component={Screens.SignupScreen} />
+      <Stack.Screen
+          name="Verification"
+          component={Screens.VerificationScreen}
+        /> 
       <Stack.Screen
         name="ForgotPassword"
         component={Screens.ForgotPasswordScreen}
       />
-      <Stack.Screen
+       <Stack.Screen
         name="ResetPassword"
         component={Screens.ResetPasswordScreen}
       />
-
-      <Stack.Group
-        screenOptions={{
-          presentation: 'transparentModal',
-          contentStyle: { backgroundColor: 'transparent' },
-          animation: 'slide_from_bottom',
-        }}
-      >
-        <Stack.Screen
-          name="Verification"
-          component={Screens.VerificationScreen}
-        /> */}
-      {/* </Stack.Group> */}
+       <Stack.Screen
+        name="CommonSucess"
+        component={Screens.CommonSucessScreen}
+      />
+       <Stack.Screen
+        name="MyDocuments"
+        component={Screens.MyDocumentsScreen}
+      />
+       <Stack.Screen
+        name="UploadUserDetail"
+        component={Screens.UploadUserDetailScreen}
+      />
+         <Stack.Screen
+        name="UploadDocument"
+        component={Screens.UploadDocumentScreen}
+      />
+      {/* 
 
       {/* <Stack.Screen
          name="PrivacyPolicy"

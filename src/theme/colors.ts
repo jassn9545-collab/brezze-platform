@@ -12,7 +12,7 @@ const palette = {
   transparentGreen: '#E9FFF2',
   offGreen: '#E8F5E9',
   offWhite: '#F6F6F6',
-  offWhite2: '#F2F2F7',
+  offWhite2: '#EFEFEF',
 
   primaryColor: '#0054A5',
   primaryDimmed: '#92CEFF',

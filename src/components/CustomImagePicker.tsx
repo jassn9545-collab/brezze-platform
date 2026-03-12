@@ -20,12 +20,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type CustomImagePickerProps = {
   imagePickerModal: boolean;
+  frontCamera?: boolean;
   onDismiss: () => void;
   callback: (image: ImagePickerResponse) => void;
 };
 
 export const CustomImagePicker = ({
   imagePickerModal,
+  frontCamera,
   onDismiss,
   callback,
 }: CustomImagePickerProps) => {
@@ -34,6 +36,7 @@ export const CustomImagePicker = ({
     await cameraPermission();
     launchCamera({
       mediaType: 'photo',
+      ...(frontCamera && { cameraType: 'front' }),
       maxWidth: 512,
       maxHeight: 512,
       quality: 0.6,

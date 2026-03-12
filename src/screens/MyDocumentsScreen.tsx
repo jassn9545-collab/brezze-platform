@@ -1,0 +1,190 @@
+// import * as Firebase from '../utils/Firebase';
+
+import {
+  AuthHeader,
+  Button,
+  CustomImagePicker,
+  Screen,
+  Text,
+} from '../components';
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { FC, useEffect, useState } from 'react';
+import { colors, images, spacing } from '../theme';
+
+import { AuthStackScreenProps } from '../navigators';
+import { TxKeyPath } from '../i18n';
+import { ImagePickerResponse } from 'react-native-image-picker';
+
+type NavigationProps = AuthStackScreenProps<'MyDocuments'>;
+// type StoreProps = ConnectedProps<typeof connector>;
+// type Props = NavigationProps & StoreProps;
+
+
+interface DocumentTypes {
+  title: TxKeyPath;
+  description: TxKeyPath;
+  screen?: 'UploadUserDetail' | 'UploadDocument';
+}
+
+const documentList: DocumentTypes[] = [
+  {
+    title: 'document.basicDetailsProvide',
+    description: 'document.basicDetailsProvideDesc',
+    screen: 'UploadUserDetail',
+  },
+  {
+    title: 'document.faceVerification',
+    description: 'document.faceVerificationDesc',
+  },
+  {
+    title: 'document.IDVerification',
+    description: 'document.IDVerificationDesc',
+    screen: 'UploadDocument'
+  },
+];
+
+const MyDocuments: FC<NavigationProps> = props => {
+  const [imagePickerVisible, setImagePickerVisible] = useState(false);
+  const [imageURI, setImageURI] = useState('');
+  // const [imageFormData, setImageFormData] = useState<{
+  //   uri: string;
+  //   name: string;
+  //   type: string;
+  // } | null>(null);
+
+  useEffect(() => {
+    if (imageURI) {
+      props.navigation.navigate('CommonSucess', {
+        from: 'faceVerification',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageURI]);
+
+  const uploadImage = (image: ImagePickerResponse) => {
+    if ((image.assets?.length ?? 0) > 0) {
+      setImageURI(image.assets?.[0].uri!);
+      // setImageFormData({
+      //   uri: image.assets?.[0].uri!,
+      //   name: image.assets?.[0].fileName!,
+      //   type: image.assets?.[0].type!,
+      // });
+    }
+  };
+
+  const onPressDetail = (data: DocumentTypes) => {
+    if (data.screen) {
+      props.navigation.navigate(data.screen);
+    } else {
+      setImagePickerVisible(true);
+    }
+  };
+
+  const validate = () => {};
+
+  return (
+    <>
+      <Screen
+        preset="auto"
+        contentContainerStyle={styles.containerStyle}
+        safeAreaEdges={['top']}
+      >
+        <AuthHeader tx="document.heading" desc="document.description" />
+        <View style={styles.mainView}>
+          <Text
+            style={styles.listHeading}
+            size="sm"
+            weight="semiBold"
+            tx="document.documentRequirement"
+          />
+          {documentList?.map((item, index) => (
+            <TouchableOpacity
+              onPress={() => onPressDetail(item)}
+              key={index}
+              style={styles.card}
+            >
+              <Image source={images.smileIcon} />
+              <View style={styles.cardTextWrapper}>
+                <Text
+                  size="sm"
+                  weight="semiBold"
+                  tx={item.title}
+                  style={{ color: colors.primary }}
+                />
+                <Text
+                  size="sm"
+                  tx={item.description}
+                  style={{ color: colors.textDim }}
+                />
+              </View>
+            </TouchableOpacity>
+          ))}
+
+          <View style={styles.flex} />
+          <Text size="xs" tx="document.footerText" style={styles.footerText} />
+          <Button
+            tx="document.submit"
+            style={styles.buttonStyle}
+            onPress={validate}
+          />
+        </View>
+      </Screen>
+      <CustomImagePicker
+        frontCamera
+        callback={uploadImage}
+        imagePickerModal={imagePickerVisible}
+        onDismiss={() => setImagePickerVisible(false)}
+      />
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  containerStyle: {
+    flexGrow: 1,
+  },
+  mainView: {
+    flex: 1,
+    marginHorizontal: spacing.md,
+  },
+  listHeading: {
+    marginVertical: spacing.md,
+  },
+  card: {
+    gap: spacing.sm,
+    borderWidth: 0.5,
+    padding: spacing.sm,
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+    borderRadius: spacing.xs,
+    borderColor: colors.palette.borderColor,
+  },
+  cardTextWrapper: {
+    marginRight: spacing.xxl,
+  },
+  flex: {
+    flex: 1,
+  },
+  footerText: {
+    textAlign: 'center',
+    color: colors.textDim,
+    marginHorizontal: spacing.lg,
+  },
+  buttonStyle: {
+    borderRadius: spacing.xs,
+    marginVertical: spacing.lg,
+  },
+});
+
+// const mapStateToProps = (state: RootState) => ({
+//   loading: state.auth.loading,
+// });
+
+// const mapDispatch = {
+//   user_Login: (params: Signin) => userLogin(params),
+//   clearLoginLoading: () => authActions.clearLoginLoading(),
+// };
+
+// const connector = connect(mapStateToProps, mapDispatch);
+
+export const MyDocumentsScreen = MyDocuments;

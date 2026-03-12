@@ -146,7 +146,7 @@ export const TextField = forwardRef(function TextField(
 
   const $inputWrapperStyles = [
     $inputWrapperStyle,
-    // status === 'error' && { borderBottomColor: colors.error, borderBottomWidth: 1 },
+    status === 'error' && { borderColor: colors.error, borderWidth: 1 },
     textInputProps.multiline && { minHeight: 103 },
     LeftAccessory && { paddingStart: 0 },
     RightAccessory && { paddingEnd: 0 },
@@ -274,7 +274,6 @@ const $inputStyle: TextStyle = {
 
 const $helperStyle: TextStyle = {
   marginTop: spacing.xxxs,
-  marginStart: spacing.md,
 };
 
 const $rightAccessoryStyle: ViewStyle = {

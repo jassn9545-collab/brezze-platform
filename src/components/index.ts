@@ -5,6 +5,7 @@ export * from './TextField';
 export * from './Loader';
 export * from './CountryPickerModal';
 export * from './AuthHeader';
+export * from './OTPTextView';
 // export * from './Star';
 // export * from './TapRating';
 export * from './DashedLine';

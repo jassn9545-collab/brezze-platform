@@ -17,6 +17,14 @@ export const images = {
   eyeIcon: require('../assets/images/eyeIcon.png'),
   eyeCloseIcon: require('../assets/images/eyeCloseIcon.png'),
   leftArrow: require('../assets/images/leftArrow.png'),
+  checkboxFilled: require('../assets/images/checkboxFilled.png'),
+  checkboxOutline: require('../assets/images/checkboxOutline.png'),
+  successTick: require('../assets/images/successTick.png'),
+  calender: require('../assets/images/calender.png'),
+  downArrow: require('../assets/images/downArrow.png'),
+  
+  //
+  smileIcon: require('../assets/images/smileIcon.png'),
 
   // bottom tab icons
   // home: require('../assets/images/homeActive.png'),

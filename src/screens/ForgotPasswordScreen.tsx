@@ -1,133 +1,109 @@
-// import {
-//   AuthHeader,
-//   Button,
-//   Country,
-//   CountryPickerModal,
-//   Loader,
-//   Screen,
-// } from '../components';
-// import { Keyboard, View, ViewStyle } from 'react-native';
-// import React, { FC, useEffect, useState } from 'react';
-// import { TextField } from '../components/TextField';
-// import { buildError, forgotPasswordSchema } from '../apis/schema';
-// import { spacing } from '../theme';
+import { AuthHeader, Button, Screen } from '../components';
+import { Keyboard, View, ViewStyle } from 'react-native';
+import React, { FC, useState } from 'react';
+import { TextField } from '../components/TextField';
+import { buildError, forgotPasswordSchema } from '../apis/schema';
+import { spacing } from '../theme';
 
-// import { AuthStackScreenProps } from '../navigators';
-// import { TxKeyPath } from '../i18n';
-// import { DefaultCountry } from '../config/defaults';
-// import { phoneLeftAccessory } from './LoginScreen';
-// import { useAppDispatch, useAppSelector } from '../store/hooks';
-// import { authActions, forgotPassword } from '../slices/auth.slice';
+import { AuthStackScreenProps } from '../navigators';
+import { TxKeyPath } from '../i18n';
+import { emailLeftAccessory } from './LoginScreen';
 
-// type Props = AuthStackScreenProps<'ForgotPassword'>;
+type Props = AuthStackScreenProps<'ForgotPassword'>;
 
-// type FieldError = {
-//   phone?: TxKeyPath | undefined;
-// };
+type FieldError = {
+  email?: TxKeyPath | undefined;
+};
 
-// const ForgotPassword: FC<Props> = () => {
-//   const dispatch = useAppDispatch();
-//   const loadingState = useAppSelector(
-//     store => store.auth.forgotPasswordLoading,
-//   );
+const ForgotPassword: FC<Props> = props => {
+  //   const dispatch = useAppDispatch();
+  //   const loadingState = useAppSelector(
+  //     store => store.auth.forgotPasswordLoading,
+  //   );
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState<FieldError>({});
 
-//   const [mobile, setMobile] = useState('');
-//   const [country, setCountry] = useState<Country>(DefaultCountry);
-//   const [showCountries, setShowCountries] = useState<boolean>(false);
-//   const [error, setError] = useState<FieldError>({});
+  //   useEffect(() => {
+  //     if (loadingState === 'loaded') {
+  //       dispatch(authActions.resetForgotPasswordLoading());
+  //     }
+  //   }, [dispatch, loadingState]);
 
-//   useEffect(() => {
-//     if (loadingState === 'loaded') {
-//       dispatch(authActions.resetForgotPasswordLoading());
-//     }
-//   }, [dispatch, loadingState]);
+  const validate = () => {
+    forgotPasswordSchema
+      .validate(
+        {
+          email,
+        },
+        { abortEarly: false },
+      )
+      .then(res => {
+        Keyboard.dismiss();
+        props.navigation.navigate('Verification', {
+          email: res.email,
+          from: 'forgotPassword',
+          serviceSid: '',
+          user_id: 1,
+        });
+        // dispatch(forgotPassword(res));
+        setError({});
+      })
+      .catch(errors => {
+        const err = buildError<FieldError>(errors);
+        setError(err);
+      });
+  };
 
-//   const validate = () => {
-//     forgotPasswordSchema
-//       .validate(
-//         {
-//           phone: mobile,
-//           country_code: country.dial_code,
-//           country: country.code,
-//         },
-//         { abortEarly: false },
-//       )
-//       .then(res => {
-//         Keyboard.dismiss();
-//         console.log('res', res);
-//         dispatch(forgotPassword(res));
-//         setError({});
-//       })
-//       .catch(errors => {
-//         const err = buildError<FieldError>(errors);
-//         setError(err);
-//       });
-//   };
+  return (
+    <>
+      <Screen
+        preset="auto"
+        safeAreaEdges={['top']}
+        contentContainerStyle={$containerStyle}
+      >
+        <AuthHeader
+          tx="forgotPassword.heading"
+          desc="forgotPassword.description"
+        />
+        <View style={$main}>
+          <TextField
+            value={email}
+            onChangeText={setEmail}
+            containerStyle={$inputContainer}
+            keyboardType="email-address"
+            placeholderTx="forgotPassword.emailPlaceholder"
+            returnKeyType="done"
+            LeftAccessory={emailLeftAccessory}
+            helperTx={error?.email}
+            status={error?.email ? 'error' : undefined}
+          />
+          <Button
+            tx="forgotPassword.send"
+            onPress={validate}
+            style={$buttonStyle}
+          />
+        </View>
+      </Screen>
+      {/* <Loader loading={loadingState === 'loading'} /> */}
+    </>
+  );
+};
 
-//   return (
-//     <>
-//       <Screen
-//         preset="auto"
-//         contentContainerStyle={$containerStyle}
-//         safeAreaEdges={['top']}
-//       >
-//         <AuthHeader tx="forgotPassword.forgotPassword" />
-//         <View style={$main}>
-//           <TextField
-//             value={mobile ? `${country.dial_code} ${mobile}` : ''}
-//             onChangeText={text => {
-//               const dialCode = country.dial_code.replace('+', '\\+');
-//               const cleaned = text
-//                 .replace(new RegExp(`^${dialCode}\\s?`), '')
-//                 .replace(/\D/g, '');
-//               setMobile(cleaned);
-//             }}
-//             containerStyle={$inputContainer}
-//             labelTx="forgotPassword.mobileNumber"
-//             keyboardType="number-pad"
-//             placeholderTx="forgotPassword.mobilePlaceholder"
-//             returnKeyType="done"
-//             LeftAccessory={phoneLeftAccessory}
-//             helperTx={error?.phone}
-//             status={error?.phone ? 'error' : undefined}
-//           />
+const $containerStyle: ViewStyle = {
+  flexGrow: 1,
+};
 
-//           <Button
-//             tx="forgotPassword.send"
-//             onPress={validate}
-//             style={$buttonStyle}
-//           />
-//         </View>
-//       </Screen>
-//         <Loader loading={loadingState === 'loading'} />
-//       <CountryPickerModal
-//         onSelect={data => {
-//           setCountry(data);
-//           setShowCountries(false);
-//         }}
-//         modalVisible={showCountries}
-//         onClose={() => {
-//           setShowCountries(false);
-//         }}
-//       />
-//     </>
-//   );
-// };
+const $main: ViewStyle = {
+  flex: 1,
+  marginHorizontal: spacing.md,
+};
 
-// const $containerStyle: ViewStyle = {
-//   flexGrow: 1,
-// };
+const $inputContainer: ViewStyle = {
+  marginTop: spacing.xl,
+};
 
-// const $main: ViewStyle = {
-//   flex: 1,
-// };
-
-// const $inputContainer: ViewStyle = {
-//   marginTop: spacing.xl,
-// };
-
-// const $buttonStyle: ViewStyle = {
-//   marginVertical: spacing.lg,
-//   marginHorizontal: spacing.md,
-// };
-// export const ForgotPasswordScreen = ForgotPassword;
+const $buttonStyle: ViewStyle = {
+  borderRadius: spacing.xs,
+  marginVertical: spacing.lg,
+};
+export const ForgotPasswordScreen = ForgotPassword;

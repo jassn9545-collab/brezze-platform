@@ -16,26 +16,11 @@ export const userSchema = yup.object().shape({
     .min(6, 'validation.minMobileNo')
     .max(15, 'validation.maxMobile')
     .required('validation.required'),
-  alternate_phone: yup
-    .string()
-    .min(6, 'validation.minMobileNo')
-    .max(15, 'validation.maxMobile')
-    .required('validation.required'),
   email: yup
     .string()
     .min(3, 'validation.minEmail')
     .email('validation.invalidEmail')
     .required('validation.required'),
-  dob: yup.string().required('validation.required'),
-  nominee_name: yup.string().required('validation.required'),
-  nominee_dob: yup.string().required('validation.required'),
-  nominee_phone: yup
-    .string()
-    .min(6, 'validation.minMobileNo')
-    .max(15, 'validation.maxMobile')
-    .required('validation.required'),
-  relation_with_nominee: yup.string().required('validation.required'),
-  refrence: yup.string().notRequired(),
   password: yup.string().when('$isSignup', {
     is: true,
     then: schema =>
@@ -88,12 +73,11 @@ export const loginSchema = yup.object().shape({
 export type Signin = yup.InferType<typeof loginSchema>;
 
 export const forgotPasswordSchema = yup.object().shape({
-  country_code: yup.string(),
-  phone: yup
-    .string()
-    .min(6, 'validation.minMobileNo')
-    .max(15, 'validation.maxMobile')
-    .required('validation.required'),
+  email: yup
+  .string()
+  .min(3, 'validation.minEmail')
+  .email('validation.invalidEmail')
+  .required('validation.required'),
 });
 
 export type ForgotPasswordParam = yup.InferType<typeof forgotPasswordSchema>;
@@ -131,6 +115,36 @@ export const resetPasswordSchema = yup.object().shape({
 
 export type ResetPasswordParams = yup.InferType<typeof resetPasswordSchema>;
 
+export const basicDetailSchema = yup.object().shape({
+  name: yup.string().required('validation.required'),
+  country_code: yup.string(),
+  phone: yup
+    .string()
+    .min(6, 'validation.minMobileNo')
+    .max(15, 'validation.maxMobile')
+    .required('validation.required'),
+  email: yup
+    .string()
+    .min(3, 'validation.minEmail')
+    .email('validation.invalidEmail')
+    .required('validation.required'),
+  dob: yup.string().required('validation.required'),
+  skills: yup
+    .array()
+    .of(yup.string())
+    .min(1, 'validation.required')
+    .required('validation.required'),
+  hourPrice: yup
+    .number()
+    .typeError('validation.required')
+    .required('validation.required'),
+  streetAddress: yup.string().required('validation.required'),
+  state: yup.string().required('validation.required'),
+  zipCode: yup.string().required('validation.required'),
+});
+
+export type BasicUserDetailParams = yup.InferType<typeof basicDetailSchema>;
+
 export const helpSchema = yup.object().shape({
   name: yup.number(),
   email: yup
@@ -149,22 +163,6 @@ export const helpSchema = yup.object().shape({
 
 export type HelpParams = yup.InferType<typeof helpSchema>;
 
-export const addEmergencyContactScheme = yup.object().shape({
-  _id: yup.string(),
-  name: yup.string().required('validation.required'),
-  mobileNumber: yup
-    .string()
-    .min(6, 'validation.minMobileNo')
-    .max(15, 'validation.maxMobile')
-    .required('validation.required'),
-  country_code: yup.string(),
-  status: yup.mixed().oneOf(['active', 'inactive']),
-});
-
-export type AddEmergencyContactParams = yup.InferType<
-  typeof addEmergencyContactScheme
->;
-
 export const createPasswordSchema = yup.object().shape({
   password: yup
     .string()
@@ -180,16 +178,6 @@ export const createPasswordSchema = yup.object().shape({
 });
 
 export type CreatePasswordParams = yup.InferType<typeof createPasswordSchema>;
-
-export const applyCoupon = yup.object().shape({
-  coupon: yup
-    .string()
-    .min(3, 'validation.shortPassword')
-    .max(50, 'validation.longPassword')
-    .required('validation.required'),
-});
-
-export type ApplyCouponParams = yup.InferType<typeof applyCoupon>;
 
 export const editProfile = yup.object().shape({
   name: yup.string(),
@@ -224,66 +212,3 @@ export const addAddressScheme = yup.object().shape({
     .max(15, 'validation.maxMobile')
     .notRequired(),
 });
-
-export type addAddressParams = yup.InferType<typeof addAddressScheme>;
-
-export const bookingSchema = yup.object({
-  type: yup.string().oneOf(['schedule', 'instant']).required(),
-  date: yup.string().when('type', {
-    is: (val: string) => val === 'schedule',
-    then: schema => schema.required('validation.required'),
-    otherwise: schema => schema.notRequired().nullable(),
-  }),
-  time: yup.string().when('type', {
-    is: (val: string) => val === 'schedule',
-    then: schema => schema.required('validation.required'),
-    otherwise: schema => schema.notRequired().nullable(),
-  }),
-});
-
-export const addCustomOrderSchema = yup.object({
-  selectedImage: yup.string(),
-  productName: yup.string().required('validation.required'),
-  weightFrom: yup
-    .string()
-    .typeError('validation.required')
-    .required('validation.required'),
-  weightTo: yup
-    .string()
-    .typeError('validation.required')
-    .required('validation.required'),
-  purity: yup.string().required('validation.required'),
-  sizeLength: yup.string().required('validation.required'),
-  width: yup
-    .string()
-    .typeError('validation.required')
-    .required('validation.required'),
-  quantity: yup
-    .string()
-    .typeError('validation.required')
-    .required('validation.required'),
-  piecePair: yup.string().required('validation.required'),
-  dueDate: yup.string().required('validation.required'),
-  seal: yup.string().required('validation.required'),
-  sampleWeight: yup
-    .string()
-    .typeError('validation.required')
-    .required('validation.required'),
-  stoneWeight: yup
-    .string()
-    .typeError('validation.required')
-    .required('validation.required'),
-  remarks: yup.string().optional(),
-});
-export type addCustomOrderParams = yup.InferType<typeof addCustomOrderSchema>;
-
-export const addbankAccountSchema = yup.object({
-  account_id: yup.string(),
-  bank_name: yup.string().required('validation.required'),
-  account_number: yup.string().required('validation.required'),
-  ifsc_code: yup.string().required('validation.required'),
-  branch_name: yup.string().required('validation.required'),
-  account_holder_name: yup.string().required('validation.required'),
-  account_type: yup.string().required('validation.required'),
-});
-export type AddBankAccountParams = yup.InferType<typeof addbankAccountSchema>;

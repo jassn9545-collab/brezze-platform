@@ -52,7 +52,7 @@ const passwordLeftAccessory = (props: TextFieldAccessoryProps) => {
 
 const Login: FC<NavigationProps> = (
   {
-    //   navigation,
+      navigation,
     //   loading,
     //   clearLoginLoading,
     //   user_Login,
@@ -113,6 +113,7 @@ const Login: FC<NavigationProps> = (
       .then(params => {
         Keyboard.dismiss();
         console.log('params', params);
+        navigation.navigate('MyDocuments')
         // user_Login(params);
         setError({});
       })
@@ -181,7 +182,7 @@ const Login: FC<NavigationProps> = (
             size="sm"
             tx="login.forgotPassword"
             style={$forgotText}
-            // onPress={() => navigation.navigate('ForgotPassword')}
+            onPress={() => navigation.navigate('ForgotPassword')}
           />
           <Button tx="login.signIn" onPress={validate} style={$buttonStyle} />
 
@@ -194,7 +195,7 @@ const Login: FC<NavigationProps> = (
               style={{color: colors.primary}}
               onPress={() => {
                 Keyboard.dismiss();
-                // navigation.navigate('Signup');
+                navigation.navigate('Signup');
               }}
             />
           </Text>
@@ -207,7 +208,6 @@ const Login: FC<NavigationProps> = (
 
 const $containerStyle: ViewStyle = {
   flexGrow: 1,
-  paddingTop: spacing.lg,
 };
 
 const $mainView: ViewStyle = {

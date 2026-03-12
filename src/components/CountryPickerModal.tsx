@@ -6,13 +6,15 @@ import {
   ViewStyle,
   TextStyle,
   Platform,
+  Image,
+  ImageStyle,
 } from 'react-native';
 
 import CountriesArray from './countries.json';
 import {Screen} from './Screen';
 import {TextField} from './TextField';
 import {Text} from './Text';
-import { spacing} from '../theme';
+import { images, spacing} from '../theme';
 
 export type Country = {
   name: string;
@@ -57,7 +59,7 @@ export const CountryPickerModal = ({
         safeAreaEdges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
         contentContainerStyle={$modal}>
         <TouchableOpacity onPress={close} style={$header}>
-          {/* <Image source={images.back} resizeMode="contain" style={$back} /> */}
+          <Image source={images.leftArrow} resizeMode="contain" style={$back} />
           <Text tx="countries.heading" preset="heading" size="lg" />
         </TouchableOpacity>
         <TextField
@@ -106,9 +108,9 @@ const $header: ViewStyle = {
   alignItems: 'center',
 };
 
-// const $back: ImageStyle = {
-//   marginRight: spacing.xs,
-// };
+const $back: ImageStyle = {
+  marginRight: spacing.xs,
+};
 
 const $subHeading: TextStyle = {
   marginVertical: spacing.sm,
