@@ -22,9 +22,13 @@ export const images = {
   successTick: require('../assets/images/successTick.png'),
   calender: require('../assets/images/calender.png'),
   downArrow: require('../assets/images/downArrow.png'),
+  uploadingIcon: require('../assets/images/uploadingIcon.png'),
   
   //
   smileIcon: require('../assets/images/smileIcon.png'),
+  smallTick: require('../assets/images/smallTick.png'),
+  waitingIcon: require('../assets/images/waitingIcon.png'),
+
 
   // bottom tab icons
   // home: require('../assets/images/homeActive.png'),

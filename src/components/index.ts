@@ -6,6 +6,7 @@ export * from './Loader';
 export * from './CountryPickerModal';
 export * from './AuthHeader';
 export * from './OTPTextView';
+export * from './DropDownList';
 // export * from './Star';
 // export * from './TapRating';
 export * from './DashedLine';

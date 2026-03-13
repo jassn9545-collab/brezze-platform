@@ -243,7 +243,6 @@ export const TextField = forwardRef(function TextField(
 });
 
 const $labelStyle: TextStyle = {
-  marginStart: spacing.md,
   marginBottom: spacing.xxxs,
   color: colors.text,
 };

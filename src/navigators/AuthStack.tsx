@@ -33,6 +33,7 @@ export type AuthStackParamList = {
   MyDocuments: undefined
   UploadUserDetail: undefined
   UploadDocument: undefined
+  DocumentReview: undefined
   // PrivacyPolicy: { title: TxKeyPath; type: Screens.StaticType } | undefined;
   // TermsCondition: { title: TxKeyPath; type: Screens.StaticType } | undefined;
 };
@@ -100,6 +101,10 @@ export const AuthStack: FC<AuthStackProps> = () => {
          <Stack.Screen
         name="UploadDocument"
         component={Screens.UploadDocumentScreen}
+      />
+         <Stack.Screen
+        name="DocumentReview"
+        component={Screens.DocumentReviewScreen}
       />
       {/* 
 

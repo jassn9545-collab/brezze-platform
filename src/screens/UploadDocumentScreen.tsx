@@ -1,436 +1,280 @@
-// import * as Firebase from '../utils/Firebase';
-
 import {
-    AuthHeader,
-    Button,
-    Country,
-    CountryPickerModal,
-    DatePickerModal,
-    Screen,
-    Text,
-    TextField,
-    TextFieldAccessoryProps,
-  } from '../components';
-  import {
-    Image,
-    Keyboard,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-  } from 'react-native';
-  import React, { FC, useEffect, useMemo, useState } from 'react';
-  import { colors, images, spacing } from '../theme';
-  import moment from 'moment';
-  
-  import { AuthStackScreenProps } from '../navigators';
-  import { TxKeyPath } from '../i18n';
-  import { DefaultCountry } from '../config/defaults';
-  import { commonStyle } from '../theme/style';
-  import { basicDetailSchema, buildError } from '../apis/schema';
-  import { ValidationError } from 'yup';
-  
-  type NavigationProps = AuthStackScreenProps<'UploadDocument'>;
-  // type StoreProps = ConnectedProps<typeof connector>;
-  // type Props = NavigationProps & StoreProps;
-  
-  type FieldError = {
-    name?: TxKeyPath | undefined;
-    phone?: TxKeyPath | undefined;
-    email?: TxKeyPath | undefined;
-    dob?: TxKeyPath | undefined;
-    skills?: TxKeyPath | undefined;
-    hourPrice?: TxKeyPath | undefined;
-    streetAddress?: TxKeyPath | undefined;
-    state?: TxKeyPath | undefined;
-    zipCode?: TxKeyPath | undefined;
+  Button,
+  CustomImagePicker,
+  DataType,
+  DatePickerModal,
+  DropDownList,
+  Screen,
+  sizeForSheet,
+  Text,
+  TextField,
+} from '../components';
+import {
+  Image,
+  Keyboard,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import React, { FC, useRef, useState } from 'react';
+import { colors, images, spacing } from '../theme';
+
+import { AuthStackScreenProps } from '../navigators';
+import { translate, TxKeyPath } from '../i18n';
+import moment from 'moment';
+import { TrueSheet } from '@lodev09/react-native-true-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { commonStyle } from '../theme/style';
+import { ImagePickerResponse } from 'react-native-image-picker';
+import { ValidationError } from 'yup';
+import { buildError, cardDetailSchema } from '../apis/schema';
+
+type NavigationProps = AuthStackScreenProps<'UploadDocument'>;
+// type StoreProps = ConnectedProps<typeof connector>;
+// type Props = NavigationProps & StoreProps;
+
+type FieldError = {
+  idType?: TxKeyPath | undefined;
+  idNumber?: TxKeyPath | undefined;
+  expiryDate?: TxKeyPath | undefined;
+};
+
+export const idTypeList: DataType[] = [
+  { name: 'idTypes.driverLicense', id: 'driver_license' },
+  { name: 'idTypes.passport', id: 'passport' },
+  { name: 'idTypes.nationalId', id: 'national_id' },
+  { name: 'idTypes.voterId', id: 'voter_id' },
+  { name: 'idTypes.panCard', id: 'pan_card' },
+  { name: 'idTypes.aadhaarCard', id: 'aadhaar_card' },
+  { name: 'idTypes.residencePermit', id: 'residence_permit' },
+];
+
+const UploadDocument: FC<NavigationProps> = props => {
+  const insets = useSafeAreaInsets();
+
+  const IDTypeSheet = useRef<TrueSheet>(null);
+
+  const [idType, setIDType] = useState<DataType>();
+  const [idNumber, setIDNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // const [imageURI, setImageURI] = useState('');
+  const [imagePickerVisible, setImagePickerVisible] = useState(false);
+  // const [imageFormData, setImageFormData] = useState<{
+  //   uri: string;
+  //   name: string;
+  //   type: string;
+  // } | null>(null);
+
+  const uploadImage = (image: ImagePickerResponse) => {
+    if ((image.assets?.length ?? 0) > 0) {
+      // setImageURI(image.assets?.[0].uri!);
+      // setImageFormData({
+      //   uri: image.assets?.[0].uri!,
+      //   name: image.assets?.[0].fileName!,
+      //   type: image.assets?.[0].type!,
+      // });
+    }
   };
-  
-  const skillsList = [
-    'Electrician',
-    'AC Repair',
-    'Wire Fitting',
-    'Washing Machine Repair',
-    'AC Services',
-  ];
-  
-  const UploadDocument: FC<NavigationProps> = props => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [mobile, setMobile] = useState('');
-    const [country, setCountry] = useState<Country>(DefaultCountry);
-    const [showCountries, setShowCountries] = useState(false);
-    const [dob, setDOB] = useState<Date | undefined>(undefined);
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [skills, setSkills] = useState<string[]>([]);
-    const [showSkillDropdown, setShowSkillDropdown] = useState(false);
-    const [hourPrice, setHourPrice] = useState('');
-    const [streetAddress, setStreetAddress] = useState('');
-    const [state, setState] = useState('');
-    const [zipCode, setZipCode] = useState('');
-  
-    const [error, setError] = useState<FieldError>({});
-  
-    useEffect(() => {
-      if (__DEV__) {
-        setName('Mandeep Singh');
-        setMobile('7814667566');
-        setEmail('mandeep.swt.suffescom@gmail.com');
-      }
-    }, []);
-  
-    const CountryCodeAccessory = useMemo(
-      () =>
-        // eslint-disable-next-line react/no-unstable-nested-components
-        function ({ style }: TextFieldAccessoryProps) {
-          return (
-            <TouchableOpacity
-              style={[style, styles.countryCodeStyle]}
-              onPress={() => setShowCountries(true)}
-            >
-              <Text>{`${country.dial_code}`}</Text>
-            </TouchableOpacity>
-          );
+
+  const [error, setError] = useState<FieldError>({});
+  const validate = () => {
+    cardDetailSchema
+      .validate(
+        {
+          idType: idType?.id,
+          idNumber: idNumber,
+          expiryDate,
         },
-      [country],
-    );
-  
-    const onSelectSkill = (item: string) => {
-      if (skills.includes(item)) {
-        setSkills(skills.filter(i => i !== item));
-      } else {
-        if (skills.length < 5) {
-          setSkills([...skills, item]);
-        }
-      }
-    };
-  
-    const removeSkill = (item: string) => {
-      setSkills(skills.filter(i => i !== item));
-    };
-  
-    const validate = () => {
-      basicDetailSchema
-        .validate(
-          {
-            name,
-            email,
-            phone: mobile,
-            country_code: country.dial_code.replace('+', ''),
-            dob: dob ? moment(dob).format('YYYY-MM-DD') : undefined,
-            skills,
-            hourPrice,
-            streetAddress,
-            state,
-            zipCode,
-          },
-          { abortEarly: false, context: { isSignup: true } },
-        )
-        .then(res => {
-          Keyboard.dismiss();
-          console.log('res', res);
-          props.navigation.goBack();
-          setError({});
-        })
-        .catch((errors: ValidationError) => {
-          const err = buildError<FieldError>(errors);
-          setError(err);
-        });
-    };
-  
-    return (
-      <>
-        <Screen
-          preset="auto"
-          safeAreaEdges={['top']}
-          contentContainerStyle={styles.containerStyle}
-        >
-          <AuthHeader tx="document.heading" desc="document.description" />
-          <View style={styles.mainView}>
-            <TextField
-              value={name}
-              onChangeText={setName}
-              containerStyle={styles.inputContainer}
-              placeholderTx="document.namePlaceholder"
-              helperTx={error?.name}
-              status={error?.name ? 'error' : undefined}
-            />
-            <TextField
-              value={email}
-              onChangeText={setEmail}
-              containerStyle={styles.inputContainer}
-              placeholderTx="document.emailPlaceholder"
-              keyboardType="email-address"
-              helperTx={error?.email}
-              status={error?.email ? 'error' : undefined}
-            />
-            <TextField
-              value={mobile}
-              onChangeText={setMobile}
-              placeholderTx="document.mobilePlaceholder"
-              keyboardType="phone-pad"
-              containerStyle={styles.inputContainer}
-              LeftAccessory={CountryCodeAccessory}
-              helperTx={error?.phone}
-              status={error?.phone ? 'error' : undefined}
-            />
-  
-            {/* <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              activeOpacity={0.8}
-            >
-              <TextField
-                editable={false}
-                pointerEvents="none"
-                value={dob ? moment(dob).format('DD/MM/YYYY') : ''}
-                placeholderTx="document.dobPlaceholder"
-                containerStyle={styles.inputContainer}
-                RightAccessory={calendarAccessory}
-                helperTx={error?.dob}
-                status={error?.dob ? 'error' : undefined}
-              />
-            </TouchableOpacity> */}
-  
-            <View style={styles.skillContainer}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={[
-                  styles.skillInput,
-                  error.hourPrice && { borderColor: colors.error },
-                ]}
-                onPress={() => setShowSkillDropdown(!showSkillDropdown)}
-              >
-                <View style={styles.skillWrapper}>
-                  {(skills?.length ?? 0) > 0 ? (
-                    skills.map(item => (
-                      <View key={item} style={styles.skillChip}>
-                        <TouchableOpacity
-                          onPress={() => removeSkill(item)}
-                          style={styles.crossIcon}
-                        >
-                          <Text
-                            size="xs"
-                            weight="bold"
-                            text="✕"
-                            style={{ color: colors.primaryDimmed }}
-                          />
-                        </TouchableOpacity>
-                        <Text size="sm" text={item} />
-                      </View>
-                    ))
-                  ) : (
-                    <Text
-                      size="sm"
-                      tx="document.selectSkillsPlaceholder"
-                      style={{ color: colors.textDim }}
-                    />
-                  )}
-                </View>
-                <Image source={images.downArrow} />
-              </TouchableOpacity>
-  
-              {error.hourPrice && (
-                <Text
-                  preset="formHelper"
-                  tx={error.hourPrice}
-                  style={{ color: colors.error }}
-                />
-              )}
-              {showSkillDropdown && (
-                <View style={[styles.dropdownContainer, commonStyle.lightShadow]}>
-                  <ScrollView
-                    style={styles.dropdown}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    {skillsList.map(item => (
-                      <TouchableOpacity
-                        key={item}
-                        style={[
-                          styles.dropdownItem,
-                          skills.includes(item) && {
-                            backgroundColor: colors.primaryDimmed,
-                          },
-                        ]}
-                        onPress={() => onSelectSkill(item)}
-                      >
-                        <Text
-                          size="xs"
-                          text={item}
-                          style={{
-                            color: skills.includes(item)
-                              ? colors.primary
-                              : colors.text,
-                          }}
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-  
-            <TextField
-              value={hourPrice}
-              onChangeText={setHourPrice}
-              keyboardType="number-pad"
-              containerStyle={styles.inputContainer}
-              placeholderTx="document.hoursPricePlaceholder"
-              helperTx={error?.hourPrice}
-              status={error?.hourPrice ? 'error' : undefined}
-            />
-  
-            <TextField
-              value={streetAddress}
-              onChangeText={setStreetAddress}
-              containerStyle={styles.inputContainer}
-              placeholderTx="document.streetAddressPlaceholder"
-              helperTx={error?.streetAddress}
-              status={error?.streetAddress ? 'error' : undefined}
-            />
-  
-            <View style={styles.twoInputs}>
-              <TextField
-                value={state}
-                onChangeText={setState}
-                containerStyle={styles.flex}
-                placeholderTx="document.statePlaceholder"
-                helperTx={error?.state}
-                status={error?.state ? 'error' : undefined}
-              />
-  
-              <TextField
-                value={zipCode}
-                onChangeText={setZipCode}
-                containerStyle={styles.flex}
-                placeholderTx="document.zipCodePlaceholder"
-                helperTx={error?.zipCode}
-                status={error?.zipCode ? 'error' : undefined}
-              />
-            </View>
-  
-            <Button
-              tx="common.next"
-              onPress={validate}
-              style={styles.buttonStyle}
-            />
-          </View>
-        </Screen>
-        <CountryPickerModal
-          onSelect={data => {
-            setCountry(data);
-            setShowCountries(false);
-          }}
-          modalVisible={showCountries}
-          onClose={() => setShowCountries(false)}
-        />
-        <DatePickerModal
-          mode="date"
-          display="auto"
-          visible={showDatePicker}
-          onChangeDate={setDOB}
-          maximumDate={
-            new Date(new Date().setFullYear(new Date().getFullYear() - 18))
-          }
-          value={dob ?? new Date()}
-          onDismiss={() => setShowDatePicker(false)}
-        />
-      </>
-    );
+        { abortEarly: false, context: { isSignup: true } },
+      )
+      .then(res => {
+        Keyboard.dismiss();
+        console.log('res', res);
+        props.navigation.goBack();
+        setError({});
+      })
+      .catch((errors: ValidationError) => {
+        const err = buildError<FieldError>(errors);
+        setError(err);
+      });
   };
-  
-  const styles = StyleSheet.create({
-    containerStyle: {
-      flexGrow: 1,
-    },
-    mainView: {
-      flex: 1,
-      margin: spacing.md,
-    },
-    countryCodeStyle: {
-      height: 24,
-      marginVertical: spacing.sm + 2,
-      borderRightWidth: 1,
-      borderColor: colors.separator,
-    },
-    inputContainer: {
-      marginTop: spacing.sm,
-    },
-    inputAccessoryStyle: {
-      marginVertical: spacing.sm,
-      height: 24,
-    },
-    skillContainer: {
-      marginTop: spacing.sm,
-    },
-    skillInput: {
-      minHeight: 54,
-      borderWidth: 1,
-      borderRadius: spacing.xs - 2,
-      borderColor: colors.palette.borderColor,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: spacing.sm,
-    },
-    skillWrapper: {
-      flex: 1,
-      flexWrap: 'wrap',
-      flexDirection: 'row',
-    },
-    skillChip: {
-      gap: spacing.xs,
-      alignItems: 'center',
-      flexDirection: 'row',
-      marginRight: spacing.xs,
-      borderRadius: spacing.xs,
-      marginVertical: spacing.xxs,
-      paddingVertical: spacing.xxs,
-      paddingHorizontal: spacing.xs,
-      backgroundColor: colors.primaryDimmed,
-    },
-    crossIcon: {
-      borderRadius: spacing.md,
-      paddingHorizontal: spacing.xs,
-      backgroundColor: colors.primary,
-      paddingVertical: spacing.xxs - 1,
-    },
-    dropdownContainer: {
-      top: 55,
-      zIndex: 1000,
-      width: '70%',
-      position: 'absolute',
-      backgroundColor: colors.palette.offWhite2,
-    },
-    dropdown: {
-      maxHeight: 200,
-    },
-    dropdownItem: {
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.md,
-    },
-    twoInputs: {
-      gap: spacing.sm,
-      alignItems: 'center',
-      flexDirection: 'row',
-      marginTop: spacing.sm,
-    },
-    flex: { flex: 1 },
-    buttonStyle: {
-      borderRadius: spacing.xs,
-      marginVertical: spacing.lg,
-    },
-  });
-  
-  // const mapStateToProps = (state: RootState) => ({
-  //   loading: state.auth.loading,
-  // });
-  
-  // const mapDispatch = {
-  //   user_Login: (params: Signin) => userLogin(params),
-  //   clearLoginLoading: () => authActions.clearLoginLoading(),
-  // };
-  
-  // const connector = connect(mapStateToProps, mapDispatch);
-  
-  export const UploadDocumentScreen = UploadDocument;
-  
+
+  return (
+    <>
+      <Screen
+        preset="auto"
+        safeAreaEdges={['top']}
+        contentContainerStyle={styles.containerStyle}
+      >
+        <View style={styles.wrapHeader}>
+          <Image source={images.leftArrow} />
+          <Text
+            size="sm"
+            weight="bold"
+            tx="document.confirmIDCard"
+            style={styles.textCenter}
+          />
+          <View style={styles.rightIcon} />
+        </View>
+        <View style={styles.mainView}>
+          <TouchableOpacity onPress={() => IDTypeSheet.current?.present()}>
+            <TextField
+              editable={false}
+              pointerEvents="none"
+              value={idType?.name ? translate(idType.name) : ''}
+              labelTx="document.idType"
+              placeholderTx="document.idTypePlaceholder"
+              containerStyle={styles.inputContainer}
+              helperTx={error?.idType}
+              status={error?.idType ? 'error' : undefined}
+            />
+          </TouchableOpacity>
+
+          <TextField
+            value={idNumber}
+            onChangeText={setIDNumber}
+            containerStyle={styles.inputContainer}
+            placeholderTx="document.idNumberPlaceholder"
+            labelTx="document.idNumber"
+            keyboardType="number-pad"
+            helperTx={error?.idNumber}
+            status={error?.idNumber ? 'error' : undefined}
+          />
+
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.8}
+          >
+            <TextField
+              editable={false}
+              pointerEvents="none"
+              value={expiryDate ? moment(expiryDate).format('DD/MM/YYYY') : ''}
+              labelTx="document.expiryDate"
+              placeholderTx="document.expiryPlaceholder"
+              containerStyle={styles.inputContainer}
+              helperTx={error?.expiryDate}
+              status={error?.expiryDate ? 'error' : undefined}
+            />
+          </TouchableOpacity>
+
+          <View style={styles.imageView}>
+            <Text weight="light" size="sm" tx="document.uploadIDImage" />
+
+            <TouchableOpacity
+              onPress={() => setImagePickerVisible(true)}
+              style={[styles.imageContainer, commonStyle.customShadow]}
+            >
+              {/* {imageURI ? (
+                <Image source={imageURI} />
+              ) : (
+                <> */}
+              <Image source={images.uploadingIcon} />
+              <Text
+                size="sm"
+                weight="semiBold"
+                tx="document.clickUpload"
+                style={styles.primaryColor}
+              />
+              <Text
+                size="xs"
+                weight="light"
+                tx="document.imageSize"
+                style={styles.textCenter}
+              />
+              {/* </>
+              )} */}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.flex} />
+
+          <Button
+            tx="common.submit"
+            onPress={validate}
+            style={styles.buttonStyle}
+          />
+        </View>
+      </Screen>
+      <DropDownList
+        title="document.idType"
+        ref={IDTypeSheet}
+        data={idTypeList}
+        selectedId={idType?.id}
+        onSelect={data => setIDType(data)}
+        sizes={sizeForSheet(idTypeList.length, insets)}
+      />
+      <DatePickerModal
+        mode="date"
+        display="auto"
+        visible={showDatePicker}
+        onChangeDate={setExpiryDate}
+        value={expiryDate ?? new Date()}
+        onDismiss={() => setShowDatePicker(false)}
+      />
+      <CustomImagePicker
+        callback={uploadImage}
+        imagePickerModal={imagePickerVisible}
+        onDismiss={() => setImagePickerVisible(false)}
+      />
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  containerStyle: {
+    flexGrow: 1,
+  },
+  wrapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.md,
+    justifyContent: 'space-between',
+  },
+  textCenter: {
+    textAlign: 'center',
+  },
+  rightIcon: {
+    width: 45,
+  },
+  mainView: {
+    flex: 1,
+    margin: spacing.md,
+  },
+  inputContainer: {
+    marginTop: spacing.sm,
+  },
+  primaryColor: { color: colors.primary },
+  imageView: {
+    gap: spacing.md,
+    margin: spacing.lg,
+  },
+  imageContainer: {
+    borderWidth: 0.5,
+    padding: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: spacing.sm,
+    backgroundColor: colors.background,
+    borderColor: colors.palette.borderColor,
+  },
+  buttonStyle: {
+    borderRadius: spacing.xs,
+    marginVertical: spacing.lg,
+  },
+  flex: { flex: 1 },
+});
+
+// const mapStateToProps = (state: RootState) => ({
+//   loading: state.auth.loading,
+// });
+
+// const mapDispatch = {
+//   user_Login: (params: Signin) => userLogin(params),
+//   clearLoginLoading: () => authActions.clearLoginLoading(),
+// };
+
+// const connector = connect(mapStateToProps, mapDispatch);
+
+export const UploadDocumentScreen = UploadDocument;

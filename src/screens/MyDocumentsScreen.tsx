@@ -1,5 +1,3 @@
-// import * as Firebase from '../utils/Firebase';
-
 import {
   AuthHeader,
   Button,
@@ -18,7 +16,6 @@ import { ImagePickerResponse } from 'react-native-image-picker';
 type NavigationProps = AuthStackScreenProps<'MyDocuments'>;
 // type StoreProps = ConnectedProps<typeof connector>;
 // type Props = NavigationProps & StoreProps;
-
 
 interface DocumentTypes {
   title: TxKeyPath;
@@ -39,7 +36,7 @@ const documentList: DocumentTypes[] = [
   {
     title: 'document.IDVerification',
     description: 'document.IDVerificationDesc',
-    screen: 'UploadDocument'
+    screen: 'UploadDocument',
   },
 ];
 
@@ -80,14 +77,18 @@ const MyDocuments: FC<NavigationProps> = props => {
     }
   };
 
-  const validate = () => {};
+  const validate = () => {
+    props.navigation.navigate('CommonSucess', {
+      from: 'documentVerification',
+    });
+  };
 
   return (
     <>
       <Screen
         preset="auto"
         contentContainerStyle={styles.containerStyle}
-        safeAreaEdges={['top']}
+        safeAreaEdges={['top', 'bottom']}
       >
         <AuthHeader tx="document.heading" desc="document.description" />
         <View style={styles.mainView}>

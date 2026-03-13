@@ -1,5 +1,3 @@
-// import * as Firebase from '../utils/Firebase';
-
 import {
   AuthHeader,
   Button,

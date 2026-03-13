@@ -145,6 +145,15 @@ export const basicDetailSchema = yup.object().shape({
 
 export type BasicUserDetailParams = yup.InferType<typeof basicDetailSchema>;
 
+export const cardDetailSchema = yup.object().shape({
+  idType: yup.string().required('validation.required'),
+  idNumber: yup.string().required('validation.required'),
+  expiryDate: yup.string().required('validation.required'),
+});
+
+export type CardDetailParams = yup.InferType<typeof cardDetailSchema>;
+
+
 export const helpSchema = yup.object().shape({
   name: yup.number(),
   email: yup

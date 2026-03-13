@@ -8,7 +8,7 @@ import { AuthStackScreenProps } from '../navigators';
 type Props = AuthStackScreenProps<'CommonSucess'>;
 
 export type CommonSucessParams = {
-  from: 'resetPassword' | 'faceVerification';
+  from: 'resetPassword' | 'faceVerification' | 'documentVerification';
 };
 
 const CommonSucess: FC<Props> = props => {
@@ -16,12 +16,13 @@ const CommonSucess: FC<Props> = props => {
   const onPress = () => {
     if (from === 'resetPassword') {
       props.navigation.replace('Login');
+    } else if (from === 'documentVerification') {
+      props.navigation.replace('DocumentReview');
     } else {
       props.navigation.goBack();
     }
   };
   return (
-    <>
       <Screen
         preset="auto"
         safeAreaEdges={['top', 'bottom']}
@@ -36,6 +37,8 @@ const CommonSucess: FC<Props> = props => {
             tx={
               from === 'resetPassword'
                 ? 'resetPassword.passwordUpdated'
+                : from === 'documentVerification'
+                ? 'document.documentUnderVerificationTitle'
                 : 'document.faceCaptured'
             }
           />
@@ -44,6 +47,8 @@ const CommonSucess: FC<Props> = props => {
             tx={
               from === 'resetPassword'
                 ? 'resetPassword.passwordUpdatedDesc'
+                : from === 'documentVerification'
+                ? 'document.documentUnderVerificationDesc'
                 : 'document.faceCapturedDescription'
             }
             style={$dimText}
@@ -57,7 +62,6 @@ const CommonSucess: FC<Props> = props => {
           onPress={onPress}
         />
       </Screen>
-    </>
   );
 };
 

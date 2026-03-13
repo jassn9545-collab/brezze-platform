@@ -8,6 +8,7 @@ export * from './CommonSucessScreen';
 export * from './MyDocumentsScreen';
 export * from './UploadUserDetailScreen';
 export * from './UploadDocumentScreen';
+export * from './DocumentReviewScreen';
 
 
 
