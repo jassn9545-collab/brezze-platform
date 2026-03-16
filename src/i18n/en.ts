@@ -177,6 +177,11 @@ const en = {
     search: 'Search',
     countries: 'Countries',
   },
+  home: {
+    jobs: 'Jobs',
+    searchJobs: 'Search For Jobs',
+    more: ' More....'
+  }
 };
 
 export default en;

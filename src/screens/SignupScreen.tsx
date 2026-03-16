@@ -7,7 +7,6 @@ import {
 } from '../components';
 import {
   Image,
-  ImageSourcePropType,
   ImageStyle,
   Keyboard,
   TextInput,
@@ -38,14 +37,6 @@ type FieldError = {
   password?: TxKeyPath | undefined;
   confirmPassword?: TxKeyPath | undefined;
 };
-
-export const leftAccessory =
-  (icon: ImageSourcePropType) => (props: TextFieldAccessoryProps) =>
-    (
-      <View style={[props.style, $inputAccessoryStyle]}>
-        <Image source={icon} />
-      </View>
-    );
 
 const Signup: FC<Props> = props => {
   const fields = [
@@ -340,11 +331,6 @@ const $signUp: TextStyle = {
   textAlign: 'center',
   marginVertical: spacing.lg,
   justifyContent: 'center',
-};
-
-const $inputAccessoryStyle: ViewStyle = {
-  marginVertical: spacing.sm,
-  height: 24,
 };
 
 const $tncContainer: ViewStyle = {

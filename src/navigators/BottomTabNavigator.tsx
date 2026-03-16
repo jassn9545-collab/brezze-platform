@@ -19,10 +19,9 @@ import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
 
 export type BottomTabNavigatorParamList = {
   Home: undefined;
-//   Search: undefined;
-//   ProductList: { categoryId?: number, search?: string} | undefined;
-//   Sip: undefined;
-//   Profile: undefined;
+  Jobs: undefined;
+  Chat: undefined;
+  Profile: undefined;
 };
 
 // Documentation: https://reactnavigation.org/docs/tab-based-navigation/
@@ -52,19 +51,6 @@ export const BottomTabNavigator: FC<NavigationProps> = () => {
     >
       <Tab.Screen name="Home" component={Screens.HomeScreen} />
       {/* <Tab.Screen name="Search" component={Screens.SearchScreen} />
-      <Tab.Screen
-        name="ProductList"
-        component={Screens.ProductListScreen}
-        listeners={({ navigation }) => ({
-          tabPress: e => {
-            e.preventDefault();
-
-            navigation.navigate('ProductList', {
-              categoryId: undefined,
-            });
-          },
-        })}
-      />
       <Tab.Screen name="Sip" component={Screens.SipScreen} />
       <Tab.Screen name="Profile" component={Screens.ProfileScreen} /> */}
     </Tab.Navigator>

@@ -82,15 +82,12 @@ const BottomTabs = (props: BottomTabBarProps) => {
                   style={$tabBarIcon}
                 />
               )}
-              <Text
-                size="xs"
-                weight="regular"
-                style={[
-                  $tabBarLabel,
-                  isFocused && { marginTop: scale(18) },
-                ]}
-                tx={`bottomTab.${label}` as TxKeyPath}
-              />
+                <Text
+                  size="xs"
+                  weight="regular"
+                  style={[$tabBarLabel, isFocused && { marginTop: scale(18) }]}
+                  tx={`bottomTab.${label}` as TxKeyPath}
+                />
             </TouchableOpacity>
           );
         })}
@@ -110,26 +107,26 @@ const $tabBarContainer: ViewStyle = {
 
 const $wrapActiveTab: ViewStyle = {
   top: -scale(35),
+  position: 'absolute',
   alignItems: 'center',
   justifyContent: 'center',
-  position: 'absolute',
   backgroundColor: colors.transparent,
 };
 
 const $activeTab: ViewStyle = {
-  borderWidth: 4,
+  borderWidth: 5,
   alignItems: 'center',
-  borderRadius: spacing.xxxl,
   paddingVertical: spacing.sm,
   paddingHorizontal: spacing.md,
+  backgroundColor: colors.primary,
   borderColor: colors.palette.white,
-  backgroundColor: colors.palette.black,
+  borderRadius: spacing.xxxl + spacing.xl,
 };
 
 const $activeTabBarIcon: ImageStyle = {
   resizeMode: 'contain',
-  width: scale(22),
-  height: scale(22),
+  width: scale(20),
+  height: scale(20),
   marginTop: scale(4),
 };
 
@@ -142,7 +139,7 @@ const $tabBarIcon: ImageStyle = {
 const $tabBarLabel: TextStyle = {
   textAlign: 'center',
   marginTop: scale(4),
-  color: colors.palette.darkGray2
+  color: colors.palette.white,
 };
 
 const $tab: ViewStyle = {

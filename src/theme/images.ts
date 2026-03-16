@@ -23,19 +23,27 @@ export const images = {
   calender: require('../assets/images/calender.png'),
   downArrow: require('../assets/images/downArrow.png'),
   uploadingIcon: require('../assets/images/uploadingIcon.png'),
+  search: require('../assets/images/search.png'),
   
   //
   smileIcon: require('../assets/images/smileIcon.png'),
   smallTick: require('../assets/images/smallTick.png'),
   waitingIcon: require('../assets/images/waitingIcon.png'),
-
+  
+  
+  // app
+  menuIcon: require('../assets/images/menuIcon.png'),
+  notification: require('../assets/images/notification.png'),
+  filter: require('../assets/images/filter.png'),
+  savedIcon: require('../assets/images/savedIcon.png'),
+  unsavedIcon: require('../assets/images/unsavedIcon.png'),
 
   // bottom tab icons
-  // home: require('../assets/images/homeActive.png'),
-  // search: require('../assets/images/searchActive.png'),
-  // productList: require('../assets/images/shopActive.png'),
-  // sip: require('../assets/images/sipActive.png'),
-  // profile: require('../assets/images/profileActive.png'),
+  home: require('../assets/images/home.png'),
+  // jobs: require('../assets/images/jobs.png'),
+  // plus: require('../assets/images/plus.png'),
+  // inbox: require('../assets/images/inbox.png'),
+  // profile: require('../assets/images/profile.png'),
 } as const;
 
 export type AppImage = keyof typeof images;

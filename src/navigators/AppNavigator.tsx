@@ -5,7 +5,7 @@ import {
 } from './navigationUtilities';
 // import Config from '../config';
 import { NavigationContainer } from '@react-navigation/native';
-import { AuthStack } from './AuthStack';
+import { AppStack } from './AppStack';
 // import { AppStack } from './AppStack';
 // import { connect, ConnectedProps } from 'react-redux';
 // import { RootState } from '../store/store';
@@ -51,11 +51,11 @@ const MainNavigator: FC<NavigationProps> = props => {
   return (
     <NavigationContainer {...props} ref={navigationRef}>
        {/* {props.isAuthorize ? ( */}
-        {/* <AppStack /> */}
+        <AppStack />
       {/* ) : (  */}
-         <AuthStack
-        //  initialRouteName={props.initialRouteName}
-         /> 
+         {/* <AuthStack
+         initialRouteName={props.initialRouteName}
+         />  */}
        {/* )} */}
     </NavigationContainer>
   );

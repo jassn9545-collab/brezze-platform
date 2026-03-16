@@ -1,87 +1,158 @@
-import { Screen, Text } from '../components';
 import {
-  Dimensions,
+  Screen,
+  Text,
+  TextField,
+  TextFieldAccessoryProps,
+} from '../components';
+import {
+  FlatList,
+  Image,
+  ListRenderItemInfo,
   StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import React, { FC } from 'react';
-import { colors, spacing } from '../theme';
+import React, { FC, useState } from 'react';
+import { colors, images, spacing } from '../theme';
 import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 // type StoreProps = ConnectedProps<typeof connector>;
 type Props = NavigationProps;
 
-const screenWidth = Dimensions.get('window').width;
+export const searchLeftAccessory = (props: TextFieldAccessoryProps) => {
+  return (
+    <View style={[props.style, styles.inputAccessoryStyle]}>
+      <Image source={images.search} />
+    </View>
+  );
+};
 
+const jobQuickPoints = ['Contract Job', 'Experience', 'Payment Verified'];
 
+const Home: FC<Props> = props => {
+  const insets = useSafeAreaInsets();
+  const [search, setSearch] = useState('');
 
-const Home: FC<Props> = () => {
-//   const insets = useSafeAreaInsets();
+  //   const [activeIndex, setActiveIndex] = useState(0);
 
-//   const [activeIndex, setActiveIndex] = useState(0);
-
-//   useEffect(() => {
-//     props.getHomeData();
-//     props.getCategories();
-//     props.getProfile();
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, []);
-
+  //   useEffect(() => {
+  //     props.getHomeData();
+  //     props.getCategories();
+  //     props.getProfile();
+  //     // eslint-disable-next-line react-hooks/exhaustive-deps
+  //   }, []);
 
   return (
     <>
-      {/* <View style={[styles.wrapHeader, { marginTop: insets.top + spacing.sm }]}>
+      <View style={[styles.wrapHeader, { marginTop: insets.top + spacing.sm }]}>
         <TouchableOpacity onPress={() => props.navigation.openDrawer()}>
           <Image source={images.menuIcon} />
         </TouchableOpacity>
-        <Image source={images.appLogo} />
+        <Text weight="medium" size="lg" tx="home.jobs" />
         <TouchableOpacity
-          onPress={() => props.navigation.navigate('Notification')}
+        // onPress={() => props.navigation.navigate('Notification')}
         >
           <Image source={images.notification} />
         </TouchableOpacity>
-      </View> */}
-      <Screen preset="auto" contentContainerStyle={styles.container}>
-        {/* <View>
-          <Carousel
-            width={screenWidth}
-            height={scale(250)}
-            data={props.data?.banner ?? []}
-            loop={true}
-            autoPlay={true}
-            autoPlayInterval={2000}
-            style={styles.carouselStyle}
-            onSnapToItem={index => setActiveIndex(index)}
-            renderItem={({ item, index }) => {
-              return (
-                <FastImage
-                  key={index}
-                  source={{
-                    uri: `${props.data?.image_base_url}/${item.photo}`,
-                  }}
-                  style={styles.carouselImage}
-                  resizeMode="cover"
-                />
-              );
-            }}
+      </View>
+      <Screen preset="fixed" contentContainerStyle={styles.container}>
+        <View style={styles.wrapHeaderSearch}>
+          <TextField
+            value={search}
+            onChangeText={setSearch}
+            LeftAccessory={searchLeftAccessory}
+            placeholderTextColor={colors.palette.placeholderColor}
+            inputWrapperStyle={styles.inputWrapper}
+            style={{ color: colors.palette.white }}
+            containerStyle={styles.flexOne}
+            placeholderTx="home.searchJobs"
           />
-          <View style={styles.wrapCarouselDots}>
-            {(props.data?.banner ?? []).map((_, index) => (
-              <View
-                key={index}
-                style={
-                  activeIndex === index ? styles.activeDot : styles.inactiveDot
-                }
-              />
-            ))}
-          </View>
-        </View> */}
- 
+          <TouchableOpacity style={styles.wrapSearchIcon}>
+            <Image source={images.filter} tintColor={colors.palette.white} />
+          </TouchableOpacity>
+        </View>
 
- <Text text='Home screen' />
-       
+        <FlatList
+          // ref={flatlist}
+          data={[1, 1, 1, 1, 1]}
+          style={styles.flatlist}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          // keyExtractor={item => item?.id?.toString()}
+          // onEndReached={loadMore}
+          // onEndReachedThreshold={0.8}
+          renderItem={info => <JobCard {...info} />}
+          // ListEmptyComponent={
+          //   <View style={styles.empty}>
+          //     <ListEmptyComponent tx="common.noDataFound" />
+          //   </View>
+          // }
+          // ListFooterComponent={
+          //   <View style={styles.extaFetch}>
+          //     {page !== 1 && fetching ? (
+          //       <ActivityIndicator size="small" color={colors.primary} />
+          //     ) : null}
+          //   </View>
+          // }
+        />
       </Screen>
     </>
+  );
+};
+
+type NotificationCardProps = ListRenderItemInfo<any>;
+const JobCard = ({ item }: NotificationCardProps) => {
+  return (
+    <TouchableOpacity key={item.id} activeOpacity={0.9} style={styles.card}>
+      <View style={styles.spaceBetween}>
+        <Text
+          size="xxs"
+          weight="medium"
+          style={styles.flexOne}
+          text="Posted 10 minutes ago"
+        />
+        <Image source={images.unsavedIcon} />
+      </View>
+
+      <Text
+        size="sm"
+        weight="medium"
+        text="Electrician Need for House Pipe Fitting"
+      />
+      <Text>
+        <Text
+          style={[styles.extraSmallText, { color: colors.textDim }]}
+          text="By clicking on Accept and Proceed, you consent to provide us with the requested data. By clicking on Accept and Proceed, you consent to provide us with the Accept and Proceed, requested data"
+        />
+        <Text style={styles.extraSmallText} weight="medium" tx="home.more" />
+      </Text>
+
+      <Text
+        size="xxs"
+        weight="medium"
+        text="Fixed Price - Est Budget AUD 500"
+      />
+
+      <View style={styles.jobPoints}>
+        {jobQuickPoints?.map((data, index) => (
+          <View key={index} style={styles.jobQuickPoint}>
+            <Text size="xxs" weight="medium" text={data} />
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.spaceBetween}>
+        <Text
+          size="xxs"
+          weight="medium"
+          style={styles.flexOne}
+          text="42 Hebbard Street, Victoria"
+        />
+        <Text size="xxs" weight="medium" text="30+ Job Apply" />
+      </View>
+    </TouchableOpacity>
   );
 };
 
@@ -92,41 +163,74 @@ const styles = StyleSheet.create({
   wrapHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: spacing.xxs,
+    marginHorizontal: spacing.md,
     justifyContent: 'space-between',
+  },
+  wrapHeaderSearch: {
+    gap: spacing.xs,
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: spacing.md,
     marginHorizontal: spacing.md,
   },
-  carouselStyle: {
-    paddingStart: spacing.md,
-    marginVertical: spacing.md,
+  flexOne: { flex: 1 },
+  inputWrapper: {
+    borderWidth: 0,
+    borderRadius: spacing.xs,
+    backgroundColor: colors.palette.offWhite2,
   },
-  carouselImage: {
-    height: '100%',
-    overflow: 'hidden',
-    alignSelf: 'center',
-    borderRadius: spacing.md,
-    width: screenWidth - spacing.md * 2,
-    backgroundColor: colors.primaryDimmed,
+  wrapSearchIcon: {
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.primary,
   },
-  wrapCarouselDots: {
-    bottom: spacing.lg,
+  inputAccessoryStyle: {
+    height: 24,
+    marginVertical: spacing.sm + 2,
+  },
+  contentContainer: {
+    flexGrow: 1,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl
+  },
+  flatlist: {
+    flex: 1,
+  },
+  card: {
+    gap: spacing.xs,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+    borderRadius: spacing.sm,
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.palette.offWhite2,
+  },
+  spaceBetween: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'center',
-    position: 'absolute',
+    justifyContent: 'space-between',
   },
-  inactiveDot: {
-    width: spacing.xs,
-    height: spacing.xs,
-    borderRadius: spacing.xxs,
-    marginHorizontal: spacing.xxs,
-    backgroundColor: colors.palette.white,
+  extraSmallText: {
+    fontSize: spacing.xs + 2,
+    lineHeight: spacing.sm + 2,
   },
-  activeDot: {
-    width: spacing.sm,
-    height: spacing.sm,
+  jobPoints: {
+    flex: 1,
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+    marginTop: spacing.xxs,
+    marginBottom: spacing.xxxs,
+  },
+  jobQuickPoint: {
+    alignSelf: 'flex-start',
     borderRadius: spacing.xs,
-    marginHorizontal: spacing.xxs,
-    backgroundColor: colors.primary,
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.palette.white,
   },
 });
 
