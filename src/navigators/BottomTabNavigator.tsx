@@ -16,12 +16,12 @@ import { colors } from '../theme';
 // import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
 import { DrawerScreenProps } from '@react-navigation/drawer';
 import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
+import { BookingTabbar } from './BookingNavigator';
 
 export type BottomTabNavigatorParamList = {
   Home: undefined;
-  Jobs: undefined;
+  HireJobs: undefined;
   Chat: undefined;
-  Profile: undefined;
 };
 
 // Documentation: https://reactnavigation.org/docs/tab-based-navigation/
@@ -50,9 +50,10 @@ export const BottomTabNavigator: FC<NavigationProps> = () => {
       })}
     >
       <Tab.Screen name="Home" component={Screens.HomeScreen} />
-      {/* <Tab.Screen name="Search" component={Screens.SearchScreen} />
-      <Tab.Screen name="Sip" component={Screens.SipScreen} />
-      <Tab.Screen name="Profile" component={Screens.ProfileScreen} /> */}
+      <Tab.Screen name="HireJobs" component={BookingTabbar} />
+       <Tab.Screen name="Chat" component={Screens.ChatScreen} />
+
+      {/* <Tab.Screen name="Profile" component={Screens.ProfileScreen} />  */}
     </Tab.Navigator>
   );
 };

@@ -106,10 +106,10 @@ const Home: FC<Props> = props => {
   );
 };
 
-type NotificationCardProps = ListRenderItemInfo<any> & {
+type JobCardProps = ListRenderItemInfo<any> & {
   onPressJob?: () => void;
 };
-export const JobCard = ({ item, onPressJob }: NotificationCardProps) => {
+export const JobCard = ({ item, onPressJob }: JobCardProps) => {
   return (
     <TouchableOpacity
       key={item.id}

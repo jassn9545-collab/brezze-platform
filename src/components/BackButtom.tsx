@@ -35,13 +35,12 @@ export const BackButtom = ({
       <TouchableOpacity onPress={() => navigation.goBack()} style={$wrapArrow}>
         <Image source={images.leftArrow} tintColor={colors.palette.black} />
       </TouchableOpacity>
-      {headingTx && (
+      {headingTx ? (
         <Text tx={headingTx} preset="heading" size="lg" style={$heading} />
-      )}
-      {heading && (
+      ) : heading ? (
         <Text text={heading} preset="heading" size="lg" style={$heading} />
-      )}
-      {rightComponent ? rightComponent : <View style={$rightBox} />}
+      ) : null}
+      <View style={$side}>{rightComponent}</View>
     </View>
   );
 };
@@ -65,6 +64,7 @@ const $heading: TextStyle = {
   textAlign: 'center',
 };
 
-const $rightBox: ViewStyle = {
+const $side: ViewStyle = {
   width: 45,
+  alignItems: 'flex-end',
 };

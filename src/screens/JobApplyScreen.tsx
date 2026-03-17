@@ -19,7 +19,7 @@ type FieldError = {
   estimatedTime?: TxKeyPath | undefined;
 };
 
-const JobDetail: FC<Props> = () => {
+const JobDetail: FC<Props> = (props) => {
   const insets = useSafeAreaInsets();
   const [bidAmount, setBidAmount] = useState('');
   const [estimatedTime, setEstimatedTime] = useState('');
@@ -35,6 +35,7 @@ const JobDetail: FC<Props> = () => {
       .then(params => {
         Keyboard.dismiss();
         console.log('params', params);
+        props.navigation.navigate('JobApplySucessModal')
         setError({});
       })
       .catch(errors => {

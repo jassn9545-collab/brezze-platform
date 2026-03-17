@@ -64,6 +64,7 @@ const palette = {
   startColor: '#3DBFFF',
   endColor: '#0A89C8',
   centerColor: 'rgba(254, 181, 18, 1)',
+  purple: '#40189D'
 } as const;
 
 export const colors = {

@@ -1,7 +1,8 @@
 const en = {
   bottomTab: {
     Home: 'Home',
-    // Search: 'Search',
+    HireJobs: 'Hire Jobs',
+    Chat: 'Chat'
     // ProductList: 'Shop',
     // Sip: 'Sip',
     // Profile: 'Profile',
@@ -132,8 +133,10 @@ const en = {
     description: 'Your personal information and address is being reviewed.',
     progress: 'Progress',
     review1: 'Face verification: Your face capture has been verified.',
-    review2: 'Your Basic details are being checked and will be verified within 24 Hours.',
-    review3: 'ID Card verification: Your details are being checked and will be verified within 24 Hours.',
+    review2:
+      'Your Basic details are being checked and will be verified within 24 Hours.',
+    review3:
+      'ID Card verification: Your details are being checked and will be verified within 24 Hours.',
   },
   idTypes: {
     driverLicense: 'Driver License',
@@ -195,12 +198,25 @@ const en = {
     bidAmount: 'Bid Amount {{value}}',
     bidAmountPlaceholder: 'Enter bid amount',
     clientBudget: 'Client’s Budget: ',
-    estimatedTime: 'Estimated Completion Time',    
+    estimatedTime: 'Estimated Completion Time',
     estimatedTimePlaceholder: '1-3 Days',
     uploadCV: 'Click Here To Upload Your CV or Cover Letter',
     marketFee: 'Market place fee {{value}}',
     recieveMoney: 'You’ll Receive',
-    submitProposal: 'Send Submit Proposal',    
+    submitProposal: 'Send Submit Proposal',
+    jobProposalSubmit: 'Your Job Proposal has been success fully Submit',
+    jobProposalSubmitDesc: 'Your Job Application has been summitted',
+  },
+  job: {
+    hireJob: 'Hire Job List',
+    activejob: 'Active Job',
+    completejob: 'Complete Job',
+    viewDetails: 'View Details'
+  },
+  chat: {
+    messages: 'Messages',
+    read: 'Read',
+    pending: 'Pending'
   }
 };
 

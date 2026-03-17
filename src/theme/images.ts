@@ -38,11 +38,13 @@ export const images = {
   filter: require('../assets/images/filter.png'),
   savedIcon: require('../assets/images/savedIcon.png'),
   unsavedIcon: require('../assets/images/unsavedIcon.png'),
+  threeDotIcon: require('../assets/images/threeDotIcon.png'),
+  tickIcon: require('../assets/images/tickIcon.png'),
 
   // bottom tab icons
   home: require('../assets/images/home.png'),
-  // jobs: require('../assets/images/jobs.png'),
-  // plus: require('../assets/images/plus.png'),
+  hireJobs: require('../assets/images/hireJobs.png'),
+  chat: require('../assets/images/chat.png'),
   // inbox: require('../assets/images/inbox.png'),
   // profile: require('../assets/images/profile.png'),
 } as const;

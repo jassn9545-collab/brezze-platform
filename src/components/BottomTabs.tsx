@@ -78,7 +78,7 @@ const BottomTabs = (props: BottomTabBarProps) => {
               ) : (
                 <Image
                   source={images[`${key}` as ImageKeys]}
-                  tintColor={colors.palette.darkGray2}
+                  tintColor={colors.palette.white}
                   style={$tabBarIcon}
                 />
               )}

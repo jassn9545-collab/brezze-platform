@@ -35,7 +35,7 @@ export type AppStackParamList = {
   Drawer: NavigatorScreenParams<DrawerParamsList>;
   JobDetail: undefined;
   JobApply: undefined;
-
+  JobApplySucessModal: undefined
 //   EditProfile: undefined;
 //   SavedAddress: undefined;
 //   AddAddress: undefined;
@@ -139,6 +139,15 @@ export const AppStack: FC = () => {
       <Stack.Screen name="JobDetail" component={Screens.JobDetailScreen} />
       <Stack.Screen name="JobApply" component={Screens.JobApplyScreen} />
 
+      <Stack.Group
+        screenOptions={{
+          presentation: 'transparentModal',
+          contentStyle: { backgroundColor: 'transparent' },
+          animation: 'fade_from_bottom',
+        }}
+      >
+        <Stack.Screen name="JobApplySucessModal" component={Screens.JobApplySucessModal} />
+      </Stack.Group>
     
       {/* <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
       <Stack.Screen
@@ -174,15 +183,7 @@ export const AppStack: FC = () => {
         initialParams={{ type: 'about', title: 'profile.aboutUsTitle' }}
       />
 
-      <Stack.Group
-        screenOptions={{
-          presentation: 'transparentModal',
-          contentStyle: { backgroundColor: 'transparent' },
-          animation: 'fade_from_bottom',
-        }}
-      >
-        <Stack.Screen name="BottomModal" component={Screens.BottomModal} />
-      </Stack.Group> */}
+    */}
 
     </Stack.Navigator>
   );
