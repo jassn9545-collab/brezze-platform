@@ -3,10 +3,10 @@ import { Country } from '../components';
 // import {Country, countries} from '../components';
 
 export let DefaultCountry: Country = {
-  name: 'India',
-  flag: '🇮🇳',
-  code: 'IN',
-  dial_code: '+91',
+  name: 'Australia',
+  flag: '🇦🇺',
+  code: 'AU',
+  dial_code: '+61',
 };
 
 // export const setDefaultCountry = (
@@ -27,8 +27,8 @@ export interface CurrencyType {
 }
 
 export let Currency: CurrencyType = {
-  sign: '₹',
-  code: 'INR',
+  sign: '$',
+  code: 'AUD',
 };
 
 export const setCurrency = (currency: CurrencyType = Currency) => {

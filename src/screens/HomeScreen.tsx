@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import React, { FC, useState } from 'react';
 import { colors, images, spacing } from '../theme';
-import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppBottomTabScreenProps } from '../navigators';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 // type StoreProps = ConnectedProps<typeof connector>;
@@ -43,6 +43,10 @@ const Home: FC<Props> = props => {
   //     props.getProfile();
   //     // eslint-disable-next-line react-hooks/exhaustive-deps
   //   }, []);
+
+  const onPressJob = () => {
+    props.navigation.navigate('JobDetail')
+  }
 
   return (
     <>
@@ -83,7 +87,7 @@ const Home: FC<Props> = props => {
           // keyExtractor={item => item?.id?.toString()}
           // onEndReached={loadMore}
           // onEndReachedThreshold={0.8}
-          renderItem={info => <JobCard {...info} />}
+          renderItem={info => <JobCard {...info} onPressJob={onPressJob} />}
           // ListEmptyComponent={
           //   <View style={styles.empty}>
           //     <ListEmptyComponent tx="common.noDataFound" />
@@ -102,10 +106,17 @@ const Home: FC<Props> = props => {
   );
 };
 
-type NotificationCardProps = ListRenderItemInfo<any>;
-const JobCard = ({ item }: NotificationCardProps) => {
+type NotificationCardProps = ListRenderItemInfo<any> & {
+  onPressJob?: () => void;
+};
+export const JobCard = ({ item, onPressJob }: NotificationCardProps) => {
   return (
-    <TouchableOpacity key={item.id} activeOpacity={0.9} style={styles.card}>
+    <TouchableOpacity
+      key={item.id}
+      activeOpacity={0.9}
+      style={styles.card}
+      onPress={onPressJob}
+    >
       <View style={styles.spaceBetween}>
         <Text
           size="xxs"
@@ -195,7 +206,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xl
+    paddingBottom: spacing.xl,
   },
   flatlist: {
     flex: 1,

@@ -6,10 +6,7 @@ import React, { FC, useEffect } from 'react';
 
 import { colors } from '../theme';
 import { NavigatorScreenParams } from '@react-navigation/native';
-
-// import * as Screens from '../screens';
-// import { TxKeyPath } from '../i18n';
-// import { ImageSourcePropType } from 'react-native';
+import * as Screens from '../screens';
 import { DrawerNavigator, DrawerParamsList } from './DrawerNavigator';
 import {
   BottomTabNavigator,
@@ -36,13 +33,8 @@ import {
 export type AppStackParamList = {
   BottomTab: NavigatorScreenParams<BottomTabNavigatorParamList>;
   Drawer: NavigatorScreenParams<DrawerParamsList>;
-//   AdvanceBooking: { type: Screens.AdvanceBookingParams };
-//   CustomOrders: undefined;
-//   AddCustomOrder: undefined;
-//   CategoryList: undefined;
-//   ProductDetail: { data: Product };
-
-//   SpecialOfferModal: undefined;
+  JobDetail: undefined;
+  JobApply: undefined;
 
 //   EditProfile: undefined;
 //   SavedAddress: undefined;
@@ -144,6 +136,8 @@ export const AppStack: FC = () => {
     >
       <Stack.Screen name="Drawer" component={DrawerNavigator} />
       <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
+      <Stack.Screen name="JobDetail" component={Screens.JobDetailScreen} />
+      <Stack.Screen name="JobApply" component={Screens.JobApplyScreen} />
 
     
       {/* <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />

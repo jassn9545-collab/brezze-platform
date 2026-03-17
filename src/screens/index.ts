@@ -13,6 +13,8 @@ export * from './DocumentReviewScreen';
 
 
 export * from './HomeScreen';
+export * from './JobDetailScreen';
+export * from './JobApplyScreen';
 
 // export * from './NotificationScreen';
 // export * from './ProfileScreen';

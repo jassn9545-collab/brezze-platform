@@ -13,6 +13,6 @@ export * from './DashedLine';
 export * from './SlideUpModal';
 // export * from './SucessModal';
 export * from './CustomImagePicker';
-// export * from './BackButtom';
+export * from './BackButtom';
 export * from './DatePicker/DatePickerModal';
 // export * from './AnimatedBootSplash';

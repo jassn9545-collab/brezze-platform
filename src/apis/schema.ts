@@ -221,3 +221,10 @@ export const addAddressScheme = yup.object().shape({
     .max(15, 'validation.maxMobile')
     .notRequired(),
 });
+
+export const jobApplySchema = yup.object().shape({
+  bidAmount: yup.string().required('validation.required'),
+  estimatedTime: yup.string().required('validation.required'),
+});
+
+export type JobApplyParams = yup.InferType<typeof jobApplySchema>;

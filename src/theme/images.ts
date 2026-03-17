@@ -24,6 +24,7 @@ export const images = {
   downArrow: require('../assets/images/downArrow.png'),
   uploadingIcon: require('../assets/images/uploadingIcon.png'),
   search: require('../assets/images/search.png'),
+  upload: require('../assets/images/upload.png'),
   
   //
   smileIcon: require('../assets/images/smileIcon.png'),

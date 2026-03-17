@@ -180,7 +180,27 @@ const en = {
   home: {
     jobs: 'Jobs',
     searchJobs: 'Search For Jobs',
-    more: ' More....'
+    more: ' More....',
+    jobDetails: 'Job Details',
+    jobType: 'Job Type',
+    paymentVerified: 'Payment Verified',
+    experienceLevel: 'Experience Level',
+    projectCost: 'Project Cost',
+    description: 'Description',
+    requirement: 'Requirement',
+    responsibilities: 'Responsibilities',
+    applyJob: 'Apply For Job',
+    jobApply: 'Job Apply',
+    yourTerms: 'Your Terms',
+    bidAmount: 'Bid Amount {{value}}',
+    bidAmountPlaceholder: 'Enter bid amount',
+    clientBudget: 'Client’s Budget: ',
+    estimatedTime: 'Estimated Completion Time',    
+    estimatedTimePlaceholder: '1-3 Days',
+    uploadCV: 'Click Here To Upload Your CV or Cover Letter',
+    marketFee: 'Market place fee {{value}}',
+    recieveMoney: 'You’ll Receive',
+    submitProposal: 'Send Submit Proposal',    
   }
 };
 
