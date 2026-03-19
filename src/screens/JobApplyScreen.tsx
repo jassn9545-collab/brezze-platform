@@ -1,8 +1,8 @@
 import { BackButtom, Button, Screen, Text, TextField } from '../components';
-import { FlatList, Image, Keyboard, StyleSheet, View } from 'react-native';
+import { FlatList, Keyboard, StyleSheet, View } from 'react-native';
 import React, { FC, useState } from 'react';
 import { AppStackScreenProps } from '../navigators';
-import { colors, images, spacing } from '../theme';
+import { colors, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JobCard } from './HomeScreen';
 import { Currency } from '../config/defaults';
@@ -50,7 +50,7 @@ const JobDetail: FC<Props> = (props) => {
         headingTx="home.jobApply"
         style={{
           paddingTop: insets.top + spacing.sm,
-          marginHorizontal: spacing.md,
+          paddingHorizontal: spacing.md,
         }}
       />
       <Screen preset="auto" contentContainerStyle={styles.container}>
@@ -121,15 +121,6 @@ const JobDetail: FC<Props> = (props) => {
                 />
               </Text>
             </View>
-            <View style={styles.uploadingImageContainer}>
-              <Image source={images.upload} />
-              <Text
-                size="xxs"
-                weight="regular"
-                tx="home.uploadCV"
-                style={styles.uploadCVText}
-              />
-            </View>
           </View>
         </View>
       </Screen>
@@ -182,21 +173,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     borderRadius: spacing.sm,
     backgroundColor: colors.palette.offWhite2,
-  },
-  uploadingImageContainer: {
-    borderWidth: 1,
-    gap: spacing.xxs,
-    padding: spacing.xs,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    justifyContent: 'center',
-    borderRadius: spacing.sm,
-    borderColor: colors.palette.borderColor,
-  },
-  uploadCVText: {
-    textAlign: 'center',
-    color: colors.textDim,
-    marginHorizontal: spacing.xxxl,
   },
   bottomContainer: {
     gap: spacing.xs,

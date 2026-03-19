@@ -1,5 +1,6 @@
 import {
   Image,
+  ImageSourcePropType,
   StyleProp,
   TextStyle,
   TouchableOpacity,
@@ -18,6 +19,8 @@ export type BackButtomProps = {
   style?: StyleProp<ViewStyle>;
   heading?: string;
   headingTx?: TxKeyPath;
+  arrow?: ImageSourcePropType;
+  arrowColor?: string;
   // Extras
   rightComponent?: React.ReactNode;
 };
@@ -26,6 +29,8 @@ export const BackButtom = ({
   heading,
   headingTx,
   style = { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  arrow,
+  arrowColor,
   rightComponent,
 }: BackButtomProps) => {
   const navigation = useNavigation();
@@ -33,7 +38,10 @@ export const BackButtom = ({
   return (
     <View style={[$container, style]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={$wrapArrow}>
-        <Image source={images.leftArrow} tintColor={colors.palette.black} />
+        <Image
+          source={arrow ? arrow : images.leftArrow}
+          tintColor={arrowColor ? arrowColor : colors.palette.black}
+        />
       </TouchableOpacity>
       {headingTx ? (
         <Text tx={headingTx} preset="heading" size="lg" style={$heading} />

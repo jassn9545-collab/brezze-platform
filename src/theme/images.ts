@@ -30,6 +30,7 @@ export const images = {
   smileIcon: require('../assets/images/smileIcon.png'),
   smallTick: require('../assets/images/smallTick.png'),
   waitingIcon: require('../assets/images/waitingIcon.png'),
+  crossIcon: require('../assets/images/crossIcon.png'),
   
   
   // app

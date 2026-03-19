@@ -11,7 +11,7 @@ export * from './DropDownList';
 // export * from './TapRating';
 export * from './DashedLine';
 export * from './SlideUpModal';
-// export * from './SucessModal';
+export * from './RangeSlider';
 export * from './CustomImagePicker';
 export * from './BackButtom';
 export * from './DatePicker/DatePickerModal';

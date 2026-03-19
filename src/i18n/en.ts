@@ -2,7 +2,7 @@ const en = {
   bottomTab: {
     Home: 'Home',
     HireJobs: 'Hire Jobs',
-    Chat: 'Chat'
+    Chat: 'Chat',
     // ProductList: 'Shop',
     // Sip: 'Sip',
     // Profile: 'Profile',
@@ -211,13 +211,23 @@ const en = {
     hireJob: 'Hire Job List',
     activejob: 'Active Job',
     completejob: 'Complete Job',
-    viewDetails: 'View Details'
+    viewDetails: 'View Details',
+    advancefilter: 'Advance filter',
+    chooseCategory: 'CHOOSE CATEGORY',
+    searchCategory: 'Search Categories...',
+    postedWithin: "POSTED WITHIN",
+    postedOption1: 'Last 24h',
+    postedOption2: 'Last 7 days',
+    postedOption3: 'Last 30 days',
+    paymentVerified: "PAYMENT VERIFIED",
+    price: 'Price',
+    applyFilter: "APPLY FILTERS",
   },
   chat: {
     messages: 'Messages',
     read: 'Read',
-    pending: 'Pending'
-  }
+    pending: 'Pending',
+  },
 };
 
 export default en;

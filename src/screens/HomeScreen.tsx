@@ -44,9 +44,13 @@ const Home: FC<Props> = props => {
   //     // eslint-disable-next-line react-hooks/exhaustive-deps
   //   }, []);
 
+  const onPressFilter = () => {
+    props.navigation.navigate('AdvanceFilter');
+  };
+ 
   const onPressJob = () => {
-    props.navigation.navigate('JobDetail')
-  }
+    props.navigation.navigate('JobDetail');
+  };
 
   return (
     <>
@@ -56,7 +60,7 @@ const Home: FC<Props> = props => {
         </TouchableOpacity>
         <Text weight="medium" size="lg" tx="home.jobs" />
         <TouchableOpacity
-        // onPress={() => props.navigation.navigate('Notification')}
+          // onPress={() => props.navigation.navigate('AdvanceFilter')}
         >
           <Image source={images.notification} />
         </TouchableOpacity>
@@ -73,7 +77,7 @@ const Home: FC<Props> = props => {
             containerStyle={styles.flexOne}
             placeholderTx="home.searchJobs"
           />
-          <TouchableOpacity style={styles.wrapSearchIcon}>
+          <TouchableOpacity style={styles.wrapSearchIcon} onPress={onPressFilter}>
             <Image source={images.filter} tintColor={colors.palette.white} />
           </TouchableOpacity>
         </View>

@@ -45,8 +45,8 @@ const JobDetail: FC<Props> = props => {
       <BackButtom
         headingTx="home.jobDetails"
         style={{
+          paddingHorizontal: spacing.md,
           paddingTop: insets.top + spacing.sm,
-          marginHorizontal: spacing.md,
         }}
       />
       <Screen preset="auto" contentContainerStyle={styles.container}>

@@ -35,6 +35,7 @@ export type AppStackParamList = {
   Drawer: NavigatorScreenParams<DrawerParamsList>;
   JobDetail: undefined;
   JobApply: undefined;
+  AdvanceFilter: undefined
   JobApplySucessModal: undefined
 //   EditProfile: undefined;
 //   SavedAddress: undefined;
@@ -137,6 +138,7 @@ export const AppStack: FC = () => {
       <Stack.Screen name="Drawer" component={DrawerNavigator} />
       <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
       <Stack.Screen name="JobDetail" component={Screens.JobDetailScreen} />
+      <Stack.Screen name="AdvanceFilter" component={Screens.AdvanceFilterScreen} />
       <Stack.Screen name="JobApply" component={Screens.JobApplyScreen} />
 
       <Stack.Group
