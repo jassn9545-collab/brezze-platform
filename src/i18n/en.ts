@@ -3,9 +3,7 @@ const en = {
     Home: 'Home',
     HireJobs: 'Hire Jobs',
     Chat: 'Chat',
-    // ProductList: 'Shop',
-    // Sip: 'Sip',
-    // Profile: 'Profile',
+    Profile: 'Profile',
   },
   common: {
     noDataAvailable: 'No data available',
@@ -206,6 +204,8 @@ const en = {
     submitProposal: 'Send Submit Proposal',
     jobProposalSubmit: 'Your Job Proposal has been success fully Submit',
     jobProposalSubmitDesc: 'Your Job Application has been summitted',
+    notification: 'Notification',
+    markRead: 'Mark as read',
   },
   job: {
     hireJob: 'Hire Job List',
@@ -215,19 +215,59 @@ const en = {
     advancefilter: 'Advance filter',
     chooseCategory: 'CHOOSE CATEGORY',
     searchCategory: 'Search Categories...',
-    postedWithin: "POSTED WITHIN",
+    postedWithin: 'POSTED WITHIN',
     postedOption1: 'Last 24h',
     postedOption2: 'Last 7 days',
     postedOption3: 'Last 30 days',
-    paymentVerified: "PAYMENT VERIFIED",
+    paymentVerified: 'PAYMENT VERIFIED',
     price: 'Price',
-    applyFilter: "APPLY FILTERS",
+    clientRating: 'CLIENT RATING',
+    applyFilter: 'APPLY FILTERS',
   },
   chat: {
     messages: 'Messages',
     read: 'Read',
     pending: 'Pending',
+    messagePlaceholder: 'Type message...',
+    noChatMessage: 'No Messages yet',
   },
+  drawer: {
+    findJobs: 'Find Jobs',
+    applyJobs: 'Apply Jobs',
+    hireJobs: 'Hire Jobs',
+    savedJobs: "Saved Jobs",
+  },
+  profile :{
+    totalEarnings: "Total Earnings",
+    totalJobs: "Total Jobs",
+    jobSuccess: "Job Success",
+    services: "Services",
+    serviceCatalog: "Service Catalog",
+    viewAll: "View All",
+    reviews: "Reviews",
+    seeAll: "See All {{value}}",
+    viewDetails: "View Details"
+  },
+  editProfile: {
+    personalDetails: "Personal Details",
+    fullName: "Full Name",
+    fullNamePlaceholder: "Enter full name",
+    professionalHeading: "Professional Heading",
+    professionalHeadingPlaceholder: "Enter professional heading",
+    bio: "Bio",
+    bioPlaceholder: "Write a short bio",
+    locationContact: "Location & Contact",
+    location: "Location",
+    locationPlaceholder: "Enter location",
+    services: "Services",
+    servicesPlaceholder: "Add services you offer",    
+    serviceCatalog: "Service Catalog",
+    addCatalog: "Add Catalog",
+    updateProfile: "Update Profile"
+  },
+  context: {
+    edit: "Edit"
+  }
 };
 
 export default en;

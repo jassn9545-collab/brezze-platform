@@ -47,7 +47,7 @@ const Home: FC<Props> = props => {
   const onPressFilter = () => {
     props.navigation.navigate('AdvanceFilter');
   };
- 
+
   const onPressJob = () => {
     props.navigation.navigate('JobDetail');
   };
@@ -60,7 +60,7 @@ const Home: FC<Props> = props => {
         </TouchableOpacity>
         <Text weight="medium" size="lg" tx="home.jobs" />
         <TouchableOpacity
-          // onPress={() => props.navigation.navigate('AdvanceFilter')}
+          onPress={() => props.navigation.navigate('Notification')}
         >
           <Image source={images.notification} />
         </TouchableOpacity>
@@ -77,7 +77,10 @@ const Home: FC<Props> = props => {
             containerStyle={styles.flexOne}
             placeholderTx="home.searchJobs"
           />
-          <TouchableOpacity style={styles.wrapSearchIcon} onPress={onPressFilter}>
+          <TouchableOpacity
+            style={styles.wrapSearchIcon}
+            onPress={onPressFilter}
+          >
             <Image source={images.filter} tintColor={colors.palette.white} />
           </TouchableOpacity>
         </View>

@@ -25,6 +25,10 @@ export const images = {
   uploadingIcon: require('../assets/images/uploadingIcon.png'),
   search: require('../assets/images/search.png'),
   upload: require('../assets/images/upload.png'),
+  star: require('../assets/images/star.png'),
+  user: require('../assets/images/user.png'),
+  share: require('../assets/images/share.png'),
+  clock: require('../assets/images/clock.png'),
   
   //
   smileIcon: require('../assets/images/smileIcon.png'),
@@ -41,13 +45,20 @@ export const images = {
   unsavedIcon: require('../assets/images/unsavedIcon.png'),
   threeDotIcon: require('../assets/images/threeDotIcon.png'),
   tickIcon: require('../assets/images/tickIcon.png'),
+  verified: require('../assets/images/verified.png'),
+  
+  //drawer
+  drawerSearch: require('../assets/images/drawerSearch.png'),
+  document: require('../assets/images/document.png'),
+  bag: require('../assets/images/bag.png'),
+  
 
   // bottom tab icons
   home: require('../assets/images/home.png'),
   hireJobs: require('../assets/images/hireJobs.png'),
   chat: require('../assets/images/chat.png'),
+  profile: require('../assets/images/profile.png'),
   // inbox: require('../assets/images/inbox.png'),
-  // profile: require('../assets/images/profile.png'),
 } as const;
 
 export type AppImage = keyof typeof images;

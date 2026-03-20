@@ -10,12 +10,18 @@ import {
 import React, { FC } from 'react';
 import { AppBottomTabScreenProps } from '../navigators';
 import { colors, images, spacing } from '../theme';
+import { parseSource } from '../utils/util';
 
 type NavigationProps = AppBottomTabScreenProps<'Chat'>;
 // type StoreProps = ConnectedProps<typeof connector>;
 type Props = NavigationProps;
 
-const Chat: FC<Props> = () => {
+const Chat: FC<Props> = props => {
+
+  const onPressUser = () => {
+    props.navigation.navigate('ChatDetail');
+  };
+  
   return (
     <Screen
       preset="fixed"
@@ -32,7 +38,7 @@ const Chat: FC<Props> = () => {
         // keyExtractor={item => item?.id?.toString()}
         // onEndReached={loadMore}
         // onEndReachedThreshold={0.8}
-        renderItem={info => <ChatCard {...info} />}
+        renderItem={info => <ChatCard {...info} onPressUser={onPressUser} />}
         // ListEmptyComponent={
         //   <View style={styles.empty}>
         //     <ListEmptyComponent tx="common.noDataFound" />
@@ -51,15 +57,20 @@ const Chat: FC<Props> = () => {
 };
 
 type ChatCardProps = ListRenderItemInfo<any> & {
-  onPressUser?: () => void;
+  onPressUser: () => void;
 };
-const ChatCard = ({ item }: ChatCardProps) => {
+const ChatCard = ({ item, onPressUser }: ChatCardProps) => {
   return (
-    <TouchableOpacity key={item.id} activeOpacity={0.9} style={styles.card}>
+    <TouchableOpacity
+      key={item.id}
+      activeOpacity={0.9}
+      style={styles.card}
+      onPress={onPressUser}
+    >
       <Image
         resizeMode="cover"
         style={styles.userImage}
-        source={{ uri: 'https://i.pravatar.cc/300' }}
+        {...parseSource('https://i.pravatar.cc/300', images.user)}
       />
 
       <View style={styles.flexOne}>
@@ -69,8 +80,8 @@ const ChatCard = ({ item }: ChatCardProps) => {
         <View style={styles.timeWrapper}>
           <Text size="xxs" text="2m ago" style={styles.time} />
           <View style={styles.statusWrapper}>
-          <Text size="xxs" tx="chat.read" style={styles.statusInfo} />
-          <Image source={images.tickIcon} />
+            <Text size="xxs" tx="chat.read" style={styles.statusInfo} />
+            <Image source={images.tickIcon} />
           </View>
         </View>
       </View>

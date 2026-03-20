@@ -1,4 +1,11 @@
-import { BackButtom, Screen, Text, TextField } from '../components';
+import {
+  BackButtom,
+  Button,
+  Screen,
+  TapRating,
+  Text,
+  TextField,
+} from '../components';
 import {
   Image,
   StyleSheet,
@@ -27,7 +34,7 @@ const dateFilters: DateFilterType[] = [
   { id: 'month', title: 'job.postedOption3' },
 ];
 
-const AdvanceFilter: FC<Props> = (props) => {
+const AdvanceFilter: FC<Props> = props => {
   const [category, setCategory] = useState('');
   const [selectedDate, setSelectedDate] = useState<
     'one' | 'week' | 'month' | ''
@@ -40,6 +47,7 @@ const AdvanceFilter: FC<Props> = (props) => {
     min: 400,
     max: 3200,
   });
+  const [rating, setRating] = useState<number>(4);
 
   const rightHeaderComponent = React.useMemo(
     () => (
@@ -54,13 +62,14 @@ const AdvanceFilter: FC<Props> = (props) => {
     props.navigation.setOptions({
       gestureEnabled: false,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onPressDateFilter = (data: DateFilterType) => {
     setSelectedDate(prev => (prev === data.id ? '' : data.id));
   };
 
+  const onPressFilter = () => {};
   return (
     <Screen
       preset="auto"
@@ -150,7 +159,6 @@ const AdvanceFilter: FC<Props> = (props) => {
             style={styles.textDim}
             tx="job.price"
           />
-
           <RangeSlider
             min={0}
             max={4000}
@@ -161,6 +169,24 @@ const AdvanceFilter: FC<Props> = (props) => {
             }
           />
         </View>
+
+        <View style={styles.alignStart}>
+          <Text
+            size="xxs"
+            weight="semiBold"
+            style={styles.textDim}
+            tx="job.clientRating"
+          />
+          <TapRating
+            size={spacing.lg}
+            selectedColor="orange"
+            defaultRating={rating}
+            count={5}
+            onFinishRating={setRating}
+          />
+        </View>
+
+        <Button tx="job.applyFilter" onPress={onPressFilter} />
       </View>
     </Screen>
   );
@@ -200,6 +226,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  ratingStarContainer: {
+    gap: spacing.lg,
+    paddingVertical: spacing.xs,
+  },
+  ratingStar: {
+    gap: spacing.xxs,
+    backgroundColor: colors.transparent,
+    padding: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+    borderRadius: spacing.xs,
+  },
+  alignStart: { gap: spacing.xxs, alignItems: 'flex-start' , marginBottom: spacing.md},
 });
 
 // const mapStateToProps = (state: RootState) => ({

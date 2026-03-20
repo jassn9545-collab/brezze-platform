@@ -35,56 +35,63 @@ export type AppStackParamList = {
   Drawer: NavigatorScreenParams<DrawerParamsList>;
   JobDetail: undefined;
   JobApply: undefined;
-  AdvanceFilter: undefined
-  JobApplySucessModal: undefined
-//   EditProfile: undefined;
-//   SavedAddress: undefined;
-//   AddAddress: undefined;
-//   Wishlist: undefined;
-//   Cart: undefined;
-//   Orders: undefined;
-//   ReferEarn: undefined;
-//   Notification: undefined;
-//   FAQ: undefined;
-//   Vault: undefined;
-//   Withdrawal: undefined;
-//   Transection: {
-//     type: 'sip' | 'gold' | 'silver';
-//     heading: TxKeyPath;
-//     investmentText: TxKeyPath;
-//     histroyHeading: TxKeyPath;
-//   };
-//   Thankyou: {
-//     type: 'sip' | 'gold' | 'cart';
-//     desc: string;
-//   };
-//   BankAccounts: undefined;
-//   AddBankAccount: {
-//     type: 'add' | 'edit';
-//     data?: MyAccountResponse;
-//   };
-//   ChangeLanguage: undefined;
-//   PrivacyPolicy:
-//     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
-//     | undefined;
-//   TermsCondition:
-//     | {
-//         title: TxKeyPath;
-//         type: Screens.StaticType;
-//         data?: string;
-//         from?: string;
-//       }
-//     | undefined;
-//   AboutUs:
-//     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
-//     | undefined;
-//   BottomModal: {
-//     modalType: 'logout' | 'deleteAccount';
-//     title: TxKeyPath;
-//     desc: TxKeyPath;
-//     image: ImageSourcePropType;
-//     btnText: TxKeyPath;
-//   };
+  AdvanceFilter: undefined;
+  ApplyJob: undefined;
+  SavedJob: undefined;
+  ChatDetail: undefined;
+  Notification: undefined;
+  EditProfile: undefined;
+    
+  //modal
+  JobApplySucessModal: undefined;
+
+  //   SavedAddress: undefined;
+  //   AddAddress: undefined;
+  //   Wishlist: undefined;
+  //   Cart: undefined;
+  //   Orders: undefined;
+  //   ReferEarn: undefined;
+
+  //   FAQ: undefined;
+  //   Vault: undefined;
+  //   Withdrawal: undefined;
+  //   Transection: {
+  //     type: 'sip' | 'gold' | 'silver';
+  //     heading: TxKeyPath;
+  //     investmentText: TxKeyPath;
+  //     histroyHeading: TxKeyPath;
+  //   };
+  //   Thankyou: {
+  //     type: 'sip' | 'gold' | 'cart';
+  //     desc: string;
+  //   };
+  //   BankAccounts: undefined;
+  //   AddBankAccount: {
+  //     type: 'add' | 'edit';
+  //     data?: MyAccountResponse;
+  //   };
+  //   ChangeLanguage: undefined;
+  //   PrivacyPolicy:
+  //     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
+  //     | undefined;
+  //   TermsCondition:
+  //     | {
+  //         title: TxKeyPath;
+  //         type: Screens.StaticType;
+  //         data?: string;
+  //         from?: string;
+  //       }
+  //     | undefined;
+  //   AboutUs:
+  //     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
+  //     | undefined;
+  //   BottomModal: {
+  //     modalType: 'logout' | 'deleteAccount';
+  //     title: TxKeyPath;
+  //     desc: TxKeyPath;
+  //     image: ImageSourcePropType;
+  //     btnText: TxKeyPath;
+  //   };
 };
 
 export type AppStackScreenProps<T extends keyof AppStackParamList> =
@@ -138,8 +145,19 @@ export const AppStack: FC = () => {
       <Stack.Screen name="Drawer" component={DrawerNavigator} />
       <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
       <Stack.Screen name="JobDetail" component={Screens.JobDetailScreen} />
-      <Stack.Screen name="AdvanceFilter" component={Screens.AdvanceFilterScreen} />
+      <Stack.Screen
+        name="AdvanceFilter"
+        component={Screens.AdvanceFilterScreen}
+      />
       <Stack.Screen name="JobApply" component={Screens.JobApplyScreen} />
+      <Stack.Screen name="ApplyJob" component={Screens.ApplyJobScreen} />
+      <Stack.Screen name="SavedJob" component={Screens.SavedJobScreen} />
+      <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
+      <Stack.Screen
+        name="Notification"
+        component={Screens.NotificationScreen}
+      />
+      <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
 
       <Stack.Group
         screenOptions={{
@@ -148,10 +166,13 @@ export const AppStack: FC = () => {
           animation: 'fade_from_bottom',
         }}
       >
-        <Stack.Screen name="JobApplySucessModal" component={Screens.JobApplySucessModal} />
+        <Stack.Screen
+          name="JobApplySucessModal"
+          component={Screens.JobApplySucessModal}
+        />
       </Stack.Group>
-    
-      {/* <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
+
+      {/* 
       <Stack.Screen
         name="SavedAddress"
         component={Screens.SavedAddressScreen}
@@ -159,10 +180,7 @@ export const AppStack: FC = () => {
       <Stack.Screen name="AddAddress" component={Screens.AddAddressScreen} />
      
       <Stack.Screen name="ReferEarn" component={Screens.ReferEarnScreen} />
-      <Stack.Screen
-        name="Notification"
-        component={Screens.NotificationScreen}
-      />
+     
       <Stack.Screen name="FAQ" component={Screens.FAQScreen} />
       <Stack.Screen
         name="ChangeLanguage"
@@ -186,7 +204,6 @@ export const AppStack: FC = () => {
       />
 
     */}
-
     </Stack.Navigator>
   );
 };

@@ -6,9 +6,9 @@ const palette = {
   red: '#D9192A',
   dimRed: '#FEF2F2',
 
-  green: '#27AE60',
+  green: '#14A800',
   lightGreen: '#90EE90',
-  dimGreen: '#DCFCE7',
+  dimGreen: 'rgba(235, 255, 238, 1)',
   transparentGreen: '#E9FFF2',
   offGreen: '#E8F5E9',
   offWhite: '#F6F6F6',
@@ -29,7 +29,7 @@ const palette = {
 
   lightGray1: '#A2A2A7',
 
-  lightCream: '#FCF3EC',
+  lightCream: 'rgba(255, 255, 255, 0.55)',
 
   // added colors
   darkRed: '#FF383C',

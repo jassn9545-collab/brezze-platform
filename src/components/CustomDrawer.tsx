@@ -3,55 +3,35 @@ import {
   View,
   StyleSheet,
   ScrollView,
+  Image,
+  ImageSourcePropType,
+  TouchableOpacity,
 } from 'react-native';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { colors, spacing } from '../theme';
+import { colors, images, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scale } from 'react-native-size-matters';
+import { Text } from './Text';
+import { TxKeyPath } from '../i18n';
 
-const CustomDrawer: FC<DrawerContentComponentProps> = () => {
+const CustomDrawer: FC<DrawerContentComponentProps> = props => {
   const insets = useSafeAreaInsets();
-  // const drawerStatus = useDrawerStatus();
-//   const [expandedCategory, setExpandedCategory] = useState<boolean>(true);
-
-//   const loadingState = useAppSelector(store => store.auth.logoutLoading);
-//   const profile = useAppSelector(store => store.auth.myProfile?.data);
-//   const baseUrl = useAppSelector(store => store.home.baseURl);
 
   return (
     <View style={styles.container}>
-      {/* {drawerStatus === 'open' && (
-        <TouchableOpacity
-          style={[styles.closeBtn, { top: insets.top }]}
-          onPress={() => props.navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Animated.Image
-            source={images.rightArrow}
-            style={{ transform: [{ rotate: '180deg' }] }}
-          />
-        </TouchableOpacity>
-      )} */}
-
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
-        {/* <FastImage
-          source={
-            profile?.profile
-              ? {
-                  uri: baseUrl + '/' + profile?.profile,
-                }
-              : images.vector
-          }
+        <Image
+          resizeMode="cover"
           style={styles.userImage}
+          source={{ uri: 'https://i.pravatar.cc/300' }}
         />
-        <Text
-          weight="medium"
-          size="sm"
-          tx="drawer.hi"
-          style={{ color: colors.palette.white }}
-        />
-        <Text weight="medium" size="xl" text={profile?.name} /> */}
+        <View style={styles.userDetail}>
+          <Text size="md" text="Mandeep Saini" />
+          <Text size="xs" weight="semiBold" text="EXPERT ELECTRICIAN" />
+          <View style={styles.userBadge}>
+            <Text size="xxs" weight="semiBold" text="TOP RATED" />
+          </View>
+        </View>
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -60,16 +40,38 @@ const CustomDrawer: FC<DrawerContentComponentProps> = () => {
       >
         {/* Main Menu */}
         <View style={styles.menuContainer}>
-          {/* <DrawerItem
-            image={images.paymentHistory}
-            tx="drawer.paymentHistory"
-            onPress={() => props.navigation.navigate('Vault')}
+          <DrawerItem
+            image={images.drawerSearch}
+            tx="drawer.findJobs"
+            onPress={() =>
+              props.navigation.navigate('BottomTab', {
+                screen: 'Home',
+              })
+            }
+          />
+
+          <DrawerItem
+            image={images.document}
+            tx="drawer.applyJobs"
+            onPress={() => props.navigation.navigate('ApplyJob')}
           />
           <DrawerItem
-            image={images.withDrawal}
-            tx="drawerScreens.withdrawal"
-            onPress={() => props.navigation.navigate('Withdrawal')}
+            image={images.bag}
+            tx="drawer.hireJobs"
+            onPress={() =>
+              props.navigation.navigate('BottomTab', {
+                screen: 'HireJobs',
+              })
+            }
           />
+          <DrawerItem
+            image={images.savedIcon}
+            tx="drawer.savedJobs"
+            onPress={() => props.navigation.navigate('ApplyJob')}
+          />
+
+          {/* 
+        
           <DrawerItem
             image={images.yourOrder}
             tx="drawer.yourOrder"
@@ -110,44 +112,54 @@ const CustomDrawer: FC<DrawerContentComponentProps> = () => {
   );
 };
 
-// type DrawerItemParams = {
-//   tx: TxKeyPath;
-//   image: ImageSourcePropType;
-//   onPress: () => void;
-// };
-// const DrawerItem = ({ tx, onPress, image }: DrawerItemParams) => (
-//   <TouchableOpacity style={styles.singleItem} onPress={onPress}>
-//     <Image source={image} />
-//     <Text weight="medium" size="lg" tx={tx} style={styles.flexOne} />
-//     <Image source={images.rightArrow} />
-//   </TouchableOpacity>
-// );
+type DrawerItemParams = {
+  tx: TxKeyPath;
+  image: ImageSourcePropType;
+  onPress?: () => void;
+};
+const DrawerItem = ({ tx, onPress, image }: DrawerItemParams) => (
+  <TouchableOpacity style={styles.singleItem} onPress={onPress}>
+    <Image source={image} tintColor={colors.palette.black} />
+    <Text weight="semiBold" size="sm" tx={tx} style={styles.flexOne} />
+  </TouchableOpacity>
+);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.background,
   },
   flexOne: {
     flex: 1,
   },
-  // closeBtn: {
-  //   zIndex: 1,
-  //   right: -spacing.xs,
-  //   padding: spacing.xxs,
-  //   position: 'absolute',
-  //   borderRadius: spacing.md,
-  //   backgroundColor: colors.primary,
-  // },
   header: {
+    gap: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.lg,
     marginHorizontal: spacing.md,
   },
   userImage: {
-    height: 70,
-    width: 70,
-    borderRadius: scale(10),
+    width: 60,
+    height: 60,
+    borderWidth: 2,
+    borderRadius: 30,
     marginBottom: spacing.xs,
+    borderColor: colors.primary,
+  },
+  userDetail: {
+    flex: 1,
+    gap: spacing.xxs + 1,
+  },
+  userBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: spacing.xs,
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+    backgroundColor: colors.palette.dimGreen,
+  },
+  greenText :{
+    color: colors.palette.green
   },
   scrollViewContainer: {
     flexGrow: 1,
@@ -157,18 +169,18 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     flex: 1,
-    backgroundColor: colors.palette.primaryDimmed,
   },
   singleItem: {
-    gap: spacing.sm,
+    gap: spacing.md,
     alignItems: 'center',
     flexDirection: 'row',
-    padding: spacing.md,
     borderRadius: spacing.sm,
-    marginVertical: spacing.xs,
+    paddingVertical: spacing.sm,
+    marginVertical: spacing.xxs,
     marginHorizontal: spacing.md,
+    paddingHorizontal: spacing.md,
     justifyContent: 'space-between',
-    backgroundColor: colors.primary,
+    // backgroundColor: colors.palette.primaryDimmed,
   },
   signOutItem: {
     gap: spacing.xs,

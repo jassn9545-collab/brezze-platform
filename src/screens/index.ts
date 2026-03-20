@@ -19,12 +19,15 @@ export * from './AdvanceFilterScreen';
 export * from './JobApplySucessModal';
 export * from './ActiveJobScreen';
 export * from './CompleteJobScreen';
+export * from './ApplyJobScreen';
+export * from './SavedJobScreen';
 export * from './ChatScreen';
+export * from './ChatDetailScreen';
+export * from './NotificationScreen';
 
-// export * from './NotificationScreen';
-// export * from './ProfileScreen';
+export * from './ProfileScreen';
+export * from './EditProfileScreen';
 // export * from './FAQScreen';
-// export * from './EditProfileScreen';
 // export * from './SavedAddressScreen';
 // export * from './AddAddress';
 // export * from './ReferEarnScreen';
