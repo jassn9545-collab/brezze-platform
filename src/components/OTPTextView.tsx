@@ -36,15 +36,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   textInput: {
-    height: 45,
+    // height: 45,
     width: 45,
     borderWidth: 1,
     borderRadius: 9,
     textAlign: 'center',
     margin: 5,
-    fontSize: 24,
+    fontSize: 18,
     color: '#000000',
-    fontFamily: typography.primary.regular,
+    fontFamily: typography.primary.medium,
     backgroundColor: colors.palette.offWhite
   },
 });

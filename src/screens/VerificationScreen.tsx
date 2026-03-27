@@ -143,7 +143,8 @@ const Verification: FC<Props> = props => {
                 });
                 return;
               }
-              props.navigation.goBack();
+              props.navigation.navigate('MyDocuments')
+
               //   if (props.route.params.from === 'forgotPassword') {
               //     props.verifyOTP({
               //       user_id: params.user_id,

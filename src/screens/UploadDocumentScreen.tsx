@@ -1,4 +1,5 @@
 import {
+  BackButtom,
   Button,
   CustomImagePicker,
   DataType,
@@ -108,16 +109,7 @@ const UploadDocument: FC<NavigationProps> = props => {
         safeAreaEdges={['top']}
         contentContainerStyle={styles.containerStyle}
       >
-        <View style={styles.wrapHeader}>
-          <Image source={images.leftArrow} />
-          <Text
-            size="sm"
-            weight="bold"
-            tx="document.confirmIDCard"
-            style={styles.textCenter}
-          />
-          <View style={styles.rightIcon} />
-        </View>
+        <BackButtom headingTx='document.confirmIDCard' />
         <View style={styles.mainView}>
           <TouchableOpacity onPress={() => IDTypeSheet.current?.present()}>
             <TextField
@@ -226,17 +218,8 @@ const styles = StyleSheet.create({
   containerStyle: {
     flexGrow: 1,
   },
-  wrapHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: spacing.md,
-    justifyContent: 'space-between',
-  },
   textCenter: {
     textAlign: 'center',
-  },
-  rightIcon: {
-    width: 45,
   },
   mainView: {
     flex: 1,

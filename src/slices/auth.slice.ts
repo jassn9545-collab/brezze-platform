@@ -433,7 +433,7 @@ export type AuthState = {
 
 const authState: AuthState = {
   initialRouteName: 'Walkthrough',
-  isAuthorized: true,
+  isAuthorized: false,
   booting: 'loading',
 
   userRegistrationLoading: 'idle',

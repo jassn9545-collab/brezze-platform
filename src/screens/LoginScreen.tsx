@@ -20,6 +20,8 @@ import { colors, images, spacing } from '../theme';
 import { AuthStackScreenProps } from '../navigators';
 import { Button } from '../components/Button';
 import { TxKeyPath } from '../i18n';
+import { authActions } from '../slices/auth.slice';
+import { useAppDispatch } from '../store/hooks';
 // import { connect, ConnectedProps } from 'react-redux';
 // import { authActions, userLogin } from '../slices/auth.slice';
 // import { getMessaging, getToken } from '@react-native-firebase/messaging';
@@ -58,6 +60,7 @@ const Login: FC<NavigationProps> = (
     //   user_Login,
   },
 ) => {
+  const dispatch = useAppDispatch()
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const passwordField = useRef<TextInput>(null);
@@ -113,7 +116,8 @@ const Login: FC<NavigationProps> = (
       .then(params => {
         Keyboard.dismiss();
         console.log('params', params);
-        navigation.navigate('MyDocuments')
+        dispatch(authActions.setAuthroized(true));
+
         // user_Login(params);
         setError({});
       })
