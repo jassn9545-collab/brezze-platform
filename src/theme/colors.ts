@@ -5,6 +5,7 @@ const palette = {
   white: '#FFFFFF',
   red: '#D9192A',
   dimRed: '#FEF2F2',
+  lightYellow: '#FFFBEB',
 
   green: '#14A800',
   lightGreen: '#90EE90',

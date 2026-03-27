@@ -179,7 +179,7 @@ const Profile: FC<NavigationProps> = (props) => {
 };
 
 type ServiceCardProps = ListRenderItemInfo<any>;
-const Service = ({ item }: ServiceCardProps) => {
+export const Service = ({ item }: ServiceCardProps) => {
   return (
     <View key={item.id} style={styles.card}>
       <View style={styles.serviceDetail}>

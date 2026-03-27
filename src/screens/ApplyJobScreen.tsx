@@ -11,7 +11,9 @@ type Props = NavigationProps;
 
 const ApplyJob: FC<Props> = props => {
   const onPressJob = () => {
-    props.navigation.navigate('JobDetail');
+    props.navigation.navigate('JobDetail', {
+      from: 'ActiveJob'
+    });
   };
 
   return (

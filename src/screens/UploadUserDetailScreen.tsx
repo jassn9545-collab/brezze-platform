@@ -50,7 +50,7 @@ export const calendarAccessory = (props: TextFieldAccessoryProps) => (
   </View>
 );
 
-const skillsList = [
+export const skillsList = [
   'Electrician',
   'AC Repair',
   'Wire Fitting',
@@ -200,7 +200,7 @@ const UploadUserDetail: FC<NavigationProps> = props => {
               activeOpacity={0.8}
               style={[
                 styles.skillInput,
-                error.hourPrice && { borderColor: colors.error },
+                error.skills && { borderColor: colors.error },
               ]}
               onPress={() => setShowSkillDropdown(!showSkillDropdown)}
             >
@@ -233,10 +233,10 @@ const UploadUserDetail: FC<NavigationProps> = props => {
               <Image source={images.downArrow} />
             </TouchableOpacity>
 
-            {error.hourPrice && (
+            {error.skills && (
               <Text
                 preset="formHelper"
-                tx={error.hourPrice}
+                tx={error.skills}
                 style={{ color: colors.error }}
               />
             )}

@@ -2,11 +2,11 @@ import { Image, StyleSheet, View } from 'react-native';
 import { Screen, Text } from '../components';
 import { colors, images, spacing } from '../theme';
 import { AppStackScreenProps } from '../navigators';
-import { useEffect } from 'react';
+import { FC, useEffect } from 'react';
 
 type Props = AppStackScreenProps<'JobApplySucessModal'>;
 
-export const JobApplySucessModal = (props: Props) => {
+export const JobApplySucessModal: FC<Props> = (props) => {
     
   useEffect(() => {
     setTimeout(() => {

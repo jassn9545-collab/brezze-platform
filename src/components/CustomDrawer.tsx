@@ -49,7 +49,6 @@ const CustomDrawer: FC<DrawerContentComponentProps> = props => {
               })
             }
           />
-
           <DrawerItem
             image={images.document}
             tx="drawer.applyJobs"
@@ -70,31 +69,36 @@ const CustomDrawer: FC<DrawerContentComponentProps> = props => {
             onPress={() => props.navigation.navigate('ApplyJob')}
           />
 
-          {/* 
-        
           <DrawerItem
-            image={images.yourOrder}
-            tx="drawer.yourOrder"
-            onPress={() => props.navigation.navigate('Orders')}
+            image={images.wallet}
+            tx="drawer.walletEarning"
+            onPress={() => props.navigation.navigate('Wallet')}
           />
           <DrawerItem
-            image={images.yourWishlist}
-            tx="drawer.yourWishlist"
-            onPress={() => props.navigation.navigate('Wishlist')}
-          /> */}
+            image={images.docPriceIcon}
+            tx="drawer.serviceCatalogs"
+            onPress={() => props.navigation.navigate('ServiceCatalog')}
+          />
+          <View style={styles.emptyBox} />
+
+          <DrawerItem
+            image={images.helpSupportIcon}
+            tx="drawer.helpSupport"
+            onPress={() => props.navigation.navigate('HelpSupport')}
+          />
         </View>
       </ScrollView>
-      {/* <TouchableOpacity
+      <TouchableOpacity
         style={[
           styles.signOutItem,
-          { paddingBottom: insets.bottom + spacing.xs },
+          { marginBottom: insets.bottom + spacing.xs },
         ]}
         onPress={() =>
-          props.navigation.navigate('BottomModal', {
+          props.navigation.navigate('CenterModal', {
             modalType: 'logout',
             image: images.logoutIcon,
-            title: 'profile.logoutConfirmtion',
-            desc: 'profile.logoutConfirmtionDesc',
+            title: 'profile.logoutConfirmation',
+            desc: 'profile.logoutConfirmationDesc',
             btnText: 'profile.yesLogout',
           })
         }
@@ -103,10 +107,10 @@ const CustomDrawer: FC<DrawerContentComponentProps> = props => {
         <Text
           weight="medium"
           size="lg"
-          tx="drawer.signOut"
+          tx="drawer.logout"
           style={{ color: colors.error }}
         />
-      </TouchableOpacity> */}
+      </TouchableOpacity>
       {/* <Loader loading={loadingState === 'loading'} /> */}
     </View>
   );
@@ -158,8 +162,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     backgroundColor: colors.palette.dimGreen,
   },
-  greenText :{
-    color: colors.palette.green
+  greenText: {
+    color: colors.palette.green,
   },
   scrollViewContainer: {
     flexGrow: 1,
@@ -180,15 +184,20 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     paddingHorizontal: spacing.md,
     justifyContent: 'space-between',
-    // backgroundColor: colors.palette.primaryDimmed,
   },
   signOutItem: {
+    borderWidth: 1,
     gap: spacing.xs,
-    padding: spacing.md,
+    margin: spacing.md,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
+    borderRadius: spacing.xs,
+    paddingVertical: spacing.xs,
     backgroundColor: colors.palette.dimRed,
+  },
+  emptyBox: {
+    height: 40,
   },
 });
 

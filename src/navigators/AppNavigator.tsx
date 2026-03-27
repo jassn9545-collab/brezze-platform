@@ -1,14 +1,12 @@
 import React, { FC } from 'react';
-import {
-  navigationRef,
-  RootStackParamList,
-} from './navigationUtilities';
+import { navigationRef, RootStackParamList } from './navigationUtilities';
 // import Config from '../config';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppStack } from './AppStack';
+import { AuthStack } from './AuthStack';
+import { RootState } from '../store';
 // import { AppStack } from './AppStack';
-// import { connect, ConnectedProps } from 'react-redux';
-// import { RootState } from '../store/store';
+import { connect, ConnectedProps } from 'react-redux';
 // import { authActions, getAuthorization } from '../slices/auth.slice';
 // import { Linking } from 'react-native';
 // import { handleInviteURL } from '../utils/util';
@@ -24,9 +22,9 @@ export interface NavigationProps
     React.ComponentProps<typeof NavigationContainer<RootStackParamList>>
   > {}
 
-// type Props = NavigationProps & ConnectedProps<typeof connector>;
+type Props = NavigationProps & ConnectedProps<typeof connector>;
 
-const MainNavigator: FC<NavigationProps> = props => {
+const MainNavigator: FC<Props> = props => {
   // useBackButtonHandler(routeName => exitRoutes.includes(routeName));
 
   // useEffect(() => {
@@ -50,27 +48,27 @@ const MainNavigator: FC<NavigationProps> = props => {
 
   return (
     <NavigationContainer {...props} ref={navigationRef}>
-       {/* {props.isAuthorize ? ( */}
+      {props.isAuthorize ? (
         <AppStack />
-      {/* ) : (  */}
-         {/* <AuthStack
-         initialRouteName={props.initialRouteName}
-         />  */}
-       {/* )} */}
+      ) : (
+        <AuthStack
+        //  initialRouteName={props.initialRouteName}
+        />
+      )}
     </NavigationContainer>
   );
 };
 
-// const mapState = (state: RootState) => ({
-//   booting: state.auth.booting,
-//   isAuthorize: state.auth.isAuthorized,
-//   initialRouteName: state.auth.initialRouteName,
-// });
+const mapState = (state: RootState) => ({
+  // booting: state.auth.booting,
+  isAuthorize: state.auth.isAuthorized,
+  // initialRouteName: state.auth.initialRouteName,
+});
 
 // const mapDispatch = {
 //   getAuthorization,
 //   setReferralCode: authActions.setReferralCode,
 // };
 
-// const connector = connect(mapState, mapDispatch);
-export default MainNavigator;
+const connector = connect(mapState);
+export default connector(MainNavigator);

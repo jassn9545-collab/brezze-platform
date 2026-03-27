@@ -33,13 +33,21 @@ const jobQuickPoints: JobQuichPointType[] = [
   },
 ];
 
+export type JobDetailParams = {
+  from: 'ActiveJob' | 'Home' | 'SavedJob';
+};
+
 const JobDetail: FC<Props> = props => {
   const insets = useSafeAreaInsets();
 
   const onPressJob = () => {
-    props.navigation.navigate('JobApply');
+    if (props.route.params.from === 'ActiveJob') {
+      props.navigation.navigate('SubmitWork')
+    } else {
+      props.navigation.navigate('JobApply');
+    }
   };
-  
+
   return (
     <>
       <BackButtom
@@ -146,7 +154,11 @@ const JobDetail: FC<Props> = props => {
         </View>
       </Screen>
       <Button
-        tx="home.applyJob"
+        tx={
+          props.route.params.from === 'ActiveJob'
+            ? 'home.submitWork'
+            : 'home.applyJob'
+        }
         onPress={onPressJob}
         style={[
           styles.buttonStyle,

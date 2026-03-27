@@ -49,7 +49,9 @@ const Home: FC<Props> = props => {
   };
 
   const onPressJob = () => {
-    props.navigation.navigate('JobDetail');
+    props.navigation.navigate('JobDetail', {
+      from: 'Home'
+    });
   };
 
   return (

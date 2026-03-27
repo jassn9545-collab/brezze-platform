@@ -18,7 +18,7 @@ type ScreenProps = BookingScreenProps<'ActiveJob'>;
 type Props = ScreenProps;
 
 // let page = 1;
-const ActiveJob: FC<Props> = () => {
+const ActiveJob: FC<Props> = props => {
   const flatlist = useRef<FlatList>(null);
   // const isFocused = useIsFocused();
 
@@ -71,16 +71,11 @@ const ActiveJob: FC<Props> = () => {
         <TripCell
           item={item}
           index={index}
-          // viewDetail={() => {
-          //   props.tripDetails(item._id);
-          //   props.navigation.navigate('RideOptions', {
-          //     pickupAddress: getAddressParam(item.pickUp),
-          //     dropupAddress: getAddressParam(item.dropOff),
-          //     data: {
-          //       type: item.isRoundTrip ? 'round' : item.rideType,
-          //     },
-          //   });
-          // }}
+          viewDetail={() =>
+            props.navigation.navigate('JobDetail', {
+              from: 'ActiveJob',
+            })
+          }
           // cancelAction={() => {
           //   Alert.alert(
           //     translate('ride.cancelRide'),
@@ -130,7 +125,7 @@ type TripCellProps = {
   cancelAction?: () => void;
 };
 
-export const TripCell: FC<TripCellProps> = ({ index }) => {
+export const TripCell: FC<TripCellProps> = ({ index, viewDetail }) => {
   return (
     <View key={index} style={$cellStyle}>
       <View style={$spaceBetween}>
@@ -191,7 +186,7 @@ export const TripCell: FC<TripCellProps> = ({ index }) => {
           text={Currency.code + ' ' + Currency.sign + 200}
         />
 
-        <TouchableOpacity style={$button}>
+        <TouchableOpacity onPress={viewDetail} style={$button}>
           <Text
             size="xs"
             weight="semiBold"
