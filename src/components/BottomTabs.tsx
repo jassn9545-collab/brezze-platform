@@ -29,7 +29,6 @@ const BottomTabs = (props: BottomTabBarProps) => {
         {state?.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const label = route.name;
-
           const key =
             route.name.substring(0, 1).toLowerCase() + route.name.substring(1);
           const isFocused = state.index === index;
@@ -78,19 +77,21 @@ const BottomTabs = (props: BottomTabBarProps) => {
               ) : (
                 <Image
                   source={images[`${key}` as ImageKeys]}
-                  tintColor={colors.palette.darkGray2}
+                  tintColor={colors.palette.white}
                   style={$tabBarIcon}
                 />
               )}
-              <Text
-                size="xs"
-                weight="regular"
-                style={[
-                  $tabBarLabel,
-                  isFocused && { marginTop: scale(18) },
-                ]}
-                tx={`bottomTab.${label}` as TxKeyPath}
-              />
+              {options.tabBarShowLabel !== false && (
+                <Text
+                  size="xs"
+                  weight="regular"
+                  style={[
+                    $tabBarLabel,
+                    isFocused && { marginTop: scale(18) },
+                  ]}
+                  tx={`bottomTab.${label}` as TxKeyPath}
+                />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -142,7 +143,7 @@ const $tabBarIcon: ImageStyle = {
 const $tabBarLabel: TextStyle = {
   textAlign: 'center',
   marginTop: scale(4),
-  color: colors.palette.darkGray2
+  color: colors.palette.white
 };
 
 const $tab: ViewStyle = {

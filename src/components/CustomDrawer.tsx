@@ -3,13 +3,16 @@ import {
   View,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { colors, spacing } from '../theme';
+import { colors, images, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scale } from 'react-native-size-matters';
+import { Text } from './Text';
 
-const CustomDrawer: FC<DrawerContentComponentProps> = () => {
+const CustomDrawer: FC<DrawerContentComponentProps> = (props) => {
   const insets = useSafeAreaInsets();
   // const drawerStatus = useDrawerStatus();
 //   const [expandedCategory, setExpandedCategory] = useState<boolean>(true);
@@ -17,6 +20,19 @@ const CustomDrawer: FC<DrawerContentComponentProps> = () => {
 //   const loadingState = useAppSelector(store => store.auth.logoutLoading);
 //   const profile = useAppSelector(store => store.auth.myProfile?.data);
 //   const baseUrl = useAppSelector(store => store.home.baseURl);
+
+ const menuItems = [
+    { title: 'Post a New Job', icon: images.plusIconCircle, screen: 'JobPost' },
+    { title: 'My Job Postings', icon: images.myJobs, screen: 'JobPostList' },
+    { title: 'Hire History', icon: images.hireHistrory, screen: 'HireHistory' },
+    { title: 'Notifications', icon: images.notificationIcon, screen: 'Notifications' },
+    { divider: true },
+    { title: 'Payment Methods', icon: images.paymentIcon },
+    { title: 'Privacy Policy', icon: images.privacyIcon },
+    { title: 'Help & Support', icon: images.helpIcon },
+    { title: 'Password Manager', icon: images.passwordIcon },
+  ];
+
 
   return (
     <View style={styles.container}>
@@ -35,6 +51,57 @@ const CustomDrawer: FC<DrawerContentComponentProps> = () => {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
+
+
+        
+
+      {/* HEADER */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={styles.row}>
+          <Image source={images.profile1} style={styles.avatar} />
+
+          <View>
+            <Text text="Alex Harrison" weight="semiBold" />
+            <View style={styles.verified}>
+              <Text text="Verified Client" size="xxs" style={{ color: '#1BA672' }} />
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* MENU */}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.menuContainer}>
+
+          {menuItems.map((item, index) => {
+            if (item.divider) return <View key={index} style={styles.divider} />;
+
+            return (
+              <TouchableOpacity
+                key={index}
+                style={styles.menuItem}
+                onPress={() => item.screen && props.navigation.navigate(item.screen as never)}
+              >
+                <Image source={item.icon} style={styles.icon} />
+                <Text text={item.title} style={styles.menuText} />
+              </TouchableOpacity>
+            );
+          })}
+
+        </View>
+      </ScrollView>
+
+      {/* LOGOUT */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
+        <TouchableOpacity style={styles.logoutBtn}>
+          <Text text="Logout" weight="semiBold" style={{ color: '#FF3B30' }} />
+        </TouchableOpacity>
+
+        <Text text="VERSION 2.4.0" size="xxs" style={styles.version} />
+      </View>
+
+
+        {/* <Text>Hello</Text> */}
         {/* <FastImage
           source={
             profile?.profile
@@ -60,6 +127,7 @@ const CustomDrawer: FC<DrawerContentComponentProps> = () => {
       >
         {/* Main Menu */}
         <View style={styles.menuContainer}>
+
           {/* <DrawerItem
             image={images.paymentHistory}
             tx="drawer.paymentHistory"
@@ -82,7 +150,8 @@ const CustomDrawer: FC<DrawerContentComponentProps> = () => {
           /> */}
         </View>
       </ScrollView>
-      {/* <TouchableOpacity
+
+     {/* <TouchableOpacity
         style={[
           styles.signOutItem,
           { paddingBottom: insets.bottom + spacing.xs },
@@ -126,7 +195,7 @@ const CustomDrawer: FC<DrawerContentComponentProps> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.palette.white,
   },
   flexOne: {
     flex: 1,
@@ -143,6 +212,75 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     marginHorizontal: spacing.md,
   },
+  // header: {
+  //   paddingHorizontal: spacing.md,
+  //   paddingBottom: spacing.md,
+  // },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+
+  verified: {
+    backgroundColor: '#E6F7F1',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+
+  menuContainer: {
+    paddingHorizontal: spacing.md,
+  },
+
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: spacing.md,
+  },
+
+  icon: {
+    width: 22,
+    height: 22,
+    tintColor: '#333',
+  },
+
+  menuText: {
+    fontSize: 15,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: spacing.sm,
+  },
+
+  footer: {
+    padding: spacing.md,
+  },
+
+  logoutBtn: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+
+  version: {
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    color: '#8A94A6',
+  },
+
   userImage: {
     height: 70,
     width: 70,
@@ -155,10 +293,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  menuContainer: {
-    flex: 1,
-    backgroundColor: colors.palette.primaryDimmed,
-  },
+  // menuContainer: {
+  //   flex: 1,
+  //   backgroundColor: colors.palette.primaryDimmed,
+  // },
   singleItem: {
     gap: spacing.sm,
     alignItems: 'center',

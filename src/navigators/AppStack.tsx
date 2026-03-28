@@ -15,6 +15,8 @@ import {
   BottomTabNavigator,
   BottomTabNavigatorParamList,
 } from './BottomTabNavigator';
+import { HireHistoryScreen, JobPostConfirmScreen, jobPostDetailsScreen, jobPostListScreen, JobPostScreen, ProfessionalProfileScreen } from '../screens';
+import { CategoriesScreen } from '../screens';
 
 // import { useAppDispatch } from '../store/hooks';
 // import { getProfile } from '../slices/auth.slice';
@@ -36,62 +38,70 @@ import {
 export type AppStackParamList = {
   BottomTab: NavigatorScreenParams<BottomTabNavigatorParamList>;
   Drawer: NavigatorScreenParams<DrawerParamsList>;
-//   AdvanceBooking: { type: Screens.AdvanceBookingParams };
-//   CustomOrders: undefined;
-//   AddCustomOrder: undefined;
-//   CategoryList: undefined;
-//   ProductDetail: { data: Product };
+  JobPost: undefined;
+  JobPostStep2: undefined;
+  JobPostList : undefined;
+  jobPostDetails: undefined;
+  HireHistory: undefined;
+  Categories: undefined;
+  HireHistoryDetails: undefined;
+  ProfessionalProfile: undefined;
+  //   AdvanceBooking: { type: Screens.AdvanceBookingParams };
+  //   CustomOrders: undefined;
+  //   AddCustomOrder: undefined;
+  //   CategoryList: undefined;
+  //   ProductDetail: { data: Product };
 
-//   SpecialOfferModal: undefined;
+  //   SpecialOfferModal: undefined;
 
-//   EditProfile: undefined;
-//   SavedAddress: undefined;
-//   AddAddress: undefined;
-//   Wishlist: undefined;
-//   Cart: undefined;
-//   Orders: undefined;
-//   ReferEarn: undefined;
-//   Notification: undefined;
-//   FAQ: undefined;
-//   Vault: undefined;
-//   Withdrawal: undefined;
-//   Transection: {
-//     type: 'sip' | 'gold' | 'silver';
-//     heading: TxKeyPath;
-//     investmentText: TxKeyPath;
-//     histroyHeading: TxKeyPath;
-//   };
-//   Thankyou: {
-//     type: 'sip' | 'gold' | 'cart';
-//     desc: string;
-//   };
-//   BankAccounts: undefined;
-//   AddBankAccount: {
-//     type: 'add' | 'edit';
-//     data?: MyAccountResponse;
-//   };
-//   ChangeLanguage: undefined;
-//   PrivacyPolicy:
-//     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
-//     | undefined;
-//   TermsCondition:
-//     | {
-//         title: TxKeyPath;
-//         type: Screens.StaticType;
-//         data?: string;
-//         from?: string;
-//       }
-//     | undefined;
-//   AboutUs:
-//     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
-//     | undefined;
-//   BottomModal: {
-//     modalType: 'logout' | 'deleteAccount';
-//     title: TxKeyPath;
-//     desc: TxKeyPath;
-//     image: ImageSourcePropType;
-//     btnText: TxKeyPath;
-//   };
+  //   EditProfile: undefined;
+  //   SavedAddress: undefined;
+  //   AddAddress: undefined;
+  //   Wishlist: undefined;
+  //   Cart: undefined;
+  //   Orders: undefined;
+  //   ReferEarn: undefined;
+  //   Notification: undefined;
+  //   FAQ: undefined;
+  //   Vault: undefined;
+  //   Withdrawal: undefined;
+  //   Transection: {
+  //     type: 'sip' | 'gold' | 'silver';
+  //     heading: TxKeyPath;
+  //     investmentText: TxKeyPath;
+  //     histroyHeading: TxKeyPath;
+  //   };
+  //   Thankyou: {
+  //     type: 'sip' | 'gold' | 'cart';
+  //     desc: string;
+  //   };
+  //   BankAccounts: undefined;
+  //   AddBankAccount: {
+  //     type: 'add' | 'edit';
+  //     data?: MyAccountResponse;
+  //   };
+  //   ChangeLanguage: undefined;
+  //   PrivacyPolicy:
+  //     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
+  //     | undefined;
+  //   TermsCondition:
+  //     | {
+  //         title: TxKeyPath;
+  //         type: Screens.StaticType;
+  //         data?: string;
+  //         from?: string;
+  //       }
+  //     | undefined;
+  //   AboutUs:
+  //     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
+  //     | undefined;
+  //   BottomModal: {
+  //     modalType: 'logout' | 'deleteAccount';
+  //     title: TxKeyPath;
+  //     desc: TxKeyPath;
+  //     image: ImageSourcePropType;
+  //     btnText: TxKeyPath;
+  //   };
 };
 
 export type AppStackScreenProps<T extends keyof AppStackParamList> =
@@ -142,10 +152,16 @@ export const AppStack: FC = () => {
       })}
       initialRouteName="Drawer"
     >
+      <Stack.Screen name="JobPost" component={JobPostScreen} />
+      <Stack.Screen name="Categories" component={CategoriesScreen} />
+      <Stack.Screen name="JobPostStep2" component={JobPostConfirmScreen} />
+      <Stack.Screen name="JobPostList" component={jobPostListScreen} />
+      <Stack.Screen name="jobPostDetails" component={jobPostDetailsScreen} />
+      <Stack.Screen name="HireHistory" component={HireHistoryScreen} />
+      <Stack.Screen name="ProfessionalProfile" component={ProfessionalProfileScreen} />
       <Stack.Screen name="Drawer" component={DrawerNavigator} />
       <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
 
-    
       {/* <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
       <Stack.Screen
         name="SavedAddress"

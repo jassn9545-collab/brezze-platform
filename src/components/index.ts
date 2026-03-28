@@ -13,4 +13,4 @@ export * from './SlideUpModal';
 export * from './CustomImagePicker';
 // export * from './BackButtom';
 export * from './DatePicker/DatePickerModal';
-// export * from './AnimatedBootSplash';
+export * from './BackButtom';

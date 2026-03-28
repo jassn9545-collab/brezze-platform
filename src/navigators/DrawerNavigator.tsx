@@ -44,6 +44,7 @@ export const DrawerNavigator: FC<NavigationProps> = () => {
       drawerContent={SideMenu}
       initialRouteName="BottomTab"
     >
+
       <Drawer.Screen name="BottomTab" component={BottomTabNavigator} />
     </Drawer.Navigator>
   );

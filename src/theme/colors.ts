@@ -15,8 +15,10 @@ const palette = {
   offWhite2: '#F2F2F7',
 
   primaryColor: '#0054A5',
-  primaryDimmed: '#92CEFF',
+  primaryDimmed: '#EBF4FF',
   borderColor: "#CACACA",
+  primarylight: "#DBEAFE",
+  
 
   secondaryFontColor: '#3E4958',
   wrapperFontColor: '#6C6C70',
@@ -35,7 +37,7 @@ const palette = {
   darkRed: '#FF383C',
   lightRed: '#FF383C26',
   grayLight: '#565656',
-  grayLight2: '#E5E5EA',
+  grayLight2: '#6B7280',
   grayLight3: '#E8E8E8',
 
   placeholderColor: '#717680',
@@ -55,7 +57,7 @@ const palette = {
   // Toast Colors
   success: '#00C851',
   info: '#33b5e5',
-  warning: '#FFD54F',
+  warning: '#B45309',
   danger: '#d9534f',
   inverse: '#292b2c',
   faded: '#f7f7f7',
@@ -63,7 +65,19 @@ const palette = {
   // Gradient Colors
   startColor: '#3DBFFF',
   endColor: '#0A89C8',
-  centerColor: 'rgba(254, 181, 18, 1)',
+  centerColor: '#FEF3C7',
+
+  // Screen specific colors
+  jobPostBackground: '#F5F6FA',
+  primaryBlue: '#2F6BFF',
+  lightGray: '#E0E0E0',
+  lightBorder: '#ccc',
+  imageBackground: '#BCAAA4',
+  overlayDark30: 'rgba(0, 0, 0, 0.3)',
+  overlayDark60: 'rgba(0, 0, 0, 0.6)',
+  overlayDark50: 'rgba(0, 0, 0, 0.5)',
+  grayText: '#8A94A6',
+  borderGray: '#D4D4D4',
 } as const;
 
 export const colors = {

@@ -14,6 +14,17 @@
     "value": "Home",
     "label": "Bottom tab: Home"
   },
+
+  {
+    "constant": "bottomTab.Services",
+    "value": "Services",
+    "label": "Bottom tab: Services"
+  },
+  {
+    "constant": "bottomTab.Chat",
+    "value": "Chat",
+    "label": "Bottom tab: Chat"
+  },
   {
     "constant": "bottomTab.Profile",
     "value": "Profile",
@@ -1743,5 +1754,39 @@
     "constant": "chat.errorMessage",
     "value": "We couldn't send your message because the trip was canceled or no driver was found.",
     "label": "Chat: Error message"
+  },
+{
+    "constant": "homeimage.title",
+    "value": "Book Expert For Your Home & Get 30% Off on First Booking.",
+    "label": "homeimage: title text"
   }
+  ,
+
+  {
+    "constant": "Browse.Categories",
+    "value": "Browse By Categories.",
+    "label": "Browse: Categories"
+  },
+  {
+    "constant": "view.all",
+    "value": "View All",
+    "label": "view: all"
+  },
+   {
+    "constant": "Featured.Professional",
+    "value": "Featured Professional",
+    "label": "Featured : Professional"
+  },
+
+   {
+    "constant": "Services.List",
+    "value": "Services List",
+    "label": "Services: List"
+  }
+
+  
+
+
+  
+
 ]
