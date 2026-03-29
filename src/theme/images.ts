@@ -26,6 +26,12 @@ export const images = {
   eyeIcon: require('../assets/images/eyeIcon.png'),
   eyeCloseIcon: require('../assets/images/eyeCloseIcon.png'),
   leftArrow: require('../assets/images/leftArrow.png'),
+  checkboxFilled: require('../assets/images/checkboxFilled.png'),
+  checkboxOutline: require('../assets/images/checkboxOutline.png'),
+  successTick: require('../assets/images/successTick.png'),
+  logoutIcon: require('../assets/images/logoutIcon.png'),
+
+
 
 
   // Homepage
@@ -59,8 +65,8 @@ export const images = {
   privacyIcon: require('../assets/images/privacyIcon.png'),
   helpIcon: require('../assets/images/helpIcon.png'),
   passwordIcon: require('../assets/images/passwordIcon.png'),
-  greenCheckIcon : require('../assets/images/greenCheck.png')
-    
+  greenCheckIcon: require('../assets/images/greenCheck.png')
+
 
 
 

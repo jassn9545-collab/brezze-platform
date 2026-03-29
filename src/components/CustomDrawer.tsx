@@ -15,13 +15,13 @@ import { Text } from './Text';
 const CustomDrawer: FC<DrawerContentComponentProps> = (props) => {
   const insets = useSafeAreaInsets();
   // const drawerStatus = useDrawerStatus();
-//   const [expandedCategory, setExpandedCategory] = useState<boolean>(true);
+  //   const [expandedCategory, setExpandedCategory] = useState<boolean>(true);
 
-//   const loadingState = useAppSelector(store => store.auth.logoutLoading);
-//   const profile = useAppSelector(store => store.auth.myProfile?.data);
-//   const baseUrl = useAppSelector(store => store.home.baseURl);
+  //   const loadingState = useAppSelector(store => store.auth.logoutLoading);
+  //   const profile = useAppSelector(store => store.auth.myProfile?.data);
+  //   const baseUrl = useAppSelector(store => store.home.baseURl);
 
- const menuItems = [
+  const menuItems = [
     { title: 'Post a New Job', icon: images.plusIconCircle, screen: 'JobPost' },
     { title: 'My Job Postings', icon: images.myJobs, screen: 'JobPostList' },
     { title: 'Hire History', icon: images.hireHistrory, screen: 'HireHistory' },
@@ -50,55 +50,46 @@ const CustomDrawer: FC<DrawerContentComponentProps> = (props) => {
       )} */}
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
+      <View>
 
 
-        
 
-      {/* HEADER */}
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <View style={styles.row}>
-          <Image source={images.profile1} style={styles.avatar} />
 
-          <View>
-            <Text text="Alex Harrison" weight="semiBold" />
-            <View style={styles.verified}>
-              <Text text="Verified Client" size="xxs" style={{ color: '#1BA672' }} />
+        {/* HEADER */}
+        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+          <View style={styles.row}>
+            <Image source={images.profile1} style={styles.avatar} />
+
+            <View>
+              <Text text="Alex Harrison" weight="semiBold" />
+              <View style={styles.verified}>
+                <Text text="Verified Client" size="xxs" style={{ color: '#1BA672' }} />
+              </View>
             </View>
           </View>
         </View>
-      </View>
 
-      {/* MENU */}
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.menuContainer}>
+        {/* MENU */}
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.menuContainer}>
 
-          {menuItems.map((item, index) => {
-            if (item.divider) return <View key={index} style={styles.divider} />;
+            {menuItems.map((item, index) => {
+              if (item.divider) return <View key={index} style={styles.divider} />;
 
-            return (
-              <TouchableOpacity
-                key={index}
-                style={styles.menuItem}
-                onPress={() => item.screen && props.navigation.navigate(item.screen as never)}
-              >
-                <Image source={item.icon} style={styles.icon} />
-                <Text text={item.title} style={styles.menuText} />
-              </TouchableOpacity>
-            );
-          })}
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.menuItem}
+                  onPress={() => item.screen && props.navigation.navigate(item.screen as never)}
+                >
+                  <Image source={item.icon} style={styles.icon} />
+                  <Text text={item.title} style={styles.menuText} />
+                </TouchableOpacity>
+              );
+            })}
 
-        </View>
-      </ScrollView>
-
-      {/* LOGOUT */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
-        <TouchableOpacity style={styles.logoutBtn}>
-          <Text text="Logout" weight="semiBold" style={{ color: '#FF3B30' }} />
-        </TouchableOpacity>
-
-        <Text text="VERSION 2.4.0" size="xxs" style={styles.version} />
-      </View>
+          </View>
+        </ScrollView>
 
 
         {/* <Text>Hello</Text> */}
@@ -151,30 +142,25 @@ const CustomDrawer: FC<DrawerContentComponentProps> = (props) => {
         </View>
       </ScrollView>
 
-     {/* <TouchableOpacity
-        style={[
-          styles.signOutItem,
-          { paddingBottom: insets.bottom + spacing.xs },
-        ]}
-        onPress={() =>
-          props.navigation.navigate('BottomModal', {
-            modalType: 'logout',
-            image: images.logoutIcon,
-            title: 'profile.logoutConfirmtion',
-            desc: 'profile.logoutConfirmtionDesc',
-            btnText: 'profile.yesLogout',
-          })
-        }
-      >
-        <Image source={images.signOut} />
-        <Text
-          weight="medium"
-          size="lg"
-          tx="drawer.signOut"
-          style={{ color: colors.error }}
-        />
-      </TouchableOpacity> */}
+      {/* LOGOUT */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
+        <TouchableOpacity style={styles.logoutBtn}
+          onPress={() =>
+            props.navigation.navigate('CenterModal', {
+              modalType: 'logout',
+              image: images.logoutIcon,
+              title: 'profile.logoutConfirmation',
+              desc: 'profile.logoutConfirmationDesc',
+              btnText: 'profile.yesLogout',
+            })
+          }>
+          <Text text="Logout" weight="semiBold" style={{ color: '#FF3B30' }} />
+        </TouchableOpacity>
+
+        <Text text="VERSION 2.4.0" size="xxs" style={styles.version} />
+      </View>
       {/* <Loader loading={loadingState === 'loading'} /> */}
+
     </View>
   );
 };
@@ -222,7 +208,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 
-avatar: {
+  avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,

@@ -20,52 +20,57 @@ const HireHistory: FC<Props> = () => {
   ];
 
   return (
-    <Screen preset="scroll" contentContainerStyle={styles.container}>
-      
-      <BackButtom heading={translate('hireHistory.heading')} />
+    <Screen preset="scroll" safeAreaEdges={['top']} contentContainerStyle={styles.container}>
 
-      {data.map((item, index) => (
-        <View key={index} style={styles.card}>
+      <BackButtom headingTx="hireHistory.heading" />
 
-          <View style={styles.rowBetween}>
-            <View style={styles.row}>
-              <Image source={images.profile1} style={styles.avatar} />
+      <View style={styles.main}>
+        {data.map((item, index) => (
+          <View key={index} style={styles.card}>
 
-              <View>
-                <Text text="Austin Butler" weight="semiBold" />
-                <Text text="Master Electrician" size="xs" style={styles.gray} />
+            <View style={styles.rowBetween}>
+              <View style={styles.row}>
+                <Image source={images.profile1} style={styles.avatar} />
+
+                <View>
+                  <Text text="Austin Butler" weight="semiBold" />
+                  <Text text="Master Electrician" size="xs" style={styles.gray} />
+                </View>
+              </View>
+
+              <View style={[styles.badge, { backgroundColor: item.color + '20' }]}>
+                <Text text={item.status} size="xxs" style={[styles.badgeText, { color: item.color }]} />
               </View>
             </View>
 
-            <View style={[styles.badge, { backgroundColor: item.color + '20' }]}>
-              <Text text={item.status} size="xxs" style={[styles.badgeText, { color: item.color }]} />
+            <View style={styles.rowBetween}>
+              <View>
+                <Text tx="hireHistory.amountPaid" size="xs" style={styles.gray} />
+                <Text tx="hireHistory.payValue" weight="semiBold" />
+              </View>
+
+              <View>
+                <Text tx="hireHistory.rating" size="xs" style={styles.gray} />
+                <Text tx="hireHistory.ratingStars" />
+              </View>
             </View>
+
           </View>
+        ))}
 
-          <View style={styles.rowBetween}>
-            <View>
-              <Text tx="hireHistory.amountPaid" size="xs" style={styles.gray} />
-              <Text tx="hireHistory.payValue" weight="semiBold" />
-            </View>
-
-            <View>
-              <Text tx="hireHistory.rating" size="xs" style={styles.gray} />
-              <Text tx="hireHistory.ratingStars" />
-            </View>
-          </View>
-
-        </View>
-      ))}
-
+      </View>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
 
+  main: {
+    marginHorizontal: spacing.md,
+  },
+
   container: {
     flexGrow: 1,
-    padding: spacing.md,
     backgroundColor: colors.palette.jobPostBackground,
   },
 

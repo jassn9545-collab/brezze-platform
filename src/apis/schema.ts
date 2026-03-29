@@ -16,26 +16,11 @@ export const userSchema = yup.object().shape({
     .min(6, 'validation.minMobileNo')
     .max(15, 'validation.maxMobile')
     .required('validation.required'),
-  alternate_phone: yup
-    .string()
-    .min(6, 'validation.minMobileNo')
-    .max(15, 'validation.maxMobile')
-    .required('validation.required'),
   email: yup
     .string()
     .min(3, 'validation.minEmail')
     .email('validation.invalidEmail')
     .required('validation.required'),
-  dob: yup.string().required('validation.required'),
-  nominee_name: yup.string().required('validation.required'),
-  nominee_dob: yup.string().required('validation.required'),
-  nominee_phone: yup
-    .string()
-    .min(6, 'validation.minMobileNo')
-    .max(15, 'validation.maxMobile')
-    .required('validation.required'),
-  relation_with_nominee: yup.string().required('validation.required'),
-  refrence: yup.string().notRequired(),
   password: yup.string().when('$isSignup', {
     is: true,
     then: schema =>
@@ -76,10 +61,10 @@ export type playerListParams = yup.InferType<typeof playerListSchema>;
 
 export const loginSchema = yup.object().shape({
   email: yup
-  .string()
-  .min(3, 'validation.minEmail')
-  .email('validation.invalidEmail')
-  .required('validation.required'),
+    .string()
+    .min(3, 'validation.minEmail')
+    .email('validation.invalidEmail')
+    .required('validation.required'),
   password: yup.string().required('validation.required'),
   firebaseToken: yup.string(),
   checked: yup.boolean(),
@@ -88,11 +73,10 @@ export const loginSchema = yup.object().shape({
 export type Signin = yup.InferType<typeof loginSchema>;
 
 export const forgotPasswordSchema = yup.object().shape({
-  country_code: yup.string(),
-  phone: yup
+  email: yup
     .string()
-    .min(6, 'validation.minMobileNo')
-    .max(15, 'validation.maxMobile')
+    .min(3, 'validation.minEmail')
+    .email('validation.invalidEmail')
     .required('validation.required'),
 });
 

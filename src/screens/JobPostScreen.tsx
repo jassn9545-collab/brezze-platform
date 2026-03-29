@@ -42,106 +42,108 @@ const JobPost: FC<Props> = (props) => {
             safeAreaEdges={['top']}
         >
             {/* HEADER */}
-            <BackButtom heading={translate('jobPost.heading')} />
+            <BackButtom headingTx="jobPost.heading" />ß
 
-            {/* STEP BAR */}
-            <View style={styles.stepContainer}>
-                <Text tx="jobPost.step1Label" weight="semiBold" />
-                <Text tx="jobPost.step1Details" size="xs" style={styles.stepRight} />
-            </View>
+            <View style={styles.main}>
+                {/* STEP BAR */}
+                <View style={styles.stepContainer}>
+                    <Text tx="jobPost.step1Label" weight="semiBold" />
+                    <Text tx="jobPost.step1Details" size="xs" style={styles.stepRight} />
+                </View>
 
-            <View style={styles.progressBar}>
-                <View style={styles.progressFill} />
-            </View>
+                <View style={styles.progressBar}>
+                    <View style={styles.progressFill} />
+                </View>
 
-            {/* TITLE */}
-            <Text
-                tx="jobPost.step1Title"
-                weight="bold"
-                size="lg"
-                style={styles.title}
-            />
-            <Text
-                tx="jobPost.step1Subtitle"
-                size="xs"
-                style={styles.subtitle}
-            />
-
-            {/* FORM */}
-
-            <View style={styles.formContainer}>
-
-                {/* Job Title */}
-                <Text tx="jobPost.jobTitleLabel" weight="medium" />
-                <TextField
-                    value={jobTitle}
-                    onChangeText={setJobtitle}
-                    placeholderTx="jobPost.jobTitlePlaceholder"
-                    containerStyle={styles.input}
+                {/* TITLE */}
+                <Text
+                    tx="jobPost.step1Title"
+                    weight="bold"
+                    size="lg"
+                    style={styles.title}
+                />
+                <Text
+                    tx="jobPost.step1Subtitle"
+                    size="xs"
+                    style={styles.subtitle}
                 />
 
-                {/* Category */}
-                <Text tx="jobPost.categoryLabel" weight="medium" />
+                {/* FORM */}
 
-                <TouchableOpacity
-                    onPress={() => dropDownRef.current?.present()}
-                    style={styles.dropdownButton}
-                >
-                    <Text
-                        text={relashipNominee?.title || translate('jobPost.selectCategory')}
-                        size="sm"
+                <View style={styles.formContainer}>
+
+                    {/* Job Title */}
+                    <Text tx="jobPost.jobTitleLabel" weight="medium" />
+                    <TextField
+                        value={jobTitle}
+                        onChangeText={setJobtitle}
+                        placeholderTx="jobPost.jobTitlePlaceholder"
+                        containerStyle={styles.input}
                     />
-                    <Image 
-                        source={images.rightArrow}
-                        style={styles.dropdownArrow}
+
+                    {/* Category */}
+                    <Text tx="jobPost.categoryLabel" weight="medium" />
+
+                    <TouchableOpacity
+                        onPress={() => dropDownRef.current?.present()}
+                        style={styles.dropdownButton}
+                    >
+                        <Text
+                            text={relashipNominee?.title || translate('jobPost.selectCategory')}
+                            size="sm"
+                        />
+                        <Image
+                            source={images.rightArrow}
+                            style={styles.dropdownArrow}
+                        />
+                    </TouchableOpacity>
+
+                    <DropDownList
+                        ref={dropDownRef}
+                        data={nomineeList}
+                        selectedId={relashipNominee?.id}
+                        onSelect={(data: DataType) => setRelashipNominee(data)}
+                        sizes={sizeForSheet(nomineeList.length,)}
                     />
-                </TouchableOpacity>
 
-                <DropDownList
-                    ref={dropDownRef}
-                    data={nomineeList}
-                    selectedId={relashipNominee?.id}
-                    onSelect={(data: DataType) => setRelashipNominee(data)}
-                    sizes={sizeForSheet(nomineeList.length,)}
-                />
-
-                {/* <TextField
+                    {/* <TextField
                     value={category}
                     onChangeText={setCategory}
                     placeholder="Select Category"
                     containerStyle={styles.input}
                 /> */}
 
-                {/* Job Type */}
-                {/* <Text text="Job Type" weight="medium" />
+                    {/* Job Type */}
+                    {/* <Text text="Job Type" weight="medium" />
                 <TextField
                     placeholder="Select Job Type"
                     containerStyle={styles.input}
                 /> */}
 
-                {/* Description */}
-                <Text tx="jobPost.descriptionLabel" weight="medium" />
-                <TextField
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholderTx="jobPost.descriptionPlaceholder"
-                    containerStyle={[styles.input, styles.textArea]}
-                    multiline
-                />
+                    {/* Description */}
+                    <Text tx="jobPost.descriptionLabel" weight="medium" />
+                    <TextField
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholderTx="jobPost.descriptionPlaceholder"
+                        containerStyle={[styles.input, styles.textArea]}
+                        multiline
+                    />
 
+                </View>
+
+                {/* BUTTON */}
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => props.navigation.navigate("JobPostStep2")}
+                >
+                    <Text
+                        tx="jobPost.continueButton"
+                        weight="semiBold"
+                        style={styles.buttonText}
+                    />
+                </TouchableOpacity>
             </View>
-
-            {/* BUTTON */}
-            <TouchableOpacity
-                style={styles.button}
-                onPress={() => props.navigation.navigate("JobPostStep2")}
-            >
-                <Text
-                    tx="jobPost.continueButton"
-                    weight="semiBold"
-                    style={styles.buttonText}
-                />
-            </TouchableOpacity>
         </Screen>
     );
 };
@@ -150,8 +152,11 @@ const styles = StyleSheet.create({
 
     container: {
         flexGrow: 1,
-        padding: spacing.md,
         backgroundColor: colors.palette.jobPostBackground,
+    },
+
+    main: {
+        marginHorizontal: spacing.md,
     },
 
     stepContainer: {

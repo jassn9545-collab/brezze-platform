@@ -11,6 +11,7 @@ export * from './DashedLine';
 export * from './SlideUpModal';
 // export * from './SucessModal';
 export * from './CustomImagePicker';
-// export * from './BackButtom';
+export * from './OTPTextView';
 export * from './DatePicker/DatePickerModal';
 export * from './BackButtom';
+

@@ -7,7 +7,7 @@ import React, { FC, useEffect } from 'react';
 import { colors } from '../theme';
 import { NavigatorScreenParams } from '@react-navigation/native';
 
-// import * as Screens from '../screens';
+import * as Screens from '../screens';
 // import { TxKeyPath } from '../i18n';
 // import { ImageSourcePropType } from 'react-native';
 import { DrawerNavigator, DrawerParamsList } from './DrawerNavigator';
@@ -40,19 +40,17 @@ export type AppStackParamList = {
   Drawer: NavigatorScreenParams<DrawerParamsList>;
   JobPost: undefined;
   JobPostStep2: undefined;
-  JobPostList : undefined;
+  JobPostList: undefined;
   jobPostDetails: undefined;
   HireHistory: undefined;
   Categories: undefined;
   HireHistoryDetails: undefined;
   ProfessionalProfile: undefined;
-  //   AdvanceBooking: { type: Screens.AdvanceBookingParams };
-  //   CustomOrders: undefined;
-  //   AddCustomOrder: undefined;
-  //   CategoryList: undefined;
-  //   ProductDetail: { data: Product };
 
-  //   SpecialOfferModal: undefined;
+
+  //modal
+  CenterModal: Screens.CenterModalParams
+
 
   //   EditProfile: undefined;
   //   SavedAddress: undefined;
@@ -161,7 +159,18 @@ export const AppStack: FC = () => {
       <Stack.Screen name="ProfessionalProfile" component={ProfessionalProfileScreen} />
       <Stack.Screen name="Drawer" component={DrawerNavigator} />
       <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
-
+      <Stack.Group
+        screenOptions={{
+          presentation: 'transparentModal',
+          contentStyle: { backgroundColor: 'transparent' },
+          animation: 'fade_from_bottom',
+        }}
+      >
+        <Stack.Screen
+          name="CenterModal"
+          component={Screens.CenterModal}
+        />
+      </Stack.Group>
       {/* <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
       <Stack.Screen
         name="SavedAddress"
@@ -195,16 +204,8 @@ export const AppStack: FC = () => {
         component={Screens.StaticScreen<'AboutUs'>}
         initialParams={{ type: 'about', title: 'profile.aboutUsTitle' }}
       />
+ */}
 
-      <Stack.Group
-        screenOptions={{
-          presentation: 'transparentModal',
-          contentStyle: { backgroundColor: 'transparent' },
-          animation: 'fade_from_bottom',
-        }}
-      >
-        <Stack.Screen name="BottomModal" component={Screens.BottomModal} />
-      </Stack.Group> */}
 
     </Stack.Navigator>
   );

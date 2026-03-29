@@ -29,6 +29,48 @@ const en = {
     newUser: 'New to Bezzie? ',
     signUp: 'Sign up now',
   },
+  auth: {
+    heading: 'Get Started',
+    description: 'by creating a free account.',
+    namePlaceholder: 'Full Name',
+    emailPlaceholder: 'Enter your email',
+    mobilePlaceholder: 'Enter your Phone',
+    passwordPlaceholder: 'Enter your password',
+    confirmPasswordPlaceholder: 'Confirm password',
+    agree: 'I agree with Bezzie’s ',
+    termsAndConditions: 'Term & Conditions',
+    signUp: 'Sign Up',
+    alreadyMember: 'Already have an account? ',
+    signIn: 'Sign in now',
+  },
+  verification: {
+    heading: 'Almost there',
+    descriptionEmail:
+      'Please enter the 6-digit code sent to your email {{value}} for verification.',
+    notReceiveResendCode: 'Didn’t receive any code?',
+    resendCode: 'Resend code',
+    receivedCode: 'Request new code in {{value}}s',
+    submit: 'VERIFY',
+  },
+  forgotPassword: {
+    heading: 'Forgot Password?',
+    description:
+      'Enter Your  Email Address to receive an OTP code for Password Reset.',
+    emailPlaceholder: 'Enter your email',
+    send: 'Send Code',
+  },
+  resetPassword: {
+    heading: 'Set A New Password',
+    description:
+      'Your New Password Must Be Different From Previous Used Passwords to Ensure Your Account Remains Secure.',
+    newPassPlaceholder: 'Enter new password',
+    confirmNewPassPlaceholder: 'Confirm new password',
+    update: 'Update Password',
+    passwordUpdated: 'Password Updated!',
+    passwordUpdatedDesc:
+      'Your Password Has Been Changed Successfully. You Can Log In With Your New Password.',
+    backLogin: 'Back to Login',
+  },
   validation: {
     required: 'Required',
     minEmail: 'Must be at least 3 characters long',
@@ -91,7 +133,7 @@ const en = {
   },
   Services: {
     List: 'Service List',
-    Searchservices : 'Search services',
+    Searchservices: 'Search services',
     addService: 'Add Service',
     reviews: 'Reviews',
   },
@@ -181,7 +223,12 @@ const en = {
     sarahMiller: 'Sarah Miller',
     reviewText: 'Passionate about Home Appliances and house fitting issues...'
   },
- 
+  profile: {
+    logoutConfirmation: 'Logout Confirmation',
+    logoutConfirmationDesc: 'Are You Sure want to log out?',
+    yesLogout: 'Yes, Log Out',
+    cancel: 'Cancel'
+  }
 };
 
 export default en;

@@ -20,6 +20,8 @@ import { colors, images, spacing } from '../theme';
 import { AuthStackScreenProps } from '../navigators';
 import { Button } from '../components/Button';
 import { TxKeyPath } from '../i18n';
+import { authActions } from '../slices/auth.slice';
+import { useAppDispatch } from '../store/hooks';
 // import { connect, ConnectedProps } from 'react-redux';
 // import { authActions, userLogin } from '../slices/auth.slice';
 // import { getMessaging, getToken } from '@react-native-firebase/messaging';
@@ -52,12 +54,14 @@ const passwordLeftAccessory = (props: TextFieldAccessoryProps) => {
 
 const Login: FC<NavigationProps> = (
   {
-    //   navigation,
+    navigation,
     //   loading,
     //   clearLoginLoading,
     //   user_Login,
   },
 ) => {
+  const dispatch = useAppDispatch()
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const passwordField = useRef<TextInput>(null);
@@ -113,6 +117,7 @@ const Login: FC<NavigationProps> = (
       .then(params => {
         Keyboard.dismiss();
         console.log('params', params);
+        dispatch(authActions.setAuthroized(true));
         // user_Login(params);
         setError({});
       })
@@ -181,20 +186,20 @@ const Login: FC<NavigationProps> = (
             size="sm"
             tx="login.forgotPassword"
             style={$forgotText}
-            // onPress={() => navigation.navigate('ForgotPassword')}
+            onPress={() => navigation.navigate('ForgotPassword')}
           />
           <Button tx="login.signIn" onPress={validate} style={$buttonStyle} />
 
           <Text style={$signUp}>
-            <Text tx="login.newUser" size="sm" weight='medium' style={{color: colors.palette.grayLight}} />
+            <Text tx="login.newUser" size="sm" weight='medium' style={{ color: colors.palette.grayLight }} />
             <Text
               size="sm"
               weight='medium'
               tx="login.signUp"
-              style={{color: colors.primary}}
+              style={{ color: colors.primary }}
               onPress={() => {
                 Keyboard.dismiss();
-                // navigation.navigate('Signup');
+                navigation.navigate('Signup');
               }}
             />
           </Text>

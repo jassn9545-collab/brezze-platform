@@ -1,5 +1,5 @@
 export * from './AuthStack';
-// export * from './AppStack';
+export * from './AppStack';
 export * from './navigationUtilities';
 export * from '../screens/JobPostScreen';
 export * from '../screens/CategoriesScreen';

@@ -62,63 +62,65 @@ const JobPostList: FC<Props> = (props) => {
       {/* HEADER */}
       <BackButtom heading={translate('jobPostList.heading')} />
 
-      {/* LIST */}
-      {jobs.map((item, index) => {
-        const statusStyle = getStatusStyle(item.type);
+      <View style={styles.main}>
+        {/* LIST */}
+        {jobs.map((item, index) => {
+          const statusStyle = getStatusStyle(item.type);
 
-        return (
-          <View key={index} style={styles.card}>
+          return (
+            <View key={index} style={styles.card}>
 
-            {/* TOP ROW */}
-            <View style={styles.topRow}>
-              <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor }]}>
-                <Text text={item.status} size="xxs" style={{ color: statusStyle.color }} />
+              {/* TOP ROW */}
+              <View style={styles.topRow}>
+                <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor }]}>
+                  <Text text={item.status} size="xxs" style={{ color: statusStyle.color }} />
+                </View>
+                <Text text={item.time} size="xxs" style={styles.timeText} />
               </View>
-              <Text text={item.time} size="xxs" style={styles.timeText} />
-            </View>
 
-            {/* TITLE */}
-            <Text text={item.title} weight="semiBold" style={styles.title} />
+              {/* TITLE */}
+              <Text text={item.title} weight="semiBold" style={styles.title} />
 
-            {/* LOCATION */}
-            <Text text={item.location} size="xs" style={styles.location} />
+              {/* LOCATION */}
+              <Text text={item.location} size="xs" style={styles.location} />
 
-            {/* BOTTOM ROW */}
-            <View style={styles.bottomRow}>
+              {/* BOTTOM ROW */}
+              <View style={styles.bottomRow}>
 
-              {/* Avatars */}
-              <View style={styles.avatarRow}>
-                <Image source={images.profile1} style={styles.avatar} />
-                <Image source={images.profile2} style={styles.avatar} />
-                <View style={styles.plusAvatar}>
-                  <Text text="+12" size="xxs" style={{ color: colors.palette.white }} />
+                {/* Avatars */}
+                <View style={styles.avatarRow}>
+                  <Image source={images.profile1} style={styles.avatar} />
+                  <Image source={images.profile2} style={styles.avatar} />
+                  <View style={styles.plusAvatar}>
+                    <Text text="+12" size="xxs" style={{ color: colors.palette.white }} />
+                  </View>
+                </View>
+
+                {/* Proposals */}
+                <View style={styles.alignRight}>
+                  <Text tx="jobPostList.proposals" size="xxs" style={styles.proposalLabel} />
+                  <Text
+                    text={item.proposals}
+                    weight="semiBold"
+                    style={[
+                      styles.proposalText,
+                      item.type === 'draft' && styles.proposalDraftText,
+                    ]}
+                  />
                 </View>
               </View>
 
-              {/* Proposals */}
-              <View style={styles.alignRight}>
-                <Text tx="jobPostList.proposals" size="xxs" style={styles.proposalLabel} />
-                <Text
-                  text={item.proposals}
-                  weight="semiBold"
-                  style={[
-                    styles.proposalText,
-                    item.type === 'draft' && styles.proposalDraftText,
-                  ]}
-                />
-              </View>
-            </View>
-
-            {/* Draft Button */}
-            {/* {item.type === 'draft' && ( */}
+              {/* Draft Button */}
+              {/* {item.type === 'draft' && ( */}
               <TouchableOpacity style={styles.draftBtn}>
-                <Text tx="jobPostList.completeButton" style={styles.draftBtnText} onPress={()=> props.navigation.navigate('jobPostDetails')} />
+                <Text tx="jobPostList.completeButton" style={styles.draftBtnText} onPress={() => props.navigation.navigate('jobPostDetails')} />
               </TouchableOpacity>
-            {/* )} */}
+              {/* )} */}
 
-          </View>
-        );
-      })}
+            </View>
+          );
+        })}
+      </View>
     </Screen>
   );
 };
@@ -127,8 +129,11 @@ const styles = StyleSheet.create({
 
   container: {
     flexGrow: 1,
-    padding: spacing.md,
+
     backgroundColor: colors.palette.jobPostBackground,
+  },
+  main: {
+    marginHorizontal: spacing.md,
   },
 
   card: {

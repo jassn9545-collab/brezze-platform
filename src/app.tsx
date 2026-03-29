@@ -1,19 +1,18 @@
 import './i18n';
 import './utils/Location';
 
-import {Text, TextInput} from 'react-native';
+import { Text, TextInput } from 'react-native';
 import React from 'react';
 import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from 'react-native-safe-area-context';
-import Toast, {ToastProvider} from 'react-native-toast-notifications';
+import Toast, { ToastProvider } from 'react-native-toast-notifications';
 import AppNavigator from './navigators/AppNavigator';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {toastProps} from './utils/toast';
-// import { Provider } from 'react-redux';
-// import { store } from './store';
-// import {Provider} from 'react-redux';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { toastProps } from './utils/toast';
+import { Provider } from 'react-redux';
+import { store } from './store';
 // import {UpdateView} from './screens/UpdateView';
 // import {store} from './store';
 // import {AnimatedBootSplash, AnimatedBootSplashRef} from './components';
@@ -25,11 +24,11 @@ import {toastProps} from './utils/toast';
 
 // Disable font scaling
 interface TextWithDefaultProps extends Text {
-  defaultProps?: {allowFontScaling?: boolean};
+  defaultProps?: { allowFontScaling?: boolean };
 }
 
 interface TextInputWithDefaultProps extends TextInput {
-  defaultProps?: {allowFontScaling?: boolean};
+  defaultProps?: { allowFontScaling?: boolean };
 }
 
 (Text as unknown as TextWithDefaultProps).defaultProps =
@@ -76,12 +75,12 @@ function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView>
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-        {/* <Provider store={store}> */}
+        <Provider store={store}>
           <ToastProvider {...toastProps}>
             <AppNavigator
               // onReady={() => animatedBootSplash.current?.hide()}
               onReady={hideSplash}
-              // onStateChange={onStateChange}
+            // onStateChange={onStateChange}
             />
             {/* <AnimatedBootSplash
               ref={animatedBootSplash}
@@ -90,7 +89,7 @@ function App(): React.JSX.Element {
             <Toast {...toastProps} />
             {/* <UpdateView /> */}
           </ToastProvider>
-        {/* </Provider> */}
+        </Provider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

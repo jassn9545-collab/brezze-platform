@@ -50,154 +50,156 @@ const JobPostStep2: FC<Props> = (props) => {
       safeAreaEdges={['top']}
     >
       {/* HEADER */}
-      <BackButtom heading={translate('jobPost.heading')} />
+      <BackButtom headingTx="jobPost.heading" />
 
-      {/* STEP */}
-      <View style={styles.stepContainer}>
-        <Text tx="jobPost.step2Label" weight="semiBold" />
-        <Text tx="jobPost.step2Details" size="xs" style={styles.stepRight} />
-      </View>
-
-      <View style={styles.progressBar}>
-        <View style={styles.progressFill} />
-      </View>
-
-      {/* LOCATION */}
-      <Text tx="jobPost.location" weight="semiBold" style={styles.sectionTitle} />
-
-      <TouchableOpacity 
-        style={styles.mapContainer}
-        onPress={() => setLocationPickerModal(true)}
-      >
-        <Image source={images.map} style={styles.mapImage} />
-        <View style={styles.mapOverlay}>
-          <Text tx="jobPost.selectLocation" style={styles.mapOverlayText} />
+      <View style={styles.main}>
+        {/* STEP */}
+        <View style={styles.stepContainer}>
+          <Text tx="jobPost.step2Label" weight="semiBold" />
+          <Text tx="jobPost.step2Details" size="xs" style={styles.stepRight} />
         </View>
-      </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.currentLocation}
-        onPress={() => setLocationPickerModal(true)}
-      >
-        <Text text={'📍 ' + translate('jobPost.chooseFromMap')} style={styles.linkText} />
-      </TouchableOpacity>
+        <View style={styles.progressBar}>
+          <View style={styles.progressFill} />
+        </View>
 
-      <TextField
-        placeholderTx="jobPost.enterLocationPlaceholder"
-        value={location}
-        onChangeText={setLocation}
-        containerStyle={styles.input}
-      />
+        {/* LOCATION */}
+        <Text tx="jobPost.location" weight="semiBold" style={styles.sectionTitle} />
 
-      {/* Location Picker Modal */}
-      {locationPickerModal && (
-        <View style={styles.modal}>
-          <TouchableOpacity 
-            style={styles.modalOverlay} 
-            onPress={() => setLocationPickerModal(false)}
-          />
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text tx="jobPost.selectLocationTitle" weight="semiBold" size="lg" />
-              <TouchableOpacity onPress={() => setLocationPickerModal(false)}>
-                <Text text="✕" size="lg" />
-              </TouchableOpacity>
-            </View>
-
-            {locations.map((loc, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.locationItem}
-                onPress={() => handleLocationSelect(loc.name)}
-              >
-                <Text text="📍" style={styles.locationIcon} />
-                <View style={styles.locationTextContainer}>
-                  <Text text={loc.name} size="sm" />
-                </View>
-              </TouchableOpacity>
-            ))}
+        <TouchableOpacity
+          style={styles.mapContainer}
+          onPress={() => setLocationPickerModal(true)}
+        >
+          <Image source={images.map} style={styles.mapImage} />
+          <View style={styles.mapOverlay}>
+            <Text tx="jobPost.selectLocation" style={styles.mapOverlayText} />
           </View>
-        </View>
-      )}
+        </TouchableOpacity>
 
-      {/* BUDGET + DURATION */}
-      <View style={styles.row}>
-        <View style={styles.half}>
-          <Text text="Budget Range (AUD)" weight="medium" />
-          <TextField value={budget} onChangeText={setBudget} placeholder="$ 500" containerStyle={styles.input} />
-        </View>
+        <TouchableOpacity
+          style={styles.currentLocation}
+          onPress={() => setLocationPickerModal(true)}
+        >
+          <Text text={'📍 ' + translate('jobPost.chooseFromMap')} style={styles.linkText} />
+        </TouchableOpacity>
 
-        {/* <View style={styles.half}>
+        <TextField
+          placeholderTx="jobPost.enterLocationPlaceholder"
+          value={location}
+          onChangeText={setLocation}
+          containerStyle={styles.input}
+        />
+
+        {/* Location Picker Modal */}
+        {locationPickerModal && (
+          <View style={styles.modal}>
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              onPress={() => setLocationPickerModal(false)}
+            />
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text tx="jobPost.selectLocationTitle" weight="semiBold" size="lg" />
+                <TouchableOpacity onPress={() => setLocationPickerModal(false)}>
+                  <Text text="✕" size="lg" />
+                </TouchableOpacity>
+              </View>
+
+              {locations.map((loc, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.locationItem}
+                  onPress={() => handleLocationSelect(loc.name)}
+                >
+                  <Text text="📍" style={styles.locationIcon} />
+                  <View style={styles.locationTextContainer}>
+                    <Text text={loc.name} size="sm" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* BUDGET + DURATION */}
+        <View style={styles.row}>
+          <View style={styles.half}>
+            <Text text="Budget Range (AUD)" weight="medium" />
+            <TextField value={budget} onChangeText={setBudget} placeholder="$ 500" containerStyle={styles.input} />
+          </View>
+
+          {/* <View style={styles.half}>
           <Text text="Duration" weight="medium" />
           <TextField placeholder="1-3 Days" containerStyle={styles.input} />
         </View> */}
-      </View>
-
-      {/* UPLOAD */}
-      <Text tx="jobPost.uploadPhotosLabel" weight="semiBold" style={styles.sectionTitle} />
-
-      <View style={styles.uploadRow}>
-        {selectedImages.length < 2 && (
-          <TouchableOpacity 
-            style={styles.uploadBox}
-            onPress={() => setImagePickerModal(true)}
-          >
-            <Text text="📷" size="lg" />
-            <Text tx="jobPost.uploadButtonText" size="xs" />
-          </TouchableOpacity>
-        )}
-
-        {selectedImages.map((image, index) => (
-          <TouchableOpacity 
-            key={index} 
-            style={styles.imageBox}
-            onPress={() => removeImage(index)}
-          >
-            {image.assets?.[0]?.uri && (
-              <Image 
-                source={{ uri: image.assets?.[0]?.uri }} 
-                style={styles.selectedImage}
-              />
-            )}
-            <View style={styles.removeButton}>
-              <Text text="✕" size="xs" style={styles.removeButtonText} />
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text
-        tx="jobPost.photosHelpText"
-        size="xxs"
-        style={styles.infoText}
-      />
-
-      <CustomImagePicker
-        imagePickerModal={imagePickerModal}
-        onDismiss={() => setImagePickerModal(false)}
-        callback={handleImagePicked}
-      />
-
-      {/* FOOTER */}
-      <View style={styles.footer}>
-        <View style={styles.footerRow}>
-          <Text tx="jobPost.step2Label" />
-          <Text tx="jobPost.almostThere" weight="semiBold" />
         </View>
 
+        {/* UPLOAD */}
+        <Text tx="jobPost.uploadPhotosLabel" weight="semiBold" style={styles.sectionTitle} />
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => props.navigation.navigate("JobPostList")}
-        >
-          <Text
-            tx="jobPost.postJobButton"
-            weight="semiBold"
-            style={styles.buttonText}
-          />
-        </TouchableOpacity>
+        <View style={styles.uploadRow}>
+          {selectedImages.length < 2 && (
+            <TouchableOpacity
+              style={styles.uploadBox}
+              onPress={() => setImagePickerModal(true)}
+            >
+              <Text text="📷" size="lg" />
+              <Text tx="jobPost.uploadButtonText" size="xs" />
+            </TouchableOpacity>
+          )}
+
+          {selectedImages.map((image, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.imageBox}
+              onPress={() => removeImage(index)}
+            >
+              {image.assets?.[0]?.uri && (
+                <Image
+                  source={{ uri: image.assets?.[0]?.uri }}
+                  style={styles.selectedImage}
+                />
+              )}
+              <View style={styles.removeButton}>
+                <Text text="✕" size="xs" style={styles.removeButtonText} />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text
+          tx="jobPost.photosHelpText"
+          size="xxs"
+          style={styles.infoText}
+        />
+
+        <CustomImagePicker
+          imagePickerModal={imagePickerModal}
+          onDismiss={() => setImagePickerModal(false)}
+          callback={handleImagePicked}
+        />
+
+        {/* FOOTER */}
+        <View style={styles.footer}>
+          <View style={styles.footerRow}>
+            <Text tx="jobPost.step2Label" />
+            <Text tx="jobPost.almostThere" weight="semiBold" />
+          </View>
+
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => props.navigation.navigate("JobPostList")}
+          >
+            <Text
+              tx="jobPost.postJobButton"
+              weight="semiBold"
+              style={styles.buttonText}
+            />
+          </TouchableOpacity>
+        </View>
+
       </View>
-
     </Screen>
   );
 };
@@ -206,10 +208,11 @@ const styles = StyleSheet.create({
 
   container: {
     flexGrow: 1,
-    padding: spacing.md,
     backgroundColor: colors.palette.jobPostBackground,
   },
-
+  main: {
+    marginHorizontal: spacing.md,
+  },
   stepContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
