@@ -118,7 +118,8 @@ const en = {
     idNumberPlaceholder: '0000 000 0000',
     expiryDate: 'Expiry date',
     expiryPlaceholder: '01-OCT-1960',
-    uploadIDImage: 'Upload a valid ID Card',
+    uploadFrontIDImage: 'Upload front image of a valid ID card',
+    uploadBackIDImage: 'Upload back image of a valid ID card',
     clickUpload: 'Click to upload',
     imageSize: 'SVG, PNG, JPG or GIF (max. 800x400px)',
     documentUnderVerificationTitle:
@@ -311,6 +312,13 @@ const en = {
     message: 'Message....',
     submit: 'Submit',
     faq: 'Frequently Asked Questions',
+  },
+  ride: {
+    currentAddress: 'Current Address',
+    addresses: 'Addresses',
+    noAddresses: 'No suggested address(es) found',
+    chooseAddress: 'Confirm Location',
+    enterAddress: 'Enter an address',
   }
 };
 

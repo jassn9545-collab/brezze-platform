@@ -21,11 +21,11 @@ api.interceptors.request.use(request => {
 api.interceptors.response.use(
   response => {
     if (response.data != null && response.data.status === 'success') {
-      // const {
-      //   data,
-      //   config: {url},
-      // } = response;
-      // console.log(url, 'response =>', JSON.stringify(data));
+      const {
+        data,
+        config: {url},
+      } = response;
+      console.log(url, 'response =>', JSON.stringify(data));
       return response;
     } else {
       let message = response?.data?.message ?? 'Unknown error';

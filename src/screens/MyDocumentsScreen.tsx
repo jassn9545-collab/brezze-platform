@@ -2,20 +2,24 @@ import {
   AuthHeader,
   Button,
   CustomImagePicker,
+  Loader,
   Screen,
   Text,
 } from '../components';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 
 import { AuthStackScreenProps } from '../navigators';
 import { TxKeyPath } from '../i18n';
 import { ImagePickerResponse } from 'react-native-image-picker';
+import { RootState } from '../store';
+import { connect, ConnectedProps } from 'react-redux';
+import { uploadProfilePhoto } from '../slices/auth.slice';
 
 type NavigationProps = AuthStackScreenProps<'MyDocuments'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 interface DocumentTypes {
   title: TxKeyPath;
@@ -40,32 +44,18 @@ const documentList: DocumentTypes[] = [
   },
 ];
 
-const MyDocuments: FC<NavigationProps> = props => {
+const MyDocuments: FC<Props> = props => {
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
-  const [imageURI, setImageURI] = useState('');
-  // const [imageFormData, setImageFormData] = useState<{
-  //   uri: string;
-  //   name: string;
-  //   type: string;
-  // } | null>(null);
-
-  useEffect(() => {
-    if (imageURI) {
-      props.navigation.navigate('CommonSucess', {
-        from: 'faceVerification',
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageURI]);
 
   const uploadImage = (image: ImagePickerResponse) => {
     if ((image.assets?.length ?? 0) > 0) {
-      setImageURI(image.assets?.[0].uri!);
-      // setImageFormData({
-      //   uri: image.assets?.[0].uri!,
-      //   name: image.assets?.[0].fileName!,
-      //   type: image.assets?.[0].type!,
-      // });
+      var body = new FormData();
+      body.append("profile_image", {
+        uri: image.assets?.[0].uri,
+        name: image.assets?.[0].fileName,
+        type: image.assets?.[0].type,
+      });
+      props.uploadProfilePhoto(body);
     }
   };
 
@@ -136,6 +126,7 @@ const MyDocuments: FC<NavigationProps> = props => {
         imagePickerModal={imagePickerVisible}
         onDismiss={() => setImagePickerVisible(false)}
       />
+      <Loader loading={props.photoLoading === 'loading'} />
     </>
   );
 };
@@ -177,15 +168,14 @@ const styles = StyleSheet.create({
   },
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.loading,
-// });
+const mapStateToProps = (state: RootState) => ({
+  photoLoading: state.auth.uploadProfilePhotoLoading,
+});
 
-// const mapDispatch = {
-//   user_Login: (params: Signin) => userLogin(params),
-//   clearLoginLoading: () => authActions.clearLoginLoading(),
-// };
+const mapDispatch = {
+  uploadProfilePhoto: (params: FormData) => uploadProfilePhoto(params),
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps, mapDispatch);
 
-export const MyDocumentsScreen = MyDocuments;
+export const MyDocumentsScreen = connector(MyDocuments);

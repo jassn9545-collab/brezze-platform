@@ -1,4 +1,11 @@
-import { AuthHeader, Button, OTPTextView, Screen, Text } from '../components';
+import {
+  AuthHeader,
+  Button,
+  Loader,
+  OTPTextView,
+  Screen,
+  Text,
+} from '../components';
 import { Keyboard, TextStyle, View, ViewStyle } from 'react-native';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { colors, spacing } from '../theme';
@@ -7,35 +14,41 @@ import { AuthStackScreenProps } from '../navigators';
 import { translate } from '../i18n';
 import { useFocusEffect } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
-
-// import { RootState } from '../store';
-// import {
-//   authActions,
-//   resendOTP,
-//   resendUserVerifyOTP,
-//   userVerification,
-//   UserVerificationParam,
-//   verifyOTP,
-//   VerifyOTPParam,
-// } from '../slices/auth.slice';
-// import { connect, ConnectedProps } from 'react-redux';
+import { RootState } from '../store';
+import {
+  authActions,
+  resendOTP,
+  resendUserVerifyOTP,
+  userVerification,
+  UserVerificationParam,
+  verifyOTP,
+  VerifyOTPParam,
+} from '../slices/auth.slice';
+import { connect, ConnectedProps } from 'react-redux';
+import { Registration } from '../apis/schema';
 
 type NavigationProps = AuthStackScreenProps<'Verification'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-type Props = NavigationProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 let timerOn = false;
 let timeout: ReturnType<typeof setTimeout>;
 
-export type VerificationParams = {
+export type ForgotPasswordParams = {
   email: string;
   serviceSid: string;
   user_id: number;
-  from: 'forgotPassword' | 'signup';
+  from: 'forgotPassword';
 };
 
+export type SignupParams = {
+  serviceSid: string;
+  user_id: number;
+  from: 'signup';
+} & Registration;
+
 const Verification: FC<Props> = props => {
-  const params = props.route.params as VerificationParams;
+  const params = props.route.params as ForgotPasswordParams | SignupParams;
 
   const input = useRef<OTPTextView>(null);
   const [otpInput, setOtpInput] = useState<string>('');
@@ -83,24 +96,24 @@ const Verification: FC<Props> = props => {
     }
   };
 
-  //   useEffect(() => {
-  //     if (props.verifyLoading === 'loaded') {
-  //       props.clearUserVerification();
-  //     }
-  //     // eslint-disable-next-line react-hooks/exhaustive-deps
-  //   }, [props.verifyLoading]);
+  useEffect(() => {
+    if (props.verifyLoading === 'loaded') {
+      props.clearUserVerification();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.verifyLoading]);
 
-  //   useEffect(() => {
-  //     if (props.loading === 'loaded') {
-  //       props.resetVerifyOtp();
-  //       if (props.route.params.from === 'forgotPassword') {
-  //         props.navigation.replace('ResetPassword', {
-  //           user_id: params.user_id,
-  //         });
-  //       }
-  //     }
-  //     // eslint-disable-next-line react-hooks/exhaustive-deps
-  //   }, [props.loading]);
+  useEffect(() => {
+    if (props.loading === 'loaded') {
+      props.resetVerifyOtp();
+      if (props.route.params.from === 'forgotPassword') {
+        props.navigation.replace('ResetPassword', {
+          user_id: params.user_id,
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.loading]);
 
   return (
     <Screen
@@ -109,13 +122,6 @@ const Verification: FC<Props> = props => {
       contentContainerStyle={$containerStyle}
     >
       <View style={$main}>
-        {/* <Text
-            text={ '+' + params.countryCode + ' ' + params.mobile}
-            size="sm"
-            weight="medium"
-            style={$primaryColor}
-          /> */}
-
         <AuthHeader
           tx="verification.heading"
           desc="verification.descriptionEmail"
@@ -138,26 +144,20 @@ const Verification: FC<Props> = props => {
             if (otpInput.length === 6) {
               Keyboard.dismiss();
               if (props.route.params.from === 'forgotPassword') {
-                props.navigation.navigate('ResetPassword', {
-                  user_id: 1,
+                props.verifyOTP({
+                  user_id: params.user_id,
+                  otp: otpInput,
+                  serviceSid: params.serviceSid,
                 });
-                return;
+              } else if (props.route.params.from === 'signup') {
+                props.userVerification({
+                  serviceSid: params.serviceSid,
+                  otp: otpInput,
+                  user_id: params.user_id,
+                  user_type: 'freelancer',
+                  ...props.route.params,
+                });
               }
-              props.navigation.navigate('MyDocuments')
-
-              //   if (props.route.params.from === 'forgotPassword') {
-              //     props.verifyOTP({
-              //       user_id: params.user_id,
-              //       otp: otpInput,
-              //       serviceSid: params.serviceSid,
-              //     })
-              //   } else {
-              //     props.userVerification({
-              //       serviceSid: params.serviceSid,
-              //       otp: otpInput,
-              //       user_id: params.user_id,
-              //     });
-              //   }
             } else {
               toast.show(translate('validation.otpRequired'), {
                 type: 'warning',
@@ -195,27 +195,21 @@ const Verification: FC<Props> = props => {
               onPress={() => {
                 timerOn = true;
                 timer(countDown);
-                //   if (props.route.params.from === 'signup') {
-                //     props.resendUserVerifyOTP({
-                //       user_id: params.user_id,
-                //     });
-                //   } else {
-                //     props.resendUserVerifyOTP({
-                //       user_id: params.user_id,
-                //     });
-                //   }
+                props.resendUserVerifyOTP({
+                  email: params.email,
+                });
               }}
             />
           )}
         </View>
       </View>
-      {/* <Loader
+      <Loader
         loading={
           props.verifyLoading === 'loading' ||
           props.resendVerifyOTPLoading === 'loading' ||
           props.loading === 'loading'
         }
-      /> */}
+      />
     </Screen>
   );
 };
@@ -262,23 +256,23 @@ const $resendButton: TextStyle = {
   color: colors.palette.black,
 };
 
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.verifyOTPLoading,
-//   // data: state.auth.otpResponse,
-//   resendVerifyOTPLoading: state.auth.resendVerifyOTPLoading,
-//   verifyLoading: state.auth.userVerificationLoading,
-// });
+const mapStateToProps = (state: RootState) => ({
+  loading: state.auth.verifyOTPLoading,
+  // data: state.auth.otpResponse,
+  resendVerifyOTPLoading: state.auth.resendVerifyOTPLoading,
+  verifyLoading: state.auth.userVerificationLoading,
+});
 
-// const mapDispatch = {
-//   resendOTP: (params: UserVerificationParam) => resendOTP(params),
-//   verifyOTP: (params: VerifyOTPParam) => verifyOTP(params),
-//   resetVerifyOtp: () => authActions.resetVerifyOTPLoading(),
-//   userVerification: (params: UserVerificationParam) => userVerification(params),
-//   resendUserVerifyOTP: (params: UserVerificationParam) =>
-//     resendUserVerifyOTP(params),
-//   clearUserVerification: () => authActions.resetUserVerificationLoading(),
-// };
+const mapDispatch = {
+  resendOTP: (params: UserVerificationParam) => resendOTP(params),
+  verifyOTP: (params: VerifyOTPParam) => verifyOTP(params),
+  resetVerifyOtp: () => authActions.resetVerifyOTPLoading(),
+  userVerification: (params: UserVerificationParam) => userVerification(params),
+  resendUserVerifyOTP: (params: UserVerificationParam) =>
+    resendUserVerifyOTP(params),
+  clearUserVerification: () => authActions.resetUserVerificationLoading(),
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps, mapDispatch);
 
-export const VerificationScreen = Verification;
+export const VerificationScreen = connector(Verification);

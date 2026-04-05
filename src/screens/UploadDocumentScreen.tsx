@@ -5,6 +5,7 @@ import {
   DataType,
   DatePickerModal,
   DropDownList,
+  Loader,
   Screen,
   sizeForSheet,
   Text,
@@ -12,6 +13,7 @@ import {
 } from '../components';
 import {
   Image,
+  ImageSourcePropType,
   Keyboard,
   StyleSheet,
   TouchableOpacity,
@@ -29,15 +31,18 @@ import { commonStyle } from '../theme/style';
 import { ImagePickerResponse } from 'react-native-image-picker';
 import { ValidationError } from 'yup';
 import { buildError, cardDetailSchema } from '../apis/schema';
+import { connect, ConnectedProps } from 'react-redux';
+import { RootState } from '../store';
+import { uploadUserVerificationID } from '../slices/auth.slice';
 
 type NavigationProps = AuthStackScreenProps<'UploadDocument'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 type FieldError = {
-  idType?: TxKeyPath | undefined;
-  idNumber?: TxKeyPath | undefined;
-  expiryDate?: TxKeyPath | undefined;
+  proof_type?: TxKeyPath | undefined;
+  id_number?: TxKeyPath | undefined;
+  expiry_date?: TxKeyPath | undefined;
 };
 
 export const idTypeList: DataType[] = [
@@ -49,8 +54,11 @@ export const idTypeList: DataType[] = [
   { name: 'idTypes.aadhaarCard', id: 'aadhaar_card' },
   { name: 'idTypes.residencePermit', id: 'residence_permit' },
 ];
-
-const UploadDocument: FC<NavigationProps> = props => {
+type ImagePicker = {
+  visible: boolean;
+  type: 'front' | 'back' | '';
+};
+const UploadDocument: FC<Props> = props => {
   const insets = useSafeAreaInsets();
 
   const IDTypeSheet = useRef<TrueSheet>(null);
@@ -60,22 +68,37 @@ const UploadDocument: FC<NavigationProps> = props => {
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // const [imageURI, setImageURI] = useState('');
-  const [imagePickerVisible, setImagePickerVisible] = useState(false);
-  // const [imageFormData, setImageFormData] = useState<{
-  //   uri: string;
-  //   name: string;
-  //   type: string;
-  // } | null>(null);
+  const [imagePickerVisible, setImagePickerVisible] = useState<ImagePicker>({
+    visible: false,
+    type: '',
+  });
+  const [frontImageFormData, setFrontImageFormData] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
+
+  const [backImageFormData, setBackImageFormData] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
 
   const uploadImage = (image: ImagePickerResponse) => {
     if ((image.assets?.length ?? 0) > 0) {
-      // setImageURI(image.assets?.[0].uri!);
-      // setImageFormData({
-      //   uri: image.assets?.[0].uri!,
-      //   name: image.assets?.[0].fileName!,
-      //   type: image.assets?.[0].type!,
-      // });
+      if (imagePickerVisible.type === 'front') {
+        setFrontImageFormData({
+          uri: image.assets?.[0].uri!,
+          name: image.assets?.[0].fileName!,
+          type: image.assets?.[0].type!,
+        });
+      } else {
+        setBackImageFormData({
+          uri: image.assets?.[0].uri!,
+          name: image.assets?.[0].fileName!,
+          type: image.assets?.[0].type!,
+        });
+      }
     }
   };
 
@@ -84,9 +107,9 @@ const UploadDocument: FC<NavigationProps> = props => {
     cardDetailSchema
       .validate(
         {
-          idType: idType?.id,
-          idNumber: idNumber,
-          expiryDate,
+          proof_type: idType?.id,
+          id_number: idNumber,
+          expiry_date: expiryDate,
         },
         { abortEarly: false, context: { isSignup: true } },
       )
@@ -109,7 +132,7 @@ const UploadDocument: FC<NavigationProps> = props => {
         safeAreaEdges={['top']}
         contentContainerStyle={styles.containerStyle}
       >
-        <BackButtom headingTx='document.confirmIDCard' />
+        <BackButtom headingTx="document.confirmIDCard" />
         <View style={styles.mainView}>
           <TouchableOpacity onPress={() => IDTypeSheet.current?.present()}>
             <TextField
@@ -119,8 +142,8 @@ const UploadDocument: FC<NavigationProps> = props => {
               labelTx="document.idType"
               placeholderTx="document.idTypePlaceholder"
               containerStyle={styles.inputContainer}
-              helperTx={error?.idType}
-              status={error?.idType ? 'error' : undefined}
+              helperTx={error?.proof_type}
+              status={error?.proof_type ? 'error' : undefined}
             />
           </TouchableOpacity>
 
@@ -131,8 +154,8 @@ const UploadDocument: FC<NavigationProps> = props => {
             placeholderTx="document.idNumberPlaceholder"
             labelTx="document.idNumber"
             keyboardType="number-pad"
-            helperTx={error?.idNumber}
-            status={error?.idNumber ? 'error' : undefined}
+            helperTx={error?.id_number}
+            status={error?.id_number ? 'error' : undefined}
           />
 
           <TouchableOpacity
@@ -146,37 +169,74 @@ const UploadDocument: FC<NavigationProps> = props => {
               labelTx="document.expiryDate"
               placeholderTx="document.expiryPlaceholder"
               containerStyle={styles.inputContainer}
-              helperTx={error?.expiryDate}
-              status={error?.expiryDate ? 'error' : undefined}
+              helperTx={error?.expiry_date}
+              status={error?.expiry_date ? 'error' : undefined}
             />
           </TouchableOpacity>
 
           <View style={styles.imageView}>
-            <Text weight="light" size="sm" tx="document.uploadIDImage" />
+            <Text weight="light" size="sm" tx="document.uploadFrontIDImage" />
 
             <TouchableOpacity
-              onPress={() => setImagePickerVisible(true)}
+              onPress={() =>
+                setImagePickerVisible({ visible: true, type: 'front' })
+              }
               style={[styles.imageContainer, commonStyle.customShadow]}
             >
-              {/* {imageURI ? (
-                <Image source={imageURI} />
+              {frontImageFormData?.uri ? (
+                <Image
+                  source={frontImageFormData?.uri as ImageSourcePropType}
+                />
               ) : (
-                <> */}
-              <Image source={images.uploadingIcon} />
-              <Text
-                size="sm"
-                weight="semiBold"
-                tx="document.clickUpload"
-                style={styles.primaryColor}
-              />
-              <Text
-                size="xs"
-                weight="light"
-                tx="document.imageSize"
-                style={styles.textCenter}
-              />
-              {/* </>
-              )} */}
+                <>
+                  <Image source={images.uploadingIcon} />
+                  <Text
+                    size="sm"
+                    weight="semiBold"
+                    tx="document.clickUpload"
+                    style={styles.primaryColor}
+                  />
+                  <Text
+                    size="xs"
+                    weight="light"
+                    tx="document.imageSize"
+                    style={styles.textCenter}
+                  />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.imageView}>
+            <Text weight="light" size="sm" tx="document.uploadBackIDImage" />
+
+            <TouchableOpacity
+              onPress={() =>
+                setImagePickerVisible({ visible: true, type: 'back' })
+              }
+              style={[styles.imageContainer, commonStyle.customShadow]}
+            >
+              {backImageFormData?.uri ? (
+                <Image
+                  source={backImageFormData?.uri as ImageSourcePropType}
+                />
+              ) : (
+                <>
+                  <Image source={images.uploadingIcon} />
+                  <Text
+                    size="sm"
+                    weight="semiBold"
+                    tx="document.clickUpload"
+                    style={styles.primaryColor}
+                  />
+                  <Text
+                    size="xs"
+                    weight="light"
+                    tx="document.imageSize"
+                    style={styles.textCenter}
+                  />
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -207,9 +267,10 @@ const UploadDocument: FC<NavigationProps> = props => {
       />
       <CustomImagePicker
         callback={uploadImage}
-        imagePickerModal={imagePickerVisible}
-        onDismiss={() => setImagePickerVisible(false)}
+        imagePickerModal={imagePickerVisible.visible}
+        onDismiss={() => setImagePickerVisible({ visible: false, type: '' })}
       />
+      <Loader loading={props.loading === 'loading'} />
     </>
   );
 };
@@ -249,15 +310,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.loading,
-// });
+const mapStateToProps = (state: RootState) => ({
+  loading: state.auth.uploadUserVerificationIDLoading,
+});
 
-// const mapDispatch = {
-//   user_Login: (params: Signin) => userLogin(params),
-//   clearLoginLoading: () => authActions.clearLoginLoading(),
-// };
+const mapDispatch = {
+  uploadUserVerificationID
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps, mapDispatch);
 
-export const UploadDocumentScreen = UploadDocument;
+export const UploadDocumentScreen = connector(UploadDocument);

@@ -1,6 +1,6 @@
 import {LatLng} from '../components/Address.types';
 
-export type AddressType = 'home' | 'office' | 'other' | 'airport';
+export type AddressType = 'none' | 'pick' | 'drop';
 
 export type AddressDataType = {
   addressLocation: AddressLocation;

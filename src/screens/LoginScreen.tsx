@@ -1,6 +1,6 @@
 // import * as Firebase from '../utils/Firebase';
 
-import { AuthHeader, Screen, Text } from '../components';
+import { AuthHeader, Loader, Screen, Text } from '../components';
 import {
   Image,
   Keyboard,
@@ -20,16 +20,14 @@ import { colors, images, spacing } from '../theme';
 import { AuthStackScreenProps } from '../navigators';
 import { Button } from '../components/Button';
 import { TxKeyPath } from '../i18n';
-import { authActions } from '../slices/auth.slice';
-import { useAppDispatch } from '../store/hooks';
-// import { connect, ConnectedProps } from 'react-redux';
-// import { authActions, userLogin } from '../slices/auth.slice';
+import { connect, ConnectedProps } from 'react-redux';
+import { authActions, userLogin } from '../slices/auth.slice';
 // import { getMessaging, getToken } from '@react-native-firebase/messaging';
-// import { RootState } from '../store';
+import { RootState } from '../store';
 
 type NavigationProps = AuthStackScreenProps<'Login'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 type FieldError = {
   email?: TxKeyPath | undefined;
@@ -52,15 +50,14 @@ const passwordLeftAccessory = (props: TextFieldAccessoryProps) => {
   );
 };
 
-const Login: FC<NavigationProps> = (
+const Login: FC<Props> = (
   {
       navigation,
-    //   loading,
-    //   clearLoginLoading,
-    //   user_Login,
+      loading,
+      clearLoginLoading,
+      user_Login,
   },
 ) => {
-  const dispatch = useAppDispatch()
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const passwordField = useRef<TextInput>(null);
@@ -70,17 +67,17 @@ const Login: FC<NavigationProps> = (
 
   useEffect(() => {
     if (__DEV__) {
-      setEmail('mandeep@gmail.com');
+      setEmail('smandeep5510@gmail.com');
       setPassword('Admin@123');
     }
   }, []);
 
-  //   useEffect(() => {
-  //     if (loading === 'loaded') {
-  //       clearLoginLoading();
-  //     }
-  //     // eslint-disable-next-line react-hooks/exhaustive-deps
-  //   }, [loading]);
+    useEffect(() => {
+      if (loading === 'loaded') {
+        clearLoginLoading();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading]);
 
   useEffect(() => {
     // (async () => {
@@ -115,10 +112,7 @@ const Login: FC<NavigationProps> = (
       .validate(loginParams, { abortEarly: false })
       .then(params => {
         Keyboard.dismiss();
-        console.log('params', params);
-        dispatch(authActions.setAuthroized(true));
-
-        // user_Login(params);
+        user_Login(params);
         setError({});
       })
       .catch(errors => {
@@ -205,7 +199,7 @@ const Login: FC<NavigationProps> = (
           </Text>
         </View>
       </Screen>
-      {/* <Loader loading={loading === 'loading'} tx="logging" /> */}
+      <Loader loading={loading === 'loading'} tx="logging" />
     </>
   );
 };
@@ -245,15 +239,15 @@ const $inputAccessoryStyle: ViewStyle = {
   marginVertical: spacing.sm,
   height: 24,
 };
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.loading,
-// });
+const mapStateToProps = (state: RootState) => ({
+  loading: state.auth.loading,
+});
 
-// const mapDispatch = {
-//   user_Login: (params: Signin) => userLogin(params),
-//   clearLoginLoading: () => authActions.clearLoginLoading(),
-// };
+const mapDispatch = {
+  user_Login: (params: Signin) => userLogin(params),
+  clearLoginLoading: () => authActions.clearLoginLoading(),
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps, mapDispatch);
 
-export const LoginScreen = Login;
+export const LoginScreen = connector(Login);

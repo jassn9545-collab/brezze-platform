@@ -2,6 +2,7 @@ import {
   AuthHeader,
   Country,
   CountryPickerModal,
+  Loader,
   Screen,
   Text,
 } from '../components';
@@ -16,7 +17,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import React, { FC, useEffect, useMemo, useRef, useState } from 'react';
-import { buildError, userSchema } from '../apis/schema';
+import { buildError, Registration, userSchema } from '../apis/schema';
 import { TextField, TextFieldAccessoryProps } from '../components/TextField';
 import { colors, spacing } from '../theme';
 import { AuthStackScreenProps } from '../navigators';
@@ -26,16 +27,19 @@ import { translate, TxKeyPath } from '../i18n';
 import { ValidationError } from 'yup';
 import { images } from '../theme/images';
 import AnimatedIcon from '../components/AnimatedIcon';
+import { connect, ConnectedProps } from 'react-redux';
+import { userRegistration } from '../slices/auth.slice';
+import { RootState } from '../store';
 
 interface SignupScreenProps extends AuthStackScreenProps<'Signup'> {}
-// type StoreProps = ConnectedProps<typeof connector>;
-type Props = SignupScreenProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = SignupScreenProps & StoreProps;
 type FieldError = {
   name?: TxKeyPath | undefined;
   phone?: TxKeyPath | undefined;
   email?: TxKeyPath | undefined;
   password?: TxKeyPath | undefined;
-  confirmPassword?: TxKeyPath | undefined;
+  confirm_password?: TxKeyPath | undefined;
 };
 
 const Signup: FC<Props> = props => {
@@ -64,7 +68,7 @@ const Signup: FC<Props> = props => {
     if (__DEV__) {
       setName('Mandeep Singh');
       setMobile('7814667566');
-      setEmail('mandeep.swt.suffescom@gmail.com');
+      setEmail('smandeep5510@gmail.com');
       setPassword('Admin@123');
       setConfirmPassword('Admin@123');
     }
@@ -150,7 +154,7 @@ const Signup: FC<Props> = props => {
           phone: mobile,
           country_code: country.dial_code.replace('+', ''),
           password,
-          confirmPassword,
+          confirm_password: confirmPassword,
           //   firebaseToken,
         },
         { abortEarly: false, context: { isSignup: true } },
@@ -161,13 +165,7 @@ const Signup: FC<Props> = props => {
           return;
         }
         Keyboard.dismiss();
-        props.navigation.navigate('Verification', {
-          email: res.email,
-          from: 'signup',
-          serviceSid: '',
-          user_id: 1,
-        });
-        // props.signup(res);
+        props.signup(res);
         setError({});
       })
       .catch((errors: ValidationError) => {
@@ -238,8 +236,8 @@ const Signup: FC<Props> = props => {
             secureTextEntry={!isConfirmPasswordHidden}
             containerStyle={$inputContainer}
             RightAccessory={ConfirmPasswordRightAccessory}
-            helperTx={error?.confirmPassword}
-            status={error?.confirmPassword ? 'error' : undefined}
+            helperTx={error?.confirm_password}
+            status={error?.confirm_password ? 'error' : undefined}
           />
           <TouchableOpacity
             style={$tncContainer}
@@ -294,7 +292,7 @@ const Signup: FC<Props> = props => {
         modalVisible={showCountries}
         onClose={() => setShowCountries(false)}
       />
-      {/* <Loader loading={props.loading === 'loading'} tx="signing" /> */}
+      <Loader loading={props.loading === 'loading'} tx="signing" />
     </>
   );
 };
@@ -355,15 +353,15 @@ const $primaryColorStyle: TextStyle = {
   color: colors.primary,
 };
 
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.userRegistrationLoading,
-//   inviteCode: state.auth.inviteCode,
-// });
+const mapStateToProps = (state: RootState) => ({
+  loading: state.auth.userRegistrationLoading,
+  inviteCode: state.auth.inviteCode,
+});
 
-// const mapDispatch = {
-//   signup: (params: Registration) => userRegistration(params),
-// };
+const mapDispatch = {
+  signup: (params: Registration) => userRegistration(params),
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps, mapDispatch);
 
-export const SignupScreen = Signup;
+export const SignupScreen = connector(Signup);

@@ -1,10 +1,5 @@
-import { AuthStackParamList } from '../navigators';
-import {
-  LoadStatus,
-  Notification,
-  ReferEarnData,
-  UserDetailsResponse,
-} from './types';
+import { AuthStackParamList, navigationRef } from '../navigators';
+import { LoadStatus, UserDetailsResponse } from './types';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import { resetAll } from './comman.action';
@@ -13,6 +8,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FAQ } from '../screens';
 import { Linking } from 'react-native';
 import { handleInviteURL } from '../utils/util';
+import URLs from '../config/urls';
+import {
+  BasicUserDetailParams,
+  ForgotPasswordParam,
+  Registration,
+  ResetPasswordParams,
+  Signin,
+} from '../apis/schema';
 
 export const getAuthorization = createAsyncThunk(
   'auth/authrization',
@@ -30,180 +33,239 @@ export const getAuthorization = createAsyncThunk(
   },
 );
 
-// export const userLogin = createAsyncThunk(
-//   'auth/login',
-//   async (params: Signin, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.login,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
+export const userLogin = createAsyncThunk(
+  'auth/login',
+  async (params: Signin, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.login,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
 
-//       const data = response?.data;
-//       await AsyncStorage.setItem('authorized', 'true');
-//       await AsyncStorage.setItem('token', data.token);
-//       return data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+      const data = response?.data;
+      await AsyncStorage.setItem('authorized', 'true');
+      await AsyncStorage.setItem('token', data.token);
+      return data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
-// export const userRegistration = createAsyncThunk(
-//   'auth/registration',
-//   async (params: Registration, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.registration,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
-//       await AsyncStorage.setItem(
-//         'user_id',
-//         response.data.data.user_id.toString(),
-//       );
-//       navigationRef.navigate('Verification', {
-//         countryCode: params.country_code!,
-//         mobile: params.phone,
-//         user_id: response.data.data.user_id,
-//         serviceSid: '',
-//         from: 'signup',
-//       });
-//       toast.show(response.data.message, { type: 'success' });
-//       return response.data.data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const userRegistration = createAsyncThunk(
+  'auth/registration',
+  async (params: Registration, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.registration,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      navigationRef.navigate('Verification', {
+        ...params,
+        user_id: response.data.data.user_id,
+        serviceSid: '',
+        from: 'signup',
+      });
+      toast.show(response.data.message, { type: 'success' });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
-// export type UserVerificationParam = {
-//   user_id: number;
-//   serviceSid?: string;
-//   otp?: string;
-// };
+export type UserVerificationParam = {
+  email: string;
+  serviceSid?: string;
+  otp?: string;
+  phone?: string;
+  user_type?: string;
+};
 
-// export const userVerification = createAsyncThunk(
-//   'auth/verification',
-//   async (params: UserVerificationParam, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.verifyUser,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
-//       const data = response.data;
-//       await AsyncStorage.setItem('authorized', 'true');
-//       await AsyncStorage.setItem('token', data.token);
-//       return data as UserDetailsResponse;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const userVerification = createAsyncThunk(
+  'auth/verification',
+  async (params: UserVerificationParam, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.verifyUser,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      const data = response.data;
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('user_id', response.data.user.id.toString());
+      navigationRef.navigate('MyDocuments');
+      return data as UserDetailsResponse;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
-// export const forgotPassword = createAsyncThunk(
-//   'auth/forgot-password',
-//   async (params: ForgotPasswordParam, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.forgotPassword,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
-//       navigationRef.navigate('Verification', {
-//         countryCode: params.country_code!,
-//         mobile: params.phone,
-//         user_id: response.data.data.user_id,
-//         serviceSid: '',
-//         from: 'forgotPassword',
-//       });
-//       toast.show(response.data.message, { type: 'success' });
-//       return response.data.data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const userBasicDetail = createAsyncThunk(
+  'auth/user-basic-detail',
+  async (params: BasicUserDetailParams, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.basicDetail,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      navigationRef.goBack();
+      return response.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
-// export const resendOTP = createAsyncThunk(
-//   'auth/resend-otp',
-//   async (params: UserVerificationParam, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.resendOtp,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
-//       toast.show(response.data.message, { type: 'success' });
-//       return response.data.data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const uploadProfilePhoto = createAsyncThunk(
+  'auth/upload-profile-photo',
+  async (data: FormData, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.uploadProfile,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        data,
+      });
+      navigationRef.navigate('CommonSucess', {
+        from: 'faceVerification',
+      });
+      return response.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
-// export const resendUserVerifyOTP = createAsyncThunk(
-//   'auth/resend-user-verify-otp',
-//   async (params: UserVerificationParam, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.resendUserVerifyOtp,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
-//       toast.show(response.data.message, { type: 'success' });
-//       return response.data.data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const uploadUserVerificationID = createAsyncThunk(
+  'auth/upload-verification-id',
+  async (data: FormData, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.userVerificationID,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        data,
+      });
+      navigationRef.goBack();
+      return response.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
-// export type VerifyOTPParam = {
-//   user_id?: number;
-//   otp: string;
-//   serviceSid?: string;
-// };
+export const forgotPassword = createAsyncThunk(
+  'auth/forgot-password',
+  async (params: ForgotPasswordParam, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.forgotPassword,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      navigationRef.navigate('Verification', {
+        email: params.email,
+        user_id: response.data.data.user_id,
+        serviceSid: '',
+        from: 'forgotPassword',
+      });
+      toast.show(response.data.message, { type: 'success' });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
-// export const verifyOTP = createAsyncThunk(
-//   'auth/verify-otp',
-//   async (params: VerifyOTPParam, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.verifyOtp,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
-//       toast.show(response.data.message, { type: 'success' });
-//       return response.data.data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const resendOTP = createAsyncThunk(
+  'auth/resend-otp',
+  async (params: UserVerificationParam, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.resendOtp,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      toast.show(response.data.message, { type: 'success' });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export const resendUserVerifyOTP = createAsyncThunk(
+  'auth/resend-user-verify-otp',
+  async (params: UserVerificationParam, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.resendUserVerifyOtp,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      toast.show(response.data.message, { type: 'success' });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export type VerifyOTPParam = {
+  user_id?: number;
+  otp: string;
+  serviceSid?: string;
+};
+
+export const verifyOTP = createAsyncThunk(
+  'auth/verify-otp',
+  async (params: VerifyOTPParam, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.verifyOtp,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      toast.show(response.data.message, { type: 'success' });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
 // export const getProfile = createAsyncThunk(
 //   'auth/profile',
@@ -243,25 +305,25 @@ export const getAuthorization = createAsyncThunk(
 //   },
 // );
 
-// export const resetPassword = createAsyncThunk(
-//   'auth/reset-password',
-//   async (params: ResetPasswordParams, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.resetPassword,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
-//       toast.show(response.data.message, { type: 'success' });
-//       return response?.data?.data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const resetPassword = createAsyncThunk(
+  'auth/reset-password',
+  async (params: ResetPasswordParams, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.resetPassword,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      toast.show(response.data.message, { type: 'success' });
+      return response?.data?.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
 // export const userLogout = createAsyncThunk(
 //   'auth/logout',
@@ -356,30 +418,6 @@ export const getAuthorization = createAsyncThunk(
 //   },
 // );
 
-// export interface withDrawRequestParams {
-//   info: string;
-//   amount: string;
-// }
-// export const withDrawRequest = createAsyncThunk(
-//   'auth/withdraw-request',
-//   async (params: withDrawRequestParams, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.withdrawReferEarn,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         data: JSON.stringify(params),
-//       });
-//       thunkAPI.dispatch(getReferEarnDetail());
-//       return response.data.data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
-
 // export const getNotifications = createAsyncThunk(
 //   'auth/get-notifications',
 //   async (params: { page: number }, thunkAPI) => {
@@ -407,6 +445,9 @@ export type AuthState = {
 
   userRegistrationLoading: LoadStatus;
   userVerificationLoading: LoadStatus;
+  userBasicDetailLoading: LoadStatus;
+  uploadProfilePhotoLoading: LoadStatus;
+  uploadUserVerificationIDLoading: LoadStatus;
 
   loading: LoadStatus;
   myProfile?: UserDetailsResponse;
@@ -422,10 +463,9 @@ export type AuthState = {
   faqs: FAQ[];
 
   referEarnLoading: LoadStatus;
-  referEarnDetail?: ReferEarnData;
   withDrawLoading: LoadStatus;
   userNotificationsLoading: LoadStatus;
-  userNotifications: Notification[];
+  userNotifications: any[];
   totalNotifications: number;
 
   error: any;
@@ -438,6 +478,9 @@ const authState: AuthState = {
 
   userRegistrationLoading: 'idle',
   userVerificationLoading: 'idle',
+  userBasicDetailLoading: 'idle',
+  uploadProfilePhotoLoading: 'idle',
+  uploadUserVerificationIDLoading: 'idle',
 
   loading: 'idle',
   updateLoading: 'idle',
@@ -452,7 +495,6 @@ const authState: AuthState = {
   faqs: [],
 
   referEarnLoading: 'idle',
-  referEarnDetail: undefined,
   withDrawLoading: 'idle',
   userNotificationsLoading: 'idle',
   userNotifications: [],
@@ -471,30 +513,30 @@ export const authSlice = createSlice({
       booting: 'loaded',
     }),
 
-    // clearLoginLoading: state => {
-    //   state.loading = 'idle';
-    // },
-    // resetUserVerificationLoading: state => {
-    //   state.userVerificationLoading = 'idle';
-    // },
-    // resetUpdateLoading: state => {
-    //   state.updateLoading = 'idle';
-    // },
-    // resetForgotPasswordLoading: state => {
-    //   state.forgotPasswordLoading = 'idle';
-    // },
-    // resetVerifyOTPLoading: state => {
-    //   state.verifyOTPLoading = 'idle';
-    // },
-    // resetResetPasswordLoading: state => {
-    //   state.resetPasswordLoading = 'idle';
-    // },
+    clearLoginLoading: state => {
+      state.loading = 'idle';
+    },
+    resetUserVerificationLoading: state => {
+      state.userVerificationLoading = 'idle';
+    },
+    resetUpdateLoading: state => {
+      state.updateLoading = 'idle';
+    },
+    resetForgotPasswordLoading: state => {
+      state.forgotPasswordLoading = 'idle';
+    },
+    resetVerifyOTPLoading: state => {
+      state.verifyOTPLoading = 'idle';
+    },
+    resetResetPasswordLoading: state => {
+      state.resetPasswordLoading = 'idle';
+    },
     setAuthroized: (state, action) => {
       state.isAuthorized = action.payload;
     },
-    // setReferralCode: (state, action) => {
-    //   state.inviteCode = action.payload;
-    // },
+    setReferralCode: (state, action) => {
+      state.inviteCode = action.payload;
+    },
   },
   extraReducers: builder => {
     // Reset All
@@ -517,48 +559,88 @@ export const authSlice = createSlice({
         state.booting = 'failed';
       });
     // User Login
-    // builder
-    //   .addCase(userLogin.pending, state => {
-    //     state.loading = 'loading';
-    //   })
-    //   .addCase(userLogin.fulfilled, (state, action) => {
-    //     state.loading = 'loaded';
-    //     state.isAuthorized = true;
-    //     api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
-    //     state.myProfile = action.payload;
-    //   })
-    //   .addCase(userLogin.rejected, (state, action) => {
-    //     state.loading = 'failed';
-    //     state.error = action.payload;
-    //   });
+    builder
+      .addCase(userLogin.pending, state => {
+        state.loading = 'loading';
+      })
+      .addCase(userLogin.fulfilled, (state, action) => {
+        state.loading = 'loaded';
+        state.isAuthorized = true;
+        api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
+        state.myProfile = action.payload;
+      })
+      .addCase(userLogin.rejected, (state, action) => {
+        state.loading = 'failed';
+        state.error = action.payload;
+      });
 
-    // // User Registration
-    // builder
-    //   .addCase(userRegistration.pending, state => {
-    //     state.userRegistrationLoading = 'loading';
-    //   })
-    //   .addCase(userRegistration.fulfilled, state => {
-    //     state.userRegistrationLoading = 'loaded';
-    //   })
-    //   .addCase(userRegistration.rejected, (state, action) => {
-    //     state.userRegistrationLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
-    // // User Verification
-    // builder
-    //   .addCase(userVerification.pending, state => {
-    //     state.userVerificationLoading = 'loading';
-    //   })
-    //   .addCase(userVerification.fulfilled, (state, action) => {
-    //     state.isAuthorized = true;
-    //     api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
-    //     state.myProfile = action.payload;
-    //     state.userVerificationLoading = 'loaded';
-    //   })
-    //   .addCase(userVerification.rejected, (state, action) => {
-    //     state.userVerificationLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
+    // User Registration
+    builder
+      .addCase(userRegistration.pending, state => {
+        state.userRegistrationLoading = 'loading';
+      })
+      .addCase(userRegistration.fulfilled, state => {
+        state.userRegistrationLoading = 'loaded';
+      })
+      .addCase(userRegistration.rejected, (state, action) => {
+        state.userRegistrationLoading = 'failed';
+        state.error = action.payload;
+      });
+
+    // User Verification
+    builder
+      .addCase(userVerification.pending, state => {
+        state.userVerificationLoading = 'loading';
+      })
+      .addCase(userVerification.fulfilled, (state, action) => {
+        api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
+        state.myProfile = action.payload;
+        state.userVerificationLoading = 'loaded';
+      })
+      .addCase(userVerification.rejected, (state, action) => {
+        state.userVerificationLoading = 'failed';
+        state.error = action.payload;
+      });
+
+    // User Basic Detail
+    builder
+      .addCase(userBasicDetail.pending, state => {
+        state.userBasicDetailLoading = 'loading';
+      })
+      .addCase(userBasicDetail.fulfilled, state => {
+        state.userBasicDetailLoading = 'loaded';
+      })
+      .addCase(userBasicDetail.rejected, (state, action) => {
+        state.userBasicDetailLoading = 'failed';
+        state.error = action.payload;
+      });
+
+    // Upload Profile
+    builder
+      .addCase(uploadProfilePhoto.pending, state => {
+        state.uploadProfilePhotoLoading = 'loading';
+      })
+      .addCase(uploadProfilePhoto.fulfilled, state => {
+        state.uploadProfilePhotoLoading = 'loaded';
+      })
+      .addCase(uploadProfilePhoto.rejected, (state, action) => {
+        state.uploadProfilePhotoLoading = 'failed';
+        state.error = action.payload;
+      });
+
+    // User Verification By ID
+    builder
+      .addCase(uploadUserVerificationID.pending, state => {
+        state.uploadUserVerificationIDLoading = 'loading';
+      })
+      .addCase(uploadUserVerificationID.fulfilled, state => {
+        state.uploadUserVerificationIDLoading = 'loaded';
+      })
+      .addCase(uploadUserVerificationID.rejected, (state, action) => {
+        state.uploadUserVerificationIDLoading = 'failed';
+        state.error = action.payload;
+      });
+
     // // User logout
     // builder
     //   .addCase(userLogout.pending, state => {
@@ -589,54 +671,54 @@ export const authSlice = createSlice({
     // //     state.updateLoading = 'failed';
     // //     state.error = action.payload;
     // //   });
-    // // Forgot Password
-    // builder
-    //   .addCase(forgotPassword.pending, state => {
-    //     state.forgotPasswordLoading = 'loading';
-    //   })
-    //   .addCase(forgotPassword.fulfilled, state => {
-    //     state.forgotPasswordLoading = 'loaded';
-    //   })
-    //   .addCase(forgotPassword.rejected, (state, action) => {
-    //     state.forgotPasswordLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
-    // // Resend Password
-    // builder
-    //   .addCase(resendOTP.pending, state => {
-    //     state.resendOTPLoading = 'loading';
-    //   })
-    //   .addCase(resendOTP.fulfilled, state => {
-    //     state.resendOTPLoading = 'loaded';
-    //   })
-    //   .addCase(resendOTP.rejected, (state, action) => {
-    //     state.resendOTPLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
-    // // Resend User Verify Password
-    // builder
-    //   .addCase(resendUserVerifyOTP.pending, state => {
-    //     state.resendVerifyOTPLoading = 'loading';
-    //   })
-    //   .addCase(resendUserVerifyOTP.fulfilled, state => {
-    //     state.resendVerifyOTPLoading = 'loaded';
-    //   })
-    //   .addCase(resendUserVerifyOTP.rejected, (state, action) => {
-    //     state.resendVerifyOTPLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
-    // // Verify OTP
-    // builder
-    //   .addCase(verifyOTP.pending, state => {
-    //     state.verifyOTPLoading = 'loading';
-    //   })
-    //   .addCase(verifyOTP.fulfilled, state => {
-    //     state.verifyOTPLoading = 'loaded';
-    //   })
-    //   .addCase(verifyOTP.rejected, (state, action) => {
-    //     state.verifyOTPLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
+    // Forgot Password
+    builder
+      .addCase(forgotPassword.pending, state => {
+        state.forgotPasswordLoading = 'loading';
+      })
+      .addCase(forgotPassword.fulfilled, state => {
+        state.forgotPasswordLoading = 'loaded';
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.forgotPasswordLoading = 'failed';
+        state.error = action.payload;
+      });
+    // Resend Password
+    builder
+      .addCase(resendOTP.pending, state => {
+        state.resendOTPLoading = 'loading';
+      })
+      .addCase(resendOTP.fulfilled, state => {
+        state.resendOTPLoading = 'loaded';
+      })
+      .addCase(resendOTP.rejected, (state, action) => {
+        state.resendOTPLoading = 'failed';
+        state.error = action.payload;
+      });
+    // Resend User Verify Password
+    builder
+      .addCase(resendUserVerifyOTP.pending, state => {
+        state.resendVerifyOTPLoading = 'loading';
+      })
+      .addCase(resendUserVerifyOTP.fulfilled, state => {
+        state.resendVerifyOTPLoading = 'loaded';
+      })
+      .addCase(resendUserVerifyOTP.rejected, (state, action) => {
+        state.resendVerifyOTPLoading = 'failed';
+        state.error = action.payload;
+      });
+    // Verify OTP
+    builder
+      .addCase(verifyOTP.pending, state => {
+        state.verifyOTPLoading = 'loading';
+      })
+      .addCase(verifyOTP.fulfilled, state => {
+        state.verifyOTPLoading = 'loaded';
+      })
+      .addCase(verifyOTP.rejected, (state, action) => {
+        state.verifyOTPLoading = 'failed';
+        state.error = action.payload;
+      });
     // // User Profile
     // builder
     //   .addCase(getProfile.pending, state => {
@@ -663,18 +745,18 @@ export const authSlice = createSlice({
     //     state.updateLoading = 'failed';
     //     state.error = action.error;
     //   });
-    // // reset Password
-    // builder
-    //   .addCase(resetPassword.pending, state => {
-    //     state.resetPasswordLoading = 'loading';
-    //   })
-    //   .addCase(resetPassword.fulfilled, state => {
-    //     state.resetPasswordLoading = 'loaded';
-    //   })
-    //   .addCase(resetPassword.rejected, (state, action) => {
-    //     state.resetPasswordLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
+    // reset Password
+    builder
+      .addCase(resetPassword.pending, state => {
+        state.resetPasswordLoading = 'loading';
+      })
+      .addCase(resetPassword.fulfilled, state => {
+        state.resetPasswordLoading = 'loaded';
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.resetPasswordLoading = 'failed';
+        state.error = action.payload;
+      });
 
     // // GET FAQs
     // builder
@@ -701,19 +783,6 @@ export const authSlice = createSlice({
     //   })
     //   .addCase(getReferEarnDetail.rejected, (state, action) => {
     //     state.referEarnLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
-
-    // // WITHDRAW REQUEST
-    // builder
-    //   .addCase(withDrawRequest.pending, state => {
-    //     state.withDrawLoading = 'loading';
-    //   })
-    //   .addCase(withDrawRequest.fulfilled, state => {
-    //     state.withDrawLoading = 'loaded';
-    //   })
-    //   .addCase(withDrawRequest.rejected, (state, action) => {
-    //     state.withDrawLoading = 'failed';
     //     state.error = action.payload;
     //   });
 

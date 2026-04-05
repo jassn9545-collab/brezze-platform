@@ -1,6 +1,6 @@
 import { AuthHeader, Button, Screen } from '../components';
 import { Image, TouchableOpacity, View, ViewStyle } from 'react-native';
-import React, { FC, useMemo, useState } from 'react';
+import React, { FC, useEffect, useMemo, useState } from 'react';
 import { TextField, TextFieldAccessoryProps } from '../components/TextField';
 import {
   buildError,
@@ -11,8 +11,8 @@ import { images, spacing } from '../theme';
 
 import { AuthStackScreenProps } from '../navigators';
 import { TxKeyPath } from '../i18n';
-// import { useAppDispatch, useAppSelector } from '../store/hooks';
-// import { authActions, resetPassword } from '../slices/auth.slice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { authActions, resetPassword } from '../slices/auth.slice';
 
 type Props = AuthStackScreenProps<'ResetPassword'>;
 
@@ -26,8 +26,8 @@ export type ResetParams = {
 };
 
 const ResetPassword: FC<Props> = props => {
-  //   const dispatch = useAppDispatch();
-  //   const { resetPasswordLoading: loading } = useAppSelector(store => store.auth);
+  const dispatch = useAppDispatch();
+  const { resetPasswordLoading: loading } = useAppSelector(store => store.auth);
 
   const [isAuthPasswordHidden, setIsAuthPasswordHidden] = useState(false);
   const [newPass, setNewPass] = useState<string>('');
@@ -35,12 +35,14 @@ const ResetPassword: FC<Props> = props => {
   const [confirmNewPass, setConfirmNewPass] = useState<string>('');
   const [error, setError] = useState<FieldError>({});
 
-  //   useEffect(() => {
-  //     if (loading === 'loaded') {
-  //       dispatch(authActions.resetResetPasswordLoading());
-  //       props.navigation.replace('Login');
-  //     }
-  //   }, [dispatch, loading, props.navigation]);
+  useEffect(() => {
+    if (loading === 'loaded') {
+      dispatch(authActions.resetResetPasswordLoading());
+      props.navigation.navigate('CommonSucess',{
+        from: 'resetPassword'
+    });
+    }
+  }, [dispatch, loading, props.navigation]);
 
   const validate = () => {
     const params: ResetPasswordParams = {
@@ -51,11 +53,7 @@ const ResetPassword: FC<Props> = props => {
     resetPasswordSchema
       .validate(params, { abortEarly: false })
       .then(res => {
-        console.log('res', res);
-        props.navigation.navigate('CommonSucess',{
-            from: 'resetPassword'
-        });
-        // dispatch(resetPassword(res));
+        dispatch(resetPassword(res));
         setError({});
       })
       .catch(errors => {

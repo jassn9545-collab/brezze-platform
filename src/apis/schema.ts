@@ -30,7 +30,7 @@ export const userSchema = yup.object().shape({
         .required('validation.required'),
     otherwise: schema => schema.notRequired(),
   }),
-  confirmPassword: yup.string().when('$isSignup', {
+  confirm_password: yup.string().when('$isSignup', {
     is: true,
     then: schema =>
       schema
@@ -134,21 +134,17 @@ export const basicDetailSchema = yup.object().shape({
     .of(yup.string())
     .min(1, 'validation.required')
     .required('validation.required'),
-  hourPrice: yup
-    .number()
-    .typeError('validation.required')
-    .required('validation.required'),
-  streetAddress: yup.string().required('validation.required'),
+  street_address: yup.string().required('validation.required'),
   state: yup.string().required('validation.required'),
-  zipCode: yup.string().required('validation.required'),
+  pincode: yup.string().required('validation.required'),
 });
 
 export type BasicUserDetailParams = yup.InferType<typeof basicDetailSchema>;
 
 export const cardDetailSchema = yup.object().shape({
-  idType: yup.string().required('validation.required'),
-  idNumber: yup.string().required('validation.required'),
-  expiryDate: yup.string().required('validation.required'),
+  proof_type: yup.string().required('validation.required'),
+  id_number: yup.string().required('validation.required'),
+  expiry_date: yup.string().required('validation.required'),
 });
 
 export type CardDetailParams = yup.InferType<typeof cardDetailSchema>;

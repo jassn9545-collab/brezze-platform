@@ -1,6 +1,6 @@
-import { AuthHeader, Button, Screen } from '../components';
+import { AuthHeader, Button, Loader, Screen } from '../components';
 import { Keyboard, View, ViewStyle } from 'react-native';
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { TextField } from '../components/TextField';
 import { buildError, forgotPasswordSchema } from '../apis/schema';
 import { spacing } from '../theme';
@@ -8,6 +8,8 @@ import { spacing } from '../theme';
 import { AuthStackScreenProps } from '../navigators';
 import { TxKeyPath } from '../i18n';
 import { emailLeftAccessory } from './LoginScreen';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { authActions, forgotPassword } from '../slices/auth.slice';
 
 type Props = AuthStackScreenProps<'ForgotPassword'>;
 
@@ -15,19 +17,19 @@ type FieldError = {
   email?: TxKeyPath | undefined;
 };
 
-const ForgotPassword: FC<Props> = props => {
-  //   const dispatch = useAppDispatch();
-  //   const loadingState = useAppSelector(
-  //     store => store.auth.forgotPasswordLoading,
-  //   );
-  const [email, setEmail] = useState('');
+const ForgotPassword: FC<Props> = () => {
+  const dispatch = useAppDispatch();
+  const loadingState = useAppSelector(
+    store => store.auth.forgotPasswordLoading,
+  );
+  const [email, setEmail] = useState(__DEV__ ? 'smandeep5510@gmail.com' : '');
   const [error, setError] = useState<FieldError>({});
 
-  //   useEffect(() => {
-  //     if (loadingState === 'loaded') {
-  //       dispatch(authActions.resetForgotPasswordLoading());
-  //     }
-  //   }, [dispatch, loadingState]);
+  useEffect(() => {
+    if (loadingState === 'loaded') {
+      dispatch(authActions.resetForgotPasswordLoading());
+    }
+  }, [dispatch, loadingState]);
 
   const validate = () => {
     forgotPasswordSchema
@@ -39,13 +41,7 @@ const ForgotPassword: FC<Props> = props => {
       )
       .then(res => {
         Keyboard.dismiss();
-        props.navigation.navigate('Verification', {
-          email: res.email,
-          from: 'forgotPassword',
-          serviceSid: '',
-          user_id: 1,
-        });
-        // dispatch(forgotPassword(res));
+        dispatch(forgotPassword(res));
         setError({});
       })
       .catch(errors => {
@@ -84,7 +80,7 @@ const ForgotPassword: FC<Props> = props => {
           />
         </View>
       </Screen>
-      {/* <Loader loading={loadingState === 'loading'} /> */}
+      <Loader loading={loadingState === 'loading'} />
     </>
   );
 };

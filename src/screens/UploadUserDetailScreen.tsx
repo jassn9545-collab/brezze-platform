@@ -1,9 +1,8 @@
 import {
   AuthHeader,
   Button,
-  Country,
-  CountryPickerModal,
   DatePickerModal,
+  Loader,
   Screen,
   Text,
   TextField,
@@ -17,20 +16,31 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { FC, useEffect, useMemo, useState } from 'react';
+import React, { FC, useMemo, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 import moment from 'moment';
 
 import { AuthStackScreenProps } from '../navigators';
 import { TxKeyPath } from '../i18n';
-import { DefaultCountry } from '../config/defaults';
 import { commonStyle } from '../theme/style';
-import { basicDetailSchema, buildError } from '../apis/schema';
+import {
+  basicDetailSchema,
+  BasicUserDetailParams,
+  buildError,
+} from '../apis/schema';
 import { ValidationError } from 'yup';
+import { RootState } from '../store';
+import { connect, ConnectedProps } from 'react-redux';
+import {
+  AddressParam,
+  AddressSearchModal,
+} from '../components/AddressSearchModal';
+import { AddressType } from '../slices/address.types';
+import { userBasicDetail } from '../slices/auth.slice';
 
 type NavigationProps = AuthStackScreenProps<'UploadUserDetail'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 type FieldError = {
   name?: TxKeyPath | undefined;
@@ -38,10 +48,9 @@ type FieldError = {
   email?: TxKeyPath | undefined;
   dob?: TxKeyPath | undefined;
   skills?: TxKeyPath | undefined;
-  hourPrice?: TxKeyPath | undefined;
-  streetAddress?: TxKeyPath | undefined;
+  street_address?: TxKeyPath | undefined;
   state?: TxKeyPath | undefined;
-  zipCode?: TxKeyPath | undefined;
+  pincode?: TxKeyPath | undefined;
 };
 
 export const calendarAccessory = (props: TextFieldAccessoryProps) => (
@@ -58,45 +67,39 @@ export const skillsList = [
   'AC Services',
 ];
 
-const UploadUserDetail: FC<NavigationProps> = props => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [country, setCountry] = useState<Country>(DefaultCountry);
-  const [showCountries, setShowCountries] = useState(false);
+const UploadUserDetail: FC<Props> = props => {
+  const {
+    oldName = props.profile?.name,
+    oldEmail = props.profile?.email,
+    oldCountryCode = `${props.profile?.country_code ?? '61'}`,
+    oldMobileNumber = props.profile?.phone,
+  } = {};
+
+  const [name, setName] = useState(oldName ?? '');
+  const [email, setEmail] = useState(oldEmail ?? '');
+  const [mobile, setMobile] = useState(oldMobileNumber ?? '');
   const [dob, setDOB] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [skills, setSkills] = useState<string[]>([]);
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
-  const [hourPrice, setHourPrice] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
+  const [streetAddress, setStreetAddress] = useState<AddressParam>();
   const [state, setState] = useState('');
   const [zipCode, setZipCode] = useState('');
+  const [addressModal, setAddressModal] = useState<AddressType>('none');
 
   const [error, setError] = useState<FieldError>({});
-
-  useEffect(() => {
-    if (__DEV__) {
-      setName('Mandeep Singh');
-      setMobile('7814667566');
-      setEmail('mandeep.swt.suffescom@gmail.com');
-    }
-  }, []);
 
   const CountryCodeAccessory = useMemo(
     () =>
       // eslint-disable-next-line react/no-unstable-nested-components
       function ({ style }: TextFieldAccessoryProps) {
         return (
-          <TouchableOpacity
-            style={[style, styles.countryCodeStyle]}
-            onPress={() => setShowCountries(true)}
-          >
-            <Text>{`${country.dial_code}`}</Text>
-          </TouchableOpacity>
+          <View style={[style, styles.countryCodeStyle]}>
+            <Text>{`+${oldCountryCode}`}</Text>
+          </View>
         );
       },
-    [country],
+    [oldCountryCode],
   );
 
   const onSelectSkill = (item: string) => {
@@ -120,20 +123,20 @@ const UploadUserDetail: FC<NavigationProps> = props => {
           name,
           email,
           phone: mobile,
-          country_code: country.dial_code.replace('+', ''),
+          country_code: oldCountryCode,
           dob: dob ? moment(dob).format('YYYY-MM-DD') : undefined,
           skills,
-          hourPrice,
-          streetAddress,
+          street_address: streetAddress?.address,
+          latitude: streetAddress?.location?.lat,
+          longitude: streetAddress?.location?.lng,
           state,
-          zipCode,
+          pincode: zipCode,
         },
         { abortEarly: false, context: { isSignup: true } },
       )
       .then(res => {
         Keyboard.dismiss();
-        console.log('res', res);
-        props.navigation.goBack();
+        props.userBasicDetail(res);
         setError({});
       })
       .catch((errors: ValidationError) => {
@@ -153,6 +156,7 @@ const UploadUserDetail: FC<NavigationProps> = props => {
         <View style={styles.mainView}>
           <TextField
             value={name}
+            editable={!oldName}
             onChangeText={setName}
             containerStyle={styles.inputContainer}
             placeholderTx="document.namePlaceholder"
@@ -161,6 +165,7 @@ const UploadUserDetail: FC<NavigationProps> = props => {
           />
           <TextField
             value={email}
+            editable={!oldEmail}
             onChangeText={setEmail}
             containerStyle={styles.inputContainer}
             placeholderTx="document.emailPlaceholder"
@@ -170,6 +175,7 @@ const UploadUserDetail: FC<NavigationProps> = props => {
           />
           <TextField
             value={mobile}
+            editable={!oldMobileNumber}
             onChangeText={setMobile}
             placeholderTx="document.mobilePlaceholder"
             keyboardType="phone-pad"
@@ -273,24 +279,15 @@ const UploadUserDetail: FC<NavigationProps> = props => {
             )}
           </View>
 
-          <TextField
-            value={hourPrice}
-            onChangeText={setHourPrice}
-            keyboardType="number-pad"
-            containerStyle={styles.inputContainer}
-            placeholderTx="document.hoursPricePlaceholder"
-            helperTx={error?.hourPrice}
-            status={error?.hourPrice ? 'error' : undefined}
-          />
-
-          <TextField
-            value={streetAddress}
-            onChangeText={setStreetAddress}
-            containerStyle={styles.inputContainer}
-            placeholderTx="document.streetAddressPlaceholder"
-            helperTx={error?.streetAddress}
-            status={error?.streetAddress ? 'error' : undefined}
-          />
+          <TouchableOpacity onPress={() => setAddressModal('pick')}>
+            <TextField
+              value={streetAddress?.address}
+              containerStyle={styles.inputContainer}
+              placeholderTx="document.streetAddressPlaceholder"
+              helperTx={error?.street_address}
+              status={error?.street_address ? 'error' : undefined}
+            />
+          </TouchableOpacity>
 
           <View style={styles.twoInputs}>
             <TextField
@@ -307,8 +304,8 @@ const UploadUserDetail: FC<NavigationProps> = props => {
               onChangeText={setZipCode}
               containerStyle={styles.flex}
               placeholderTx="document.zipCodePlaceholder"
-              helperTx={error?.zipCode}
-              status={error?.zipCode ? 'error' : undefined}
+              helperTx={error?.pincode}
+              status={error?.pincode ? 'error' : undefined}
             />
           </View>
 
@@ -319,14 +316,6 @@ const UploadUserDetail: FC<NavigationProps> = props => {
           />
         </View>
       </Screen>
-      <CountryPickerModal
-        onSelect={data => {
-          setCountry(data);
-          setShowCountries(false);
-        }}
-        modalVisible={showCountries}
-        onClose={() => setShowCountries(false)}
-      />
       <DatePickerModal
         mode="date"
         display="auto"
@@ -338,6 +327,16 @@ const UploadUserDetail: FC<NavigationProps> = props => {
         value={dob ?? new Date()}
         onDismiss={() => setShowDatePicker(false)}
       />
+      <AddressSearchModal
+        showCurrent
+        onSelect={(address: AddressParam) => {
+          setStreetAddress(address);
+        }}
+        isVisible={addressModal !== 'none'}
+        onClose={() => setAddressModal('none')}
+        title="ride.enterAddress"
+      />
+      <Loader loading={props.loading === 'loading'} />
     </>
   );
 };
@@ -425,15 +424,15 @@ const styles = StyleSheet.create({
   },
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.loading,
-// });
+const mapStateToProps = (state: RootState) => ({
+  profile: state.auth.myProfile?.data.user,
+  loading: state.auth.userBasicDetailLoading,
+});
 
-// const mapDispatch = {
-//   user_Login: (params: Signin) => userLogin(params),
-//   clearLoginLoading: () => authActions.clearLoginLoading(),
-// };
+const mapDispatch = {
+  userBasicDetail: (params: BasicUserDetailParams) => userBasicDetail(params),
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps, mapDispatch);
 
-export const UploadUserDetailScreen = UploadUserDetail;
+export const UploadUserDetailScreen = connector(UploadUserDetail);
