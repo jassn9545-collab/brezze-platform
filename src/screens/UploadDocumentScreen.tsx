@@ -43,6 +43,8 @@ type FieldError = {
   proof_type?: TxKeyPath | undefined;
   id_number?: TxKeyPath | undefined;
   expiry_date?: TxKeyPath | undefined;
+  front_image?: TxKeyPath | undefined;
+  back_image?: TxKeyPath | undefined;
 };
 
 export const idTypeList: DataType[] = [
@@ -110,13 +112,21 @@ const UploadDocument: FC<Props> = props => {
           proof_type: idType?.id,
           id_number: idNumber,
           expiry_date: expiryDate,
+          front_image: frontImageFormData?.uri,
+          back_image: backImageFormData?.uri,
         },
         { abortEarly: false, context: { isSignup: true } },
       )
       .then(res => {
         Keyboard.dismiss();
-        console.log('res', res);
-        props.navigation.goBack();
+        const formData = new FormData();
+        formData.append('proof_type', res.proof_type);
+        formData.append('id_number', res.id_number);
+        formData.append('expiry_date', res.expiry_date);
+        formData.append('front_image', frontImageFormData);
+        formData.append('back_image', backImageFormData);
+
+        props.uploadUserVerificationID(formData);
         setError({});
       })
       .catch((errors: ValidationError) => {
@@ -205,6 +215,14 @@ const UploadDocument: FC<Props> = props => {
                 </>
               )}
             </TouchableOpacity>
+
+            {error.front_image && (
+              <Text
+                preset="formHelper"
+                tx={error.front_image}
+                style={{ color: colors.error }}
+              />
+            )}
           </View>
 
           <View style={styles.imageView}>
@@ -217,9 +235,7 @@ const UploadDocument: FC<Props> = props => {
               style={[styles.imageContainer, commonStyle.customShadow]}
             >
               {backImageFormData?.uri ? (
-                <Image
-                  source={backImageFormData?.uri as ImageSourcePropType}
-                />
+                <Image source={backImageFormData?.uri as ImageSourcePropType} />
               ) : (
                 <>
                   <Image source={images.uploadingIcon} />
@@ -238,6 +254,14 @@ const UploadDocument: FC<Props> = props => {
                 </>
               )}
             </TouchableOpacity>
+
+            {error.back_image && (
+              <Text
+                preset="formHelper"
+                tx={error.back_image}
+                style={{ color: colors.error }}
+              />
+            )}
           </View>
 
           <View style={styles.flex} />
@@ -315,7 +339,7 @@ const mapStateToProps = (state: RootState) => ({
 });
 
 const mapDispatch = {
-  uploadUserVerificationID
+  uploadUserVerificationID,
 };
 
 const connector = connect(mapStateToProps, mapDispatch);

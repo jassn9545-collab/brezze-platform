@@ -1,4 +1,4 @@
-import { AuthHeader, Button, Screen } from '../components';
+import { AuthHeader, Button, Loader, Screen } from '../components';
 import { Image, TouchableOpacity, View, ViewStyle } from 'react-native';
 import React, { FC, useEffect, useMemo, useState } from 'react';
 import { TextField, TextFieldAccessoryProps } from '../components/TextField';
@@ -38,9 +38,21 @@ const ResetPassword: FC<Props> = props => {
   useEffect(() => {
     if (loading === 'loaded') {
       dispatch(authActions.resetResetPasswordLoading());
-      props.navigation.navigate('CommonSucess',{
-        from: 'resetPassword'
-    });
+      props.navigation.reset({
+        index: 1,
+        routes: [
+          {
+            name: 'Login',
+          },
+          {
+            name: 'CommonSucess',
+            params: {
+              from: 'resetPassword',
+            },
+          },
+        ],
+      });
+      
     }
   }, [dispatch, loading, props.navigation]);
 
@@ -141,7 +153,7 @@ const ResetPassword: FC<Props> = props => {
           />
         </View>
       </Screen>
-      {/* <Loader loading={loading === 'loading'} /> */}
+      <Loader loading={loading === 'loading'} />
     </>
   );
 };

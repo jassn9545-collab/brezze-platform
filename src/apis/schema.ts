@@ -145,6 +145,8 @@ export const cardDetailSchema = yup.object().shape({
   proof_type: yup.string().required('validation.required'),
   id_number: yup.string().required('validation.required'),
   expiry_date: yup.string().required('validation.required'),
+  front_image: yup.string().required('validation.required'),
+  back_image: yup.string().required('validation.required'),
 });
 
 export type CardDetailParams = yup.InferType<typeof cardDetailSchema>;

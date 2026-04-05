@@ -33,7 +33,7 @@ export const images = {
   signOut: require('../assets/images/signOut.png'),
   logoutIcon: require('../assets/images/logoutIcon.png'),
   address: require('../assets/images/address.png'),
-  myLocationRounded: require('../assets/images/myLocationRounded.png'),
+  myLocationRounded: require('../assets/images/my-location-rounded.png'),
 
   //
   smileIcon: require('../assets/images/smileIcon.png'),
