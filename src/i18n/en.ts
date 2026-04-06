@@ -82,6 +82,7 @@ const en = {
     backLogin: 'Back to Login',
   },
   document: {
+    required: 'Please complete all the steps',
     heading: 'Details to provide',
     description: 'The following are information we want from you.',
     documentRequirement: 'Document Requirement',

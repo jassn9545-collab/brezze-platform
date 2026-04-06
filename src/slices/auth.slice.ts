@@ -45,9 +45,14 @@ export const userLogin = createAsyncThunk(
         },
         data: JSON.stringify(params),
       });
-
-      const data = response?.data;
-      await AsyncStorage.setItem('authorized', 'true');
+      const data = response?.data?.data;
+      if (data?.is_verification_completed) {
+        await AsyncStorage.setItem('authorized', 'true');
+      } else if (data?.basic_info && data?.profile_pic && data?.proof) {
+        navigationRef.navigate('DocumentReview');
+      } else {
+        navigationRef.navigate('MyDocuments');
+      }
       await AsyncStorage.setItem('token', data.token);
       return data;
     } catch (error) {
@@ -102,10 +107,14 @@ export const userVerification = createAsyncThunk(
         },
         data: JSON.stringify(params),
       });
-      const data = response.data;
+      const data = response.data.data;
       await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('user_id', response.data.user.id.toString());
-      navigationRef.navigate('MyDocuments');
+      await AsyncStorage.setItem('user_id', data?.user?.id?.toString());
+
+      navigationRef.resetRoot({
+        index: 1,
+        routes: [{ name: 'Signup' }, { name: 'MyDocuments' }],
+      });
       return data as UserDetailsResponse;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
@@ -565,7 +574,9 @@ export const authSlice = createSlice({
       })
       .addCase(userLogin.fulfilled, (state, action) => {
         state.loading = 'loaded';
-        state.isAuthorized = true;
+        if (action.payload?.user?.is_verification_completed) {
+          state.isAuthorized = true;
+        }
         api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
         state.myProfile = action.payload;
       })
@@ -608,6 +619,9 @@ export const authSlice = createSlice({
         state.userBasicDetailLoading = 'loading';
       })
       .addCase(userBasicDetail.fulfilled, state => {
+        if (state.myProfile) {
+          state.myProfile.basic_info = true;
+        }
         state.userBasicDetailLoading = 'loaded';
       })
       .addCase(userBasicDetail.rejected, (state, action) => {
@@ -621,6 +635,9 @@ export const authSlice = createSlice({
         state.uploadProfilePhotoLoading = 'loading';
       })
       .addCase(uploadProfilePhoto.fulfilled, state => {
+        if (state.myProfile) {
+          state.myProfile.profile_pic = true;
+        }
         state.uploadProfilePhotoLoading = 'loaded';
       })
       .addCase(uploadProfilePhoto.rejected, (state, action) => {
@@ -634,6 +651,9 @@ export const authSlice = createSlice({
         state.uploadUserVerificationIDLoading = 'loading';
       })
       .addCase(uploadUserVerificationID.fulfilled, state => {
+        if (state.myProfile) {
+          state.myProfile.proof = true;
+        }
         state.uploadUserVerificationIDLoading = 'loaded';
       })
       .addCase(uploadUserVerificationID.rejected, (state, action) => {

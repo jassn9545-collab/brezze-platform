@@ -129,11 +129,7 @@ export const basicDetailSchema = yup.object().shape({
     .email('validation.invalidEmail')
     .required('validation.required'),
   dob: yup.string().required('validation.required'),
-  skills: yup
-    .array()
-    .of(yup.string())
-    .min(1, 'validation.required')
-    .required('validation.required'),
+  skills: yup.string().required('validation.required'),
   street_address: yup.string().required('validation.required'),
   state: yup.string().required('validation.required'),
   pincode: yup.string().required('validation.required'),

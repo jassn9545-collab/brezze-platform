@@ -1,6 +1,6 @@
 import { Screen, Text } from '../components';
 import { Image, StyleSheet, View } from 'react-native';
-import React, { FC, useEffect } from 'react';
+import React, { FC } from 'react';
 import { colors, images, spacing } from '../theme';
 import { TxKeyPath } from '../i18n';
 import { AuthStackScreenProps } from '../navigators';
@@ -20,25 +20,18 @@ const progressList: Progress[] = [
   },
   {
     id: 2,
-    review: false,
+    review: true,
     text: 'review.review2',
   },
   {
     id: 3,
-    review: false,
+    review: true,
     text: 'review.review3',
   },
 ];
 type NavigationProps = AuthStackScreenProps<'DocumentReview'>;
 
-const DocumentReview: FC<NavigationProps> = props => {
-    
-  useEffect(() => {
-    setTimeout(() => {
-      props.navigation.navigate('Login');
-    }, 2000);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+const DocumentReview: FC<NavigationProps> = () => {
 
   return (
     <Screen

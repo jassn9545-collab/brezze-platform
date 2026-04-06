@@ -1,4 +1,6 @@
 import {
+  AddressParam,
+  AddressSearchModal,
   AuthHeader,
   Button,
   DatePickerModal,
@@ -31,12 +33,9 @@ import {
 import { ValidationError } from 'yup';
 import { RootState } from '../store';
 import { connect, ConnectedProps } from 'react-redux';
-import {
-  AddressParam,
-  AddressSearchModal,
-} from '../components/AddressSearchModal';
 import { AddressType } from '../slices/address.types';
 import { userBasicDetail } from '../slices/auth.slice';
+import { Skill } from '../slices/setting.slice';
 
 type NavigationProps = AuthStackScreenProps<'UploadUserDetail'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -59,14 +58,6 @@ export const calendarAccessory = (props: TextFieldAccessoryProps) => (
   </View>
 );
 
-export const skillsList = [
-  'Electrician',
-  'AC Repair',
-  'Wire Fitting',
-  'Washing Machine Repair',
-  'AC Services',
-];
-
 const UploadUserDetail: FC<Props> = props => {
   const {
     oldName = props.profile?.name,
@@ -80,12 +71,12 @@ const UploadUserDetail: FC<Props> = props => {
   const [mobile, setMobile] = useState(oldMobileNumber ?? '');
   const [dob, setDOB] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [skills, setSkills] = useState<string[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const [streetAddress, setStreetAddress] = useState<AddressParam>();
+  const [addressModal, setAddressModal] = useState<AddressType>('none');
   const [state, setState] = useState('');
   const [zipCode, setZipCode] = useState('');
-  const [addressModal, setAddressModal] = useState<AddressType>('none');
 
   const [error, setError] = useState<FieldError>({});
 
@@ -102,7 +93,7 @@ const UploadUserDetail: FC<Props> = props => {
     [oldCountryCode],
   );
 
-  const onSelectSkill = (item: string) => {
+  const onSelectSkill = (item: Skill) => {
     if (skills.includes(item)) {
       setSkills(skills.filter(i => i !== item));
     } else {
@@ -112,7 +103,7 @@ const UploadUserDetail: FC<Props> = props => {
     }
   };
 
-  const removeSkill = (item: string) => {
+  const removeSkill = (item: Skill) => {
     setSkills(skills.filter(i => i !== item));
   };
 
@@ -125,7 +116,7 @@ const UploadUserDetail: FC<Props> = props => {
           phone: mobile,
           country_code: oldCountryCode,
           dob: dob ? moment(dob).format('YYYY-MM-DD') : undefined,
-          skills,
+          skills: skills.map(i => i.slug).join(","),
           street_address: streetAddress?.address,
           latitude: streetAddress?.location?.lat,
           longitude: streetAddress?.location?.lng,
@@ -213,7 +204,7 @@ const UploadUserDetail: FC<Props> = props => {
               <View style={styles.skillWrapper}>
                 {(skills?.length ?? 0) > 0 ? (
                   skills.map(item => (
-                    <View key={item} style={styles.skillChip}>
+                    <View key={item.id} style={styles.skillChip}>
                       <TouchableOpacity
                         onPress={() => removeSkill(item)}
                         style={styles.crossIcon}
@@ -225,7 +216,7 @@ const UploadUserDetail: FC<Props> = props => {
                           style={{ color: colors.primaryDimmed }}
                         />
                       </TouchableOpacity>
-                      <Text size="sm" text={item} />
+                      <Text size="sm" text={item.name} />
                     </View>
                   ))
                 ) : (
@@ -252,9 +243,9 @@ const UploadUserDetail: FC<Props> = props => {
                   style={styles.dropdown}
                   showsVerticalScrollIndicator={false}
                 >
-                  {skillsList.map(item => (
+                  {props.skills!.map(item => (
                     <TouchableOpacity
-                      key={item}
+                      key={item.id}
                       style={[
                         styles.dropdownItem,
                         skills.includes(item) && {
@@ -265,7 +256,7 @@ const UploadUserDetail: FC<Props> = props => {
                     >
                       <Text
                         size="xs"
-                        text={item}
+                        text={item.name}
                         style={{
                           color: skills.includes(item)
                             ? colors.primary
@@ -281,6 +272,8 @@ const UploadUserDetail: FC<Props> = props => {
 
           <TouchableOpacity onPress={() => setAddressModal('pick')}>
             <TextField
+              editable={false}
+              onPress={() => setAddressModal('pick')}
               value={streetAddress?.address}
               containerStyle={styles.inputContainer}
               placeholderTx="document.streetAddressPlaceholder"
@@ -329,9 +322,7 @@ const UploadUserDetail: FC<Props> = props => {
       />
       <AddressSearchModal
         showCurrent
-        onSelect={(address: AddressParam) => {
-          setStreetAddress(address);
-        }}
+        onSelect={(address: AddressParam) => setStreetAddress(address)}
         isVisible={addressModal !== 'none'}
         onClose={() => setAddressModal('none')}
         title="ride.enterAddress"
@@ -425,7 +416,8 @@ const styles = StyleSheet.create({
 });
 
 const mapStateToProps = (state: RootState) => ({
-  profile: state.auth.myProfile?.data.user,
+  skills: state.setting.basic?.skills,
+  profile: state.auth.myProfile?.user,
   loading: state.auth.userBasicDetailLoading,
 });
 

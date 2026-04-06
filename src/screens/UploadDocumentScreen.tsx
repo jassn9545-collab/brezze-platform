@@ -13,7 +13,6 @@ import {
 } from '../components';
 import {
   Image,
-  ImageSourcePropType,
   Keyboard,
   StyleSheet,
   TouchableOpacity,
@@ -23,7 +22,7 @@ import React, { FC, useRef, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 
 import { AuthStackScreenProps } from '../navigators';
-import { translate, TxKeyPath } from '../i18n';
+import { TxKeyPath } from '../i18n';
 import moment from 'moment';
 import { TrueSheet } from '@lodev09/react-native-true-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,15 +46,6 @@ type FieldError = {
   back_image?: TxKeyPath | undefined;
 };
 
-export const idTypeList: DataType[] = [
-  { name: 'idTypes.driverLicense', id: 'driver_license' },
-  { name: 'idTypes.passport', id: 'passport' },
-  { name: 'idTypes.nationalId', id: 'national_id' },
-  { name: 'idTypes.voterId', id: 'voter_id' },
-  { name: 'idTypes.panCard', id: 'pan_card' },
-  { name: 'idTypes.aadhaarCard', id: 'aadhaar_card' },
-  { name: 'idTypes.residencePermit', id: 'residence_permit' },
-];
 type ImagePicker = {
   visible: boolean;
   type: 'front' | 'back' | '';
@@ -148,7 +138,7 @@ const UploadDocument: FC<Props> = props => {
             <TextField
               editable={false}
               pointerEvents="none"
-              value={idType?.name ? translate(idType.name) : ''}
+              value={idType?.id ? idType.id : ''}
               labelTx="document.idType"
               placeholderTx="document.idTypePlaceholder"
               containerStyle={styles.inputContainer}
@@ -195,7 +185,9 @@ const UploadDocument: FC<Props> = props => {
             >
               {frontImageFormData?.uri ? (
                 <Image
-                  source={frontImageFormData?.uri as ImageSourcePropType}
+                  resizeMode="cover"
+                  style={styles.image}
+                  source={{ uri: frontImageFormData?.uri }}
                 />
               ) : (
                 <>
@@ -235,7 +227,11 @@ const UploadDocument: FC<Props> = props => {
               style={[styles.imageContainer, commonStyle.customShadow]}
             >
               {backImageFormData?.uri ? (
-                <Image source={backImageFormData?.uri as ImageSourcePropType} />
+                <Image
+                  resizeMode="cover"
+                  style={styles.image}
+                  source={{ uri: backImageFormData?.uri }}
+                />
               ) : (
                 <>
                   <Image source={images.uploadingIcon} />
@@ -276,10 +272,15 @@ const UploadDocument: FC<Props> = props => {
       <DropDownList
         title="document.idType"
         ref={IDTypeSheet}
-        data={idTypeList}
+        data={
+          (props.proofList?.map(item => ({
+            id: item.name,
+            title: item.name,
+          })) ?? []) as DataType[]
+        }
         selectedId={idType?.id}
         onSelect={data => setIDType(data)}
-        sizes={sizeForSheet(idTypeList.length, insets)}
+        sizes={sizeForSheet(props.proofList?.length!, insets)}
       />
       <DatePickerModal
         mode="date"
@@ -327,6 +328,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderColor: colors.palette.borderColor,
   },
+  image: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
   buttonStyle: {
     borderRadius: spacing.xs,
     marginVertical: spacing.lg,
@@ -335,6 +341,7 @@ const styles = StyleSheet.create({
 });
 
 const mapStateToProps = (state: RootState) => ({
+  proofList: state.setting.basic?.proof_type,
   loading: state.auth.uploadUserVerificationIDLoading,
 });
 

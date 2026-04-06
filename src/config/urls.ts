@@ -12,6 +12,7 @@ const URLs = {
   ],
 
   // API end points
+  basicSetting: '/setting',
   registration: '/register',
   resendUserVerifyOtp: '/resend-otp',
   verifyUser: '/verify-otp',

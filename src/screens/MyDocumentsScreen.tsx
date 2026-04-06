@@ -11,7 +11,7 @@ import React, { FC, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 
 import { AuthStackScreenProps } from '../navigators';
-import { TxKeyPath } from '../i18n';
+import { translate, TxKeyPath } from '../i18n';
 import { ImagePickerResponse } from 'react-native-image-picker';
 import { RootState } from '../store';
 import { connect, ConnectedProps } from 'react-redux';
@@ -25,32 +25,35 @@ interface DocumentTypes {
   title: TxKeyPath;
   description: TxKeyPath;
   screen?: 'UploadUserDetail' | 'UploadDocument';
+  status: boolean;
 }
-
-const documentList: DocumentTypes[] = [
-  {
-    title: 'document.basicDetailsProvide',
-    description: 'document.basicDetailsProvideDesc',
-    screen: 'UploadUserDetail',
-  },
-  {
-    title: 'document.faceVerification',
-    description: 'document.faceVerificationDesc',
-  },
-  {
-    title: 'document.IDVerification',
-    description: 'document.IDVerificationDesc',
-    screen: 'UploadDocument',
-  },
-];
 
 const MyDocuments: FC<Props> = props => {
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
+  const documentList: DocumentTypes[] = [
+    {
+      title: 'document.basicDetailsProvide',
+      description: 'document.basicDetailsProvideDesc',
+      screen: 'UploadUserDetail',
+      status: !!props.myProfile?.basic_info,
+    },
+    {
+      title: 'document.faceVerification',
+      description: 'document.faceVerificationDesc',
+      status: !!props.myProfile?.profile_pic,
+    },
+    {
+      title: 'document.IDVerification',
+      description: 'document.IDVerificationDesc',
+      screen: 'UploadDocument',
+      status: !!props.myProfile?.proof,
+    },
+  ];
 
   const uploadImage = (image: ImagePickerResponse) => {
     if ((image.assets?.length ?? 0) > 0) {
       var body = new FormData();
-      body.append("profile_image", {
+      body.append('profile_image', {
         uri: image.assets?.[0].uri,
         name: image.assets?.[0].fileName,
         type: image.assets?.[0].type,
@@ -60,6 +63,10 @@ const MyDocuments: FC<Props> = props => {
   };
 
   const onPressDetail = (data: DocumentTypes) => {
+    if (data.status) {
+      return;
+    }
+
     if (data.screen) {
       props.navigation.navigate(data.screen);
     } else {
@@ -68,7 +75,11 @@ const MyDocuments: FC<Props> = props => {
   };
 
   const validate = () => {
-    props.navigation.navigate('CommonSucess', {
+    if (documentList.some(item => !item.status)) {
+      toast.show(translate('document.required'), { type: 'warning' });
+      return;
+    }
+    props.navigation.replace('CommonSucess', {
       from: 'documentVerification',
     });
   };
@@ -90,9 +101,10 @@ const MyDocuments: FC<Props> = props => {
           />
           {documentList?.map((item, index) => (
             <TouchableOpacity
-              onPress={() => onPressDetail(item)}
               key={index}
+              activeOpacity={0.9}
               style={styles.card}
+              onPress={() => onPressDetail(item)}
             >
               <Image source={images.smileIcon} />
               <View style={styles.cardTextWrapper}>
@@ -108,6 +120,12 @@ const MyDocuments: FC<Props> = props => {
                   style={{ color: colors.textDim }}
                 />
               </View>
+              {item.status && (
+                <Image
+                  source={images.tickIcon}
+                  style={{ marginTop: spacing.xxs }}
+                />
+              )}
             </TouchableOpacity>
           ))}
 
@@ -152,7 +170,7 @@ const styles = StyleSheet.create({
     borderColor: colors.palette.borderColor,
   },
   cardTextWrapper: {
-    marginRight: spacing.xxl,
+    flexShrink: 1,
   },
   flex: {
     flex: 1,
@@ -170,6 +188,7 @@ const styles = StyleSheet.create({
 
 const mapStateToProps = (state: RootState) => ({
   photoLoading: state.auth.uploadProfilePhotoLoading,
+  myProfile: state.auth.myProfile,
 });
 
 const mapDispatch = {
