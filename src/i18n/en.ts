@@ -10,6 +10,7 @@ const en = {
     // ProductList: 'Shop',
     // Sip: 'Sip',
     Profile: 'Profile',
+    ProfessionalProfile: 'Profile'
   },
   walkthrough: {
     first: 'Hire Trusted Local Professionals',
@@ -228,7 +229,40 @@ const en = {
     logoutConfirmationDesc: 'Are You Sure want to log out?',
     yesLogout: 'Yes, Log Out',
     cancel: 'Cancel'
-  }
+  },
+
+  helpSupport: {
+    heading: 'Help & Support',
+    sendRequest: 'Send Request',
+    type: 'Type',
+    message: 'Message',
+    submit: 'Submit',
+    faq: 'FAQ',
+    contactUs: 'Contact Us',
+    customerCare: 'Customer Care',
+    whatsapp: 'WhatsApp',
+    email: 'Email',
+    call: 'Call',
+    fullName: 'Full Name',
+    enterEmail: 'Enter your email',
+    enterPhone: 'Enter your Phone',
+    messagePlaceholder: 'Message....',
+    submitBtn: 'Submit',
+    faqTitle: 'Frequently Asked Questions',
+    helpCenter: 'Help Center'
+  },
+  chat: {
+    title: 'Chat',
+    typeMessage: 'Type a message...',
+    online: 'Online',
+    offline: 'Offline',
+    typing: 'typing...',
+    noChatMessage: 'No chat message found',
+    messagePlaceholder: 'Message....',
+    messages: 'Messages',
+    read: 'Read'
+  },
+
 };
 
 export default en;

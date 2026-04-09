@@ -116,7 +116,7 @@ export const resetPasswordSchema = yup.object().shape({
 export type ResetPasswordParams = yup.InferType<typeof resetPasswordSchema>;
 
 export const helpSchema = yup.object().shape({
-  name: yup.number(),
+  name: yup.string().required('validation.required'),
   email: yup
     .string()
     .min(3, 'validation.minEmail')

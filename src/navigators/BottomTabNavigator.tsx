@@ -16,15 +16,16 @@ import { colors } from '../theme';
 // import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
 import { DrawerScreenProps } from '@react-navigation/drawer';
 import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
-import { View } from 'react-native-reanimated/lib/typescript/Animated';
+// import { View } from 'react-native-reanimated/lib/typescript/Animated';
 
 export type BottomTabNavigatorParamList = {
   Home: undefined;
   Categories: undefined;
   Feature: undefined;
   Service: undefined;
-  chat: undefined;
+  Chat: undefined;
   profile: undefined;
+  ProfessionalProfile: undefined;
   // JobPost: undefined;
   // Search: undefined;
 //   Search: undefined;
@@ -60,8 +61,8 @@ export const BottomTabNavigator: FC<NavigationProps> = () => {
     >
       <Tab.Screen name="Home" component={Screens.HomeScreen} /> 
       <Tab.Screen name="Service" component={Screens.ServiceListScreen} />
-      <Tab.Screen name="Chat" component={Screens.ServiceListScreen} />
-      <Tab.Screen name="Profile" component={Screens.ServiceListScreen} />
+      <Tab.Screen name="Chat" component={Screens.ChatScreen} />
+      <Tab.Screen name="ProfessionalProfile" component={Screens.ProfessionalProfileScreen} />
 
 
         {/* <Tab.Screen name="Feature" component={Screens.FeatureScreen} /> */}

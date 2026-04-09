@@ -9,3 +9,6 @@ export * from '../screens/JobPostListScreen';
 export * from '../screens/JobPostDetailsScreen';
 export * from '../screens/HireHistoryScreen';
 export * from '../screens/ProfessionalProfileScreen';
+export * from '../screens/HelpSupportScreen';
+export * from '../screens/ChatDetailScreen';
+export * from '../screens/ChatScreen';

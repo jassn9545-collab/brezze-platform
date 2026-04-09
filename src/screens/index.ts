@@ -20,7 +20,9 @@ export * from './HireHistoryScreen';
 export * from './HireHistoryDetailsScreen';
 export * from './ProfessionalProfileScreen';
 export * from './CenterModal';
-
+export * from './HelpSupportScreen';
+export * from './ChatDetailScreen';
+export * from './ChatScreen';
 
 
 // export * from './NotificationScreen';

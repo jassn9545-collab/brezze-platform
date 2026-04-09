@@ -66,6 +66,7 @@ const palette = {
   startColor: '#3DBFFF',
   endColor: '#0A89C8',
   centerColor: '#FEF3C7',
+  purple: '#40189D',
 
   // Screen specific colors
   jobPostBackground: '#F5F6FA',

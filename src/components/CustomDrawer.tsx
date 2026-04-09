@@ -29,10 +29,9 @@ const CustomDrawer: FC<DrawerContentComponentProps> = (props) => {
     { divider: true },
     { title: 'Payment Methods', icon: images.paymentIcon },
     { title: 'Privacy Policy', icon: images.privacyIcon },
-    { title: 'Help & Support', icon: images.helpIcon },
+    { title: 'Help & Support', icon: images.helpIcon, screen: 'HelpSupport' },
     { title: 'Password Manager', icon: images.passwordIcon },
   ];
-
 
   return (
     <View style={styles.container}>
@@ -51,15 +50,10 @@ const CustomDrawer: FC<DrawerContentComponentProps> = (props) => {
 
       {/* Header */}
       <View>
-
-
-
-
         {/* HEADER */}
         <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
           <View style={styles.row}>
             <Image source={images.profile1} style={styles.avatar} />
-
             <View>
               <Text text="Alex Harrison" weight="semiBold" />
               <View style={styles.verified}>

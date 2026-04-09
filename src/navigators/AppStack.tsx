@@ -15,7 +15,7 @@ import {
   BottomTabNavigator,
   BottomTabNavigatorParamList,
 } from './BottomTabNavigator';
-import { HireHistoryScreen, JobPostConfirmScreen, jobPostDetailsScreen, jobPostListScreen, JobPostScreen, ProfessionalProfileScreen } from '../screens';
+import { HireHistoryScreen, JobPostConfirmScreen, jobPostDetailsScreen, jobPostListScreen, JobPostScreen, ProfessionalProfileScreen, HelpSupportScreen } from '../screens';
 import { CategoriesScreen } from '../screens';
 
 // import { useAppDispatch } from '../store/hooks';
@@ -46,6 +46,8 @@ export type AppStackParamList = {
   Categories: undefined;
   HireHistoryDetails: undefined;
   ProfessionalProfile: undefined;
+  HelpSupport: undefined;
+  ChatDetail: undefined;
 
 
   //modal
@@ -157,6 +159,8 @@ export const AppStack: FC = () => {
       <Stack.Screen name="jobPostDetails" component={jobPostDetailsScreen} />
       <Stack.Screen name="HireHistory" component={HireHistoryScreen} />
       <Stack.Screen name="ProfessionalProfile" component={ProfessionalProfileScreen} />
+      <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+      <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
       <Stack.Screen name="Drawer" component={DrawerNavigator} />
       <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
       <Stack.Group

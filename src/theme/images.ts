@@ -17,7 +17,10 @@ export const images = {
   categories: require('../assets/images/electrician.png'),
   service: require('../assets/images/serviceIcon.png'),
   chat: require('../assets/images/chat.png'),
-  profile: require('../assets/images/profileIcon.png'),
+  ProfessionalProfile: require('../assets/images/profileIcon.png'),
+  user: require('../assets/images/user.png'),
+  tickIcon: require('../assets/images/tickIcon.png'),
+  share: require('../assets/images/share.png'),
 
   //common
   rightArrow: require('../assets/images/rightArrow.png'),
