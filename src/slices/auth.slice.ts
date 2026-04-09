@@ -574,7 +574,7 @@ export const authSlice = createSlice({
       })
       .addCase(userLogin.fulfilled, (state, action) => {
         state.loading = 'loaded';
-        if (action.payload?.user?.is_verification_completed) {
+        if (action.payload?.is_verification_completed) {
           state.isAuthorized = true;
         }
         api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
