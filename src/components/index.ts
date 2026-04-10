@@ -5,7 +5,7 @@ export * from './TextField';
 export * from './Loader';
 export * from './CountryPickerModal';
 export * from './AuthHeader';
-// export * from './Star';
+export * from './AddressSearchModal';
 // export * from './TapRating';
 export * from './DashedLine';
 export * from './SlideUpModal';

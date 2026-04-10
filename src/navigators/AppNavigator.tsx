@@ -1,12 +1,14 @@
-import React, { FC } from 'react';
-import { navigationRef, RootStackParamList } from './navigationUtilities';
-// import Config from '../config';
+import React, { FC, useEffect } from 'react';
+import { navigationRef, RootStackParamList, useBackButtonHandler } from './navigationUtilities';
+import Config from '../config';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppStack } from './AppStack';
 import { AuthStack } from './AuthStack';
 import { RootState } from '../store';
 // import { AppStack } from './AppStack';
 import { connect, ConnectedProps } from 'react-redux';
+import { getAuthorization } from '../slices/auth.slice';
+import { getBasicSettings } from '../slices/setting.slice';
 // import { authActions, getAuthorization } from '../slices/auth.slice';
 // import { Linking } from 'react-native';
 // import { handleInviteURL } from '../utils/util';
@@ -15,21 +17,24 @@ import { connect, ConnectedProps } from 'react-redux';
  * This is a list of all the route names that will exit the app if the back button
  * is pressed while in that screen. Only affects Android.
  */
-// const exitRoutes = Config.exitRoutes;
+const exitRoutes = Config.exitRoutes;
 
 export interface NavigationProps
   extends Partial<
     React.ComponentProps<typeof NavigationContainer<RootStackParamList>>
-  > { }
+  > {}
 
 type Props = NavigationProps & ConnectedProps<typeof connector>;
 
 const MainNavigator: FC<Props> = props => {
-  // useBackButtonHandler(routeName => exitRoutes.includes(routeName));
+  useBackButtonHandler(routeName => exitRoutes.includes(routeName));
+
+  useEffect(() => {
+    props.getBasicSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // useEffect(() => {
-  //   props.getAuthorization();
-
   //   const handleOpenURL = ({ url }: { url: string }) => {
   //     const inviteCode = handleInviteURL(url);
   //     if (inviteCode) {
@@ -42,9 +47,9 @@ const MainNavigator: FC<Props> = props => {
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, []);
 
-  // if (props.booting === 'loading') {
-  //   return <></>;
-  // }
+  if (props.booting === 'loading') {
+    return <></>;
+  }
 
   return (
     <NavigationContainer {...props} ref={navigationRef}>
@@ -52,7 +57,7 @@ const MainNavigator: FC<Props> = props => {
         <AppStack />
       ) : (
         <AuthStack
-        //  initialRouteName={props.initialRouteName}
+         initialRouteName={props.initialRouteName}
         />
       )}
     </NavigationContainer>
@@ -60,15 +65,16 @@ const MainNavigator: FC<Props> = props => {
 };
 
 const mapState = (state: RootState) => ({
-  // booting: state.auth.booting,
+  booting: state.auth.booting,
   isAuthorize: state.auth.isAuthorized,
-  // initialRouteName: state.auth.initialRouteName,
+  initialRouteName: state.auth.initialRouteName,
 });
 
-// const mapDispatch = {
-//   getAuthorization,
-//   setReferralCode: authActions.setReferralCode,
-// };
+const mapDispatch = {
+  getAuthorization,
+  getBasicSettings,
+  // setReferralCode: authActions.setReferralCode,
+};
 
-const connector = connect(mapState);
+const connector = connect(mapState, mapDispatch);
 export default connector(MainNavigator);

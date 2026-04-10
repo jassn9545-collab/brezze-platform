@@ -22,6 +22,11 @@ export const images = {
   tickIcon: require('../assets/images/tickIcon.png'),
   share: require('../assets/images/share.png'),
 
+  //
+  smileIcon: require('../assets/images/smileIcon.png'),
+  smallTick: require('../assets/images/smallTick.png'),
+  waitingIcon: require('../assets/images/waitingIcon.png'),
+  
   //common
   rightArrow: require('../assets/images/rightArrow.png'),
   emailIcon: require('../assets/images/emailIcon.png'),
@@ -33,8 +38,10 @@ export const images = {
   checkboxOutline: require('../assets/images/checkboxOutline.png'),
   successTick: require('../assets/images/successTick.png'),
   logoutIcon: require('../assets/images/logoutIcon.png'),
-
-
+  calender: require('../assets/images/calender.png'),
+  downArrow: require('../assets/images/downArrow.png'),
+  address: require('../assets/images/address.png'),
+  myLocationRounded: require('../assets/images/my-location-rounded.png'),
 
 
   // Homepage

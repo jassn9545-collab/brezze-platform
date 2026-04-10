@@ -136,7 +136,7 @@ const HelpSupport: FC<Props> = () => {
       email,
       msg: message,
       mobileNumber,
-      countryCode: country.dial_code.replace('+', ''),
+      country_code: country.dial_code.replace('+', ''),
     };
     helpSchema
       .validate(params, { abortEarly: false })

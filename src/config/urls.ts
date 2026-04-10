@@ -1,20 +1,23 @@
 
 const URLs = {
-  base: 'https://hirephpdeveloperindia.com/goldapp/api',
+  base: 'https://hirephpdeveloperindia.com/bezzie/api',
 
   socketUrl: '',
-  razorPayKey: 'rzp_test_SI0loib8VgWGVz',
 
   SHARE_URL: 'https://hirephpdeveloperindia.com/referral',
   inviteUrls: [
     'com.gandharva://invite/link',
     'https://hirephpdeveloperindia.com/referral',
   ],
-
+ 
   // API end points
+  basicSetting: '/setting',
   registration: '/register',
   resendUserVerifyOtp: '/resend-otp',
   verifyUser: '/verify-otp',
+  basicDetail: '/basic-info-update',
+  uploadProfile: '/profile-photo-upload',
+  userVerificationID: '/id-verification',
   login: '/login',
   profile: '/profile',
   updateProfile: '/update-profile',

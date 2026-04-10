@@ -5,6 +5,9 @@ export * from './VerificationScreen';
 export * from './ForgotPasswordScreen';
 export * from './ResetPasswordScreen';
 export * from './CommonSucessScreen';
+export * from './MyDocumentsScreen';
+export * from './UploadUserDetailScreen';
+export * from './DocumentReviewScreen';
 
 
 

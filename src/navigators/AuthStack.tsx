@@ -26,11 +26,13 @@ export type AuthStackParamList = {
   Walkthrough: undefined;
   Login: undefined;
   Signup: undefined;
-  Verification: Screens.VerificationParams;
+  Verification: Screens.ForgotPasswordParams | Screens.SignupParams;
   ForgotPassword: undefined;
   ResetPassword: Screens.ResetParams;
   CommonSucess: Screens.CommonSucessParams;
-
+  MyDocuments: undefined
+  UploadUserDetail: undefined
+  DocumentReview: undefined
   // PrivacyPolicy: { title: TxKeyPath; type: Screens.StaticType } | undefined;
   // TermsCondition: { title: TxKeyPath; type: Screens.StaticType } | undefined;
 };
@@ -72,21 +74,35 @@ export const AuthStack: FC<AuthStackProps> = () => {
       />
       <Stack.Screen name="Signup" component={Screens.SignupScreen} />
       <Stack.Screen
-        name="Verification"
-        component={Screens.VerificationScreen}
-      />
+          name="Verification"
+          component={Screens.VerificationScreen}
+        /> 
       <Stack.Screen
         name="ForgotPassword"
         component={Screens.ForgotPasswordScreen}
       />
-      <Stack.Screen
+       <Stack.Screen
         name="ResetPassword"
         component={Screens.ResetPasswordScreen}
       />
-      <Stack.Screen
+       <Stack.Screen
         name="CommonSucess"
         component={Screens.CommonSucessScreen}
       />
+       <Stack.Screen
+        name="MyDocuments"
+        component={Screens.MyDocumentsScreen}
+      />
+       <Stack.Screen
+        name="UploadUserDetail"
+        component={Screens.UploadUserDetailScreen}
+      />
+         <Stack.Screen
+        name="DocumentReview"
+        component={Screens.DocumentReviewScreen}
+      />
+      {/* 
+
       {/* <Stack.Screen
          name="PrivacyPolicy"
          component={Screens.StaticScreen<'PrivacyPolicy'>}
