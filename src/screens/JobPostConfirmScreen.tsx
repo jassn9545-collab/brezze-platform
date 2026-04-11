@@ -1,216 +1,320 @@
-import { BackButtom, Screen, Text, TextField, CustomImagePicker } from '../components';
+import {
+  BackButtom,
+  Screen,
+  Text,
+  TextField,
+  CustomImagePicker,
+  AddressParam,
+  AddressSearchModal,
+  TextFieldAccessoryProps,
+  Button,
+  Loader,
+} from '../components';
 import {
   StyleSheet,
   View,
   Image,
   TouchableOpacity,
+  Keyboard,
 } from 'react-native';
-import React, { FC, useState } from 'react';
-import { spacing, images, colors } from '../theme';
+import React, { FC, useEffect, useRef, useState } from 'react';
+import { spacing, colors, images } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
 import { ImagePickerResponse } from 'react-native-image-picker';
-import { translate } from '../i18n';
+import { AddressType } from '../slices/address.types';
+import { TxKeyPath } from '../i18n';
+import { Currency } from '../config/defaults';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { LATITUDE_DELTA, LONGITUDE_DELTA } from '../utils/util';
+import { currentPosition } from '../utils/Location';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { connect, ConnectedProps } from 'react-redux';
+import { RootState } from '../store';
+import { commonStyle } from '../theme/style';
+import { buildError, JobPostSecondSchema } from '../apis/schema';
+import { ValidationError } from 'yup';
+import { createJob } from '../slices/job.slice';
 
 type NavigationProps = AppStackScreenProps<'JobPostStep2'>;
-type Props = NavigationProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
-const JobPostStep2: FC<Props> = (props) => {
+type FieldError = {
+  budget?: TxKeyPath | undefined;
+  address?: TxKeyPath | undefined;
+  images?: TxKeyPath | undefined;
+};
 
+type ImageItem = {
+  uri: string;
+  name: string;
+  type: string;
+};
+
+const addressLeftAccessory = (props: TextFieldAccessoryProps) => {
+  return (
+    <View style={[props.style, styles.inputAccessoryStyle]}>
+      <Image source={images.locationPin} />
+    </View>
+  );
+};
+const JobPostStep2: FC<Props> = props => {
+  const insets = useSafeAreaInsets();
+  const map = useRef<MapView>(null);
+  const [selectedAddress, setSelectedAddress] = useState<AddressParam>();
+  const [addressModal, setAddressModal] = useState<AddressType>('none');
   const [budget, setBudget] = useState('');
-  const [location, setLocation] = useState('');
-  const [selectedImages, setSelectedImages] = useState<ImagePickerResponse[]>([]);
+
+  const [error, setError] = useState<FieldError>({});
+  const [selectedImages, setSelectedImages] = useState<ImageItem[]>([]);
+
   const [imagePickerModal, setImagePickerModal] = useState(false);
-  const [locationPickerModal, setLocationPickerModal] = useState(false);
 
-  const locations = [
-    { name: '123 Main Street, Sydney NSW 2000', coordinates: { lat: -33.8688, lng: 151.2093 } },
-    { name: '456 Park Avenue, Melbourne VIC 3000', coordinates: { lat: -37.8136, lng: 144.9631 } },
-    { name: '789 Queen Street, Brisbane QLD 4000', coordinates: { lat: -27.4679, lng: 153.0281 } },
-    { name: '321 King Street, Perth WA 6000', coordinates: { lat: -31.9505, lng: 115.8605 } },
-  ];
+  useEffect(() => {
+    if (map.current && selectedAddress?.location) {
+      map.current.animateToRegion(
+        {
+          latitude: selectedAddress.location.lat,
+          longitude: selectedAddress.location.lng,
+          latitudeDelta: LATITUDE_DELTA,
+          longitudeDelta: LONGITUDE_DELTA,
+        },
+        500,
+      );
+    }
+  }, [selectedAddress]);
 
-  const handleImagePicked = (image: ImagePickerResponse) => {
-    if (selectedImages.length < 2) {
-      setSelectedImages([...selectedImages, image]);
+  const uploadImage = (image: ImagePickerResponse) => {
+    if ((image.assets?.length ?? 0) > 0) {
+      const asset = image.assets![0];
+      const body: ImageItem = {
+        uri: asset.uri ?? '',
+        name: asset.fileName ?? `image_${Date.now()}.jpg`,
+        type: asset.type ?? 'image/jpeg',
+      };
+
+      setSelectedImages(prev => [...prev, body]);
     }
   };
 
   const removeImage = (index: number) => {
-    setSelectedImages(selectedImages.filter((_, i) => i !== index));
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleLocationSelect = (locationName: string) => {
-    setLocation(locationName);
-    setLocationPickerModal(false);
+  const validate = () => {
+    JobPostSecondSchema.validate(
+      {
+        budget,
+        address: selectedAddress?.address,
+        images: selectedImages,
+      },
+      { abortEarly: false },
+    )
+      .then(res => {
+        Keyboard.dismiss();
+        const formData = new FormData();
+        formData.append('category', props.route.params.category);
+        formData.append('description', props.route.params.description);
+        formData.append('title', props.route.params.title);
+        formData.append('budget', res.budget);
+        formData.append('address', res.address);
+        formData.append('images', res.images);
+        formData.append('latitude', selectedAddress?.location.lat);
+        formData.append('longitude', selectedAddress?.location.lat);
+
+        props.createJob(formData)
+        setError({});
+      })
+      .catch((errors: ValidationError) => {
+        const err = buildError<FieldError>(errors);
+        setError(err);
+      });
   };
+
   return (
-    <Screen
-      preset="scroll"
-      contentContainerStyle={styles.container}
-      safeAreaEdges={['top']}
-    >
-      {/* HEADER */}
-      <BackButtom headingTx="jobPost.heading" />
+    <>
+      <Screen
+        preset="auto"
+        safeAreaEdges={['top']}
+        contentContainerStyle={styles.container}
+      >
+        <BackButtom headingTx="jobPost.heading" />
 
-      <View style={styles.main}>
-        {/* STEP */}
-        <View style={styles.stepContainer}>
-          <Text tx="jobPost.step2Label" weight="semiBold" />
-          <Text tx="jobPost.step2Details" size="xs" style={styles.stepRight} />
-        </View>
-
-        <View style={styles.progressBar}>
-          <View style={styles.progressFill} />
-        </View>
-
-        {/* LOCATION */}
-        <Text tx="jobPost.location" weight="semiBold" style={styles.sectionTitle} />
-
-        <TouchableOpacity
-          style={styles.mapContainer}
-          onPress={() => setLocationPickerModal(true)}
-        >
-          <Image source={images.map} style={styles.mapImage} />
-          <View style={styles.mapOverlay}>
-            <Text tx="jobPost.selectLocation" style={styles.mapOverlayText} />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.currentLocation}
-          onPress={() => setLocationPickerModal(true)}
-        >
-          <Text text={'📍 ' + translate('jobPost.chooseFromMap')} style={styles.linkText} />
-        </TouchableOpacity>
-
-        <TextField
-          placeholderTx="jobPost.enterLocationPlaceholder"
-          value={location}
-          onChangeText={setLocation}
-          containerStyle={styles.input}
-        />
-
-        {/* Location Picker Modal */}
-        {locationPickerModal && (
-          <View style={styles.modal}>
-            <TouchableOpacity
-              style={styles.modalOverlay}
-              onPress={() => setLocationPickerModal(false)}
+        <View style={styles.main}>
+          <View style={styles.stepContainer}>
+            <Text tx="jobPost.step2Label" weight="semiBold" />
+            <Text
+              tx="jobPost.step2Details"
+              size="xs"
+              style={styles.stepRight}
             />
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text tx="jobPost.selectLocationTitle" weight="semiBold" size="lg" />
-                <TouchableOpacity onPress={() => setLocationPickerModal(false)}>
-                  <Text text="✕" size="lg" />
-                </TouchableOpacity>
-              </View>
+          </View>
 
-              {locations.map((loc, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.locationItem}
-                  onPress={() => handleLocationSelect(loc.name)}
+          <View style={styles.progressBar}>
+            <View style={styles.progressFill} />
+          </View>
+
+          <View style={styles.map}>
+            <Text
+              size="sm"
+              weight="medium"
+              tx="jobPost.location"
+              style={{
+                marginBottom: spacing.xs,
+              }}
+            />
+            <MapView
+              ref={map}
+              maxZoomLevel={17}
+              showsUserLocation={true}
+              showsMyLocationButton={false}
+              provider={PROVIDER_GOOGLE}
+              initialRegion={{
+                latitude:
+                  selectedAddress?.location.lat ??
+                  currentPosition?.lat ??
+                  props.myProfile?.latitude ??
+                  0,
+                longitude:
+                  selectedAddress?.location.lng ??
+                  currentPosition?.lng ??
+                  props.myProfile?.longitude ??
+                  0,
+                latitudeDelta: LATITUDE_DELTA,
+                longitudeDelta: LONGITUDE_DELTA,
+              }}
+              style={styles.mapView}
+            >
+              {(selectedAddress?.location || currentPosition) && (
+                <Marker.Animated
+                  key={`${selectedAddress}`}
+                  coordinate={{
+                    latitude:
+                      selectedAddress?.location.lat ??
+                      currentPosition?.lat ??
+                      0,
+                    longitude:
+                      selectedAddress?.location.lng ??
+                      currentPosition?.lng ??
+                      0,
+                  }}
                 >
-                  <Text text="📍" style={styles.locationIcon} />
-                  <View style={styles.locationTextContainer}>
-                    <Text text={loc.name} size="sm" />
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* BUDGET + DURATION */}
-        <View style={styles.row}>
-          <View style={styles.half}>
-            <Text text="Budget Range (AUD)" weight="medium" />
-            <TextField value={budget} onChangeText={setBudget} placeholder="$ 500" containerStyle={styles.input} />
+                  <Image source={images.address} />
+                </Marker.Animated>
+              )}
+            </MapView>
           </View>
 
-          {/* <View style={styles.half}>
-          <Text text="Duration" weight="medium" />
-          <TextField placeholder="1-3 Days" containerStyle={styles.input} />
-        </View> */}
-        </View>
+          <TouchableOpacity onPress={() => setAddressModal('pick')}>
+            <TextField
+              editable={false}
+              pointerEvents="none"
+              LeftAccessory={addressLeftAccessory}
+              onPress={() => setAddressModal('pick')}
+              value={selectedAddress?.address}
+              placeholderTx="jobPost.enterLocationPlaceholder"
+              helperTx={error?.address}
+              status={error?.address ? 'error' : undefined}
+            />
+          </TouchableOpacity>
 
-        {/* UPLOAD */}
-        <Text tx="jobPost.uploadPhotosLabel" weight="semiBold" style={styles.sectionTitle} />
+          <TextField
+            value={budget}
+            labelTx="jobPost.budgetRangeLabel"
+            labelTxOptions={{
+              value: Currency.code,
+            }}
+            onChangeText={setBudget}
+            placeholder={Currency.sign + ' 500'}
+            containerStyle={styles.input}
+            helperTx={error?.budget}
+            status={error?.budget ? 'error' : undefined}
+          />
 
-        <View style={styles.uploadRow}>
-          {selectedImages.length < 2 && (
+          <Text tx="jobPost.uploadPhotosLabel" weight="medium" />
+          <View style={styles.uploadRow}>
             <TouchableOpacity
               style={styles.uploadBox}
               onPress={() => setImagePickerModal(true)}
             >
-              <Text text="📷" size="lg" />
+              <Image source={images.camera} />
               <Text tx="jobPost.uploadButtonText" size="xs" />
             </TouchableOpacity>
-          )}
 
-          {selectedImages.map((image, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.imageBox}
-              onPress={() => removeImage(index)}
-            >
-              {image.assets?.[0]?.uri && (
+            {selectedImages.map((image, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.imageBox}
+                onPress={() => removeImage(index)}
+              >
                 <Image
-                  source={{ uri: image.assets?.[0]?.uri }}
+                  source={{ uri: image.uri ?? '' }}
                   style={styles.selectedImage}
                 />
-              )}
-              <View style={styles.removeButton}>
-                <Text text="✕" size="xs" style={styles.removeButtonText} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text
-          tx="jobPost.photosHelpText"
-          size="xxs"
-          style={styles.infoText}
-        />
-
-        <CustomImagePicker
-          imagePickerModal={imagePickerModal}
-          onDismiss={() => setImagePickerModal(false)}
-          callback={handleImagePicked}
-        />
-
-        {/* FOOTER */}
-        <View style={styles.footer}>
-          <View style={styles.footerRow}>
-            <Text tx="jobPost.step2Label" />
-            <Text tx="jobPost.almostThere" weight="semiBold" />
+                <View style={styles.removeButton}>
+                  <Text text="✕" size="xs" style={styles.redText} />
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
-
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => props.navigation.navigate("JobPostList")}
-          >
+          {error.images && (
             <Text
-              tx="jobPost.postJobButton"
-              weight="semiBold"
-              style={styles.buttonText}
+              preset="formHelper"
+              tx={error.images}
+              style={{ color: colors.error }}
             />
-          </TouchableOpacity>
+          )}
+          <View style={styles.imageHelperView}>
+            <Image source={images.info} style={{ marginTop: spacing.xxs }} />
+            <Text
+              size="xxs"
+              tx="jobPost.photosHelpText"
+              style={{ color: colors.palette.grayLight }}
+            />
+          </View>
+        </View>
+      </Screen>
+      <View
+        style={[
+          styles.footer,
+          commonStyle.customShadow,
+          { paddingBottom: insets.bottom },
+        ]}
+      >
+        <View style={styles.footerRow}>
+          <Text tx="jobPost.step2Label" weight="medium" />
+          <Text tx="jobPost.almostThere" weight="bold" />
         </View>
 
+        <Button
+          tx="jobPost.postJobButton"
+          onPress={validate}
+          style={styles.buttonStyle}
+        />
       </View>
-    </Screen>
+      <AddressSearchModal
+        showCurrent
+        onSelect={(address: AddressParam) => setSelectedAddress(address)}
+        isVisible={addressModal !== 'none'}
+        onClose={() => setAddressModal('none')}
+        title="ride.enterAddress"
+      />
+      <CustomImagePicker
+        imagePickerModal={imagePickerModal}
+        onDismiss={() => setImagePickerModal(false)}
+        callback={uploadImage}
+      />
+      <Loader loading={props.loading === 'loading'} />
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-
   container: {
     flexGrow: 1,
-    backgroundColor: colors.palette.jobPostBackground,
   },
   main: {
+    marginBottom: spacing.md,
     marginHorizontal: spacing.md,
   },
   stepContainer: {
@@ -218,11 +322,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: spacing.sm,
   },
-
   stepRight: {
     color: colors.palette.primaryBlue,
   },
-
   progressBar: {
     height: 6,
     backgroundColor: colors.palette.lightGray,
@@ -230,203 +332,102 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     marginBottom: spacing.md,
   },
-
   progressFill: {
     width: '100%',
     height: '100%',
     backgroundColor: colors.palette.primaryBlue,
     borderRadius: 10,
   },
-
-  sectionTitle: {
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-  },
-
-  mapContainer: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: colors.palette.primaryBlue,
-    position: 'relative',
-  },
-
-  mapImage: {
-    width: '100%',
-    height: 150,
-  },
-
-  mapOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.palette.overlayDark30,
-  },
-
-  mapOverlayText: {
-    color: colors.palette.white,
-    fontWeight: 'bold',
-  },
-
-  currentLocation: {
-    marginTop: spacing.sm,
-  },
-
-  linkText: {
-    color: colors.palette.primaryBlue,
-  },
-
   input: {
-    marginTop: spacing.sm,
+    marginVertical: spacing.md,
   },
-
-  row: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
+  inputAccessoryStyle: {
+    marginVertical: spacing.sm,
+    height: 24,
   },
-
-  half: {
+  map: {
+    flex: 1,
+    height: 185,
+    marginBottom: spacing.md,
+  },
+  mapView: {
     flex: 1,
   },
-
   uploadRow: {
-    flexDirection: 'row',
+    flex: 1,
     gap: spacing.sm,
-    marginTop: spacing.sm,
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
   },
-
   uploadBox: {
     width: 90,
     height: 90,
     borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.palette.lightBorder,
-    justifyContent: 'center',
+    gap: spacing.xxs,
     alignItems: 'center',
-    borderRadius: 10,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    borderRadius: spacing.xs,
+    borderColor: colors.palette.lightBorder,
+    backgroundColor: colors.palette.lightShadowPrimary,
   },
-
   imageBox: {
     width: 90,
     height: 90,
-    backgroundColor: colors.palette.imageBackground,
-    borderRadius: 10,
     overflow: 'hidden',
-    position: 'relative',
+    borderRadius: spacing.xs,
+    backgroundColor: colors.palette.imageBackground,
   },
-
   selectedImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-
   removeButton: {
+    top: 2,
+    right: 2,
+    zIndex: 999,
+    width: spacing.lg,
+    height: spacing.lg,
     position: 'absolute',
-    top: -5,
-    right: -5,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.palette.overlayDark60,
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: spacing.sm,
+    justifyContent: 'center',
+    backgroundColor: colors.palette.white,
   },
-
-  removeButtonText: {
-    color: colors.palette.white,
+  redText: {
+    color: colors.palette.red,
   },
-
-  infoText: {
+  imageHelperView: {
+    gap: spacing.xs,
+    flexDirection: 'row',
     marginTop: spacing.sm,
-    color: colors.palette.grayLight,
   },
-
   footer: {
-    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.palette.white,
   },
-
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
   },
-  button: {
+  buttonStyle: {
     marginTop: spacing.lg,
-    backgroundColor: colors.palette.primaryBlue,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
+    borderRadius: spacing.md,
   },
-
-  buttonText: {
-    color: colors.palette.white,
-  },
-
-  modal: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1000,
-  },
-
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.palette.overlayDark50,
-  },
-
-  modalContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.palette.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: spacing.md,
-    maxHeight: '70%',
-  },
-
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.palette.grayLight2,
-  },
-
-  locationItem: {
-    flexDirection: 'row',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    marginBottom: spacing.xs,
-    borderRadius: 8,
-    backgroundColor: colors.palette.jobPostBackground,
-    alignItems: 'center',
-  },
-
-  locationIcon: {
-    marginRight: spacing.md,
-    fontSize: 20,
-  },
-
-  locationTextContainer: {
-    flex: 1,
-  },
-
 });
 
-export const JobPostConfirmScreen = JobPostStep2;
+const mapStateToProps = (state: RootState) => ({
+  loading: state.job.createloading,
+  myProfile: state.auth.myProfile?.user,
+});
+
+const mapDispatch = {
+  createJob,
+};
+
+const connector = connect(mapStateToProps, mapDispatch);
+export const JobPostConfirmScreen = connector(JobPostStep2);

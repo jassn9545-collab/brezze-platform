@@ -68,7 +68,7 @@ export const loginSchema = yup.object().shape({
   password: yup.string().required('validation.required'),
   firebaseToken: yup.string(),
   checked: yup.boolean(),
-  user_type: yup.string()
+  user_type: yup.string(),
 });
 
 export type Signin = yup.InferType<typeof loginSchema>;
@@ -223,3 +223,22 @@ export const submitWorkSchema = yup.object().shape({
 });
 
 export type SubmitWorkParams = yup.InferType<typeof submitWorkSchema>;
+
+export const JobPostFirstSchema = yup.object().shape({
+  title: yup.string().required('validation.required'),
+  category: yup.string().required('validation.required'),
+  description: yup.string().required('validation.required'),
+});
+
+export type JobPostFirstParams = yup.InferType<typeof JobPostFirstSchema>;
+
+export const JobPostSecondSchema = yup.object().shape({
+  budget: yup.string().required('validation.required'),
+  address: yup.string().required('validation.required'),
+  images: yup
+    .array()
+    .min(1, 'validation.required')
+    .required('validation.required'),
+});
+
+export type JobPostSecondParams = yup.InferType<typeof JobPostSecondSchema>;

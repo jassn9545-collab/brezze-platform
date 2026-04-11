@@ -17,6 +17,7 @@ import {
 } from './BottomTabNavigator';
 import { HireHistoryScreen, JobPostConfirmScreen, jobPostDetailsScreen, jobPostListScreen, JobPostScreen, ProfessionalProfileScreen, HelpSupportScreen } from '../screens';
 import { CategoriesScreen } from '../screens';
+import { JobPostFirstParams } from '../apis/schema';
 
 // import { useAppDispatch } from '../store/hooks';
 // import { getProfile } from '../slices/auth.slice';
@@ -39,7 +40,7 @@ export type AppStackParamList = {
   BottomTab: NavigatorScreenParams<BottomTabNavigatorParamList>;
   Drawer: NavigatorScreenParams<DrawerParamsList>;
   JobPost: undefined;
-  JobPostStep2: undefined;
+  JobPostStep2: JobPostFirstParams;
   JobPostList: undefined;
   jobPostDetails: undefined;
   HireHistory: undefined;
@@ -52,56 +53,6 @@ export type AppStackParamList = {
 
   //modal
   CenterModal: Screens.CenterModalParams
-
-
-  //   EditProfile: undefined;
-  //   SavedAddress: undefined;
-  //   AddAddress: undefined;
-  //   Wishlist: undefined;
-  //   Cart: undefined;
-  //   Orders: undefined;
-  //   ReferEarn: undefined;
-  //   Notification: undefined;
-  //   FAQ: undefined;
-  //   Vault: undefined;
-  //   Withdrawal: undefined;
-  //   Transection: {
-  //     type: 'sip' | 'gold' | 'silver';
-  //     heading: TxKeyPath;
-  //     investmentText: TxKeyPath;
-  //     histroyHeading: TxKeyPath;
-  //   };
-  //   Thankyou: {
-  //     type: 'sip' | 'gold' | 'cart';
-  //     desc: string;
-  //   };
-  //   BankAccounts: undefined;
-  //   AddBankAccount: {
-  //     type: 'add' | 'edit';
-  //     data?: MyAccountResponse;
-  //   };
-  //   ChangeLanguage: undefined;
-  //   PrivacyPolicy:
-  //     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
-  //     | undefined;
-  //   TermsCondition:
-  //     | {
-  //         title: TxKeyPath;
-  //         type: Screens.StaticType;
-  //         data?: string;
-  //         from?: string;
-  //       }
-  //     | undefined;
-  //   AboutUs:
-  //     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
-  //     | undefined;
-  //   BottomModal: {
-  //     modalType: 'logout' | 'deleteAccount';
-  //     title: TxKeyPath;
-  //     desc: TxKeyPath;
-  //     image: ImageSourcePropType;
-  //     btnText: TxKeyPath;
-  //   };
 };
 
 export type AppStackScreenProps<T extends keyof AppStackParamList> =
@@ -151,7 +102,10 @@ export const AppStack: FC = () => {
         navigationBarColor: colors.background,
       })}
       initialRouteName="Drawer"
-    >
+      >
+      <Stack.Screen name="Drawer" component={DrawerNavigator} />
+      <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
+
       <Stack.Screen name="JobPost" component={JobPostScreen} />
       <Stack.Screen name="Categories" component={CategoriesScreen} />
       <Stack.Screen name="JobPostStep2" component={JobPostConfirmScreen} />
@@ -161,8 +115,6 @@ export const AppStack: FC = () => {
       <Stack.Screen name="ProfessionalProfile" component={ProfessionalProfileScreen} />
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
-      <Stack.Screen name="Drawer" component={DrawerNavigator} />
-      <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
       <Stack.Group
         screenOptions={{
           presentation: 'transparentModal',

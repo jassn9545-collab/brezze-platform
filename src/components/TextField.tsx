@@ -146,8 +146,8 @@ export const TextField = forwardRef(function TextField(
 
   const $inputWrapperStyles = [
     $inputWrapperStyle,
-    // status === 'error' && { borderBottomColor: colors.error, borderBottomWidth: 1 },
-    textInputProps.multiline && { minHeight: 103 },
+    status === 'error' && { borderColor: colors.error, borderWidth: 1 },
+    textInputProps.multiline && { minHeight: 122 },
     LeftAccessory && { paddingStart: 0 },
     RightAccessory && { paddingEnd: 0 },
     $inputWrapperStyleOverride,
@@ -243,7 +243,6 @@ export const TextField = forwardRef(function TextField(
 });
 
 const $labelStyle: TextStyle = {
-  marginStart: spacing.md,
   marginBottom: spacing.xxxs,
   color: colors.text,
 };
@@ -274,7 +273,6 @@ const $inputStyle: TextStyle = {
 
 const $helperStyle: TextStyle = {
   marginTop: spacing.xxxs,
-  marginStart: spacing.md,
 };
 
 const $rightAccessoryStyle: ViewStyle = {

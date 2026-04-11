@@ -31,42 +31,8 @@ const URLs = {
   withdrawReferEarn: '/withdraw-earning',
   getUserNotifications: '/notifications',
 
-  home: '/home',
-  categories: '/all-categories',
-  productList: '/product-list',
-  productDetail: (id: number) => '/product/' + id,
-  addCart: '/add-to-cart',
-  cartDetail: '/my-cart',
-  addWishlist: '/add-to-wishlist',
-  removeWishlist: '/remove-wishlist',
-  myWishlist: 'my-wishlist',
-  bookedGoldDetail: '/current-gold-in-wallet',
-  bookGold: '/gold-booking',
-  transections: '/my-gold-bookings',
-  
-  createOrder: '/make-order',
-  orderList: '/my-orders',
-  createCustomOrder: '/make-custom-order',
-  customOrderList: '/custom-order',
-
-  // sip
-  sipTC: '/start-sip',
-  sipTCAccept: '/sip-accept-tc',
-  makeSipPayment: '/make-sip-payment',
-  sipTransaction: '/my-sips',
-
-  myWallet: '/my-wallet',
-  myWithdrawal: '/my-withdrawals',
-  withdrawSipAmount: '/withdraw-sip-amount',
-  buyGoldWithSip: '/buy-gold-with-sip',
-  sellGold: '/sell-gold',
-
-  // bank accounts
-  addBankAccount: '/add-account',
-  editBankAccount: '/update-account',
-  bankAccountList: '/my-accounts',
-  markPrimaryAccount: '/mark-account-primary',
-  deleteBankAcount: '/delete-account'
+  // job
+  createJob: '/client/new-job',
 };
 
 export default URLs;

@@ -158,7 +158,7 @@ import {
             user_type: 'client',
             //   firebaseToken,
           },
-          { abortEarly: false, context: { isSignup: true } },
+          { abortEarly: false },
         )
         .then(res => {
           if (tnc === false) {

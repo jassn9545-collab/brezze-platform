@@ -27,8 +27,8 @@ export interface CurrencyType {
 }
 
 export let Currency: CurrencyType = {
-  sign: '₹',
-  code: 'INR',
+  sign: '$',
+  code: 'AUD',
 };
 
 export const setCurrency = (currency: CurrencyType = Currency) => {

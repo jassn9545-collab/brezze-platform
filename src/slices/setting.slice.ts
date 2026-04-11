@@ -11,7 +11,7 @@ export interface BasicData {
 }
 
 export interface Skill {
-  id: number
+  id: string
   name: string
   slug: string
   photo: string

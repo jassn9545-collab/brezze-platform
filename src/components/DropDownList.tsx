@@ -105,6 +105,7 @@ export const DropDownRightAccessory: FC<TextFieldAccessoryProps> = props => {
     <View style={[props.style, styles.dropDown]}>
       <Image
         source={images.rightArrow}
+        tintColor={colors.palette.darkGray2}
         style={{
           transform: [{ rotate: '90deg' }],
         }}

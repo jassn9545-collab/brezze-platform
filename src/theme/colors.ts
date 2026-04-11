@@ -68,6 +68,7 @@ const palette = {
   centerColor: '#FEF3C7',
   purple: '#40189D',
 
+  lightShadowPrimary: "#F8FAFC",
   // Screen specific colors
   jobPostBackground: '#F5F6FA',
   primaryBlue: '#2F6BFF',

@@ -102,7 +102,7 @@ const UploadUserDetail: FC<Props> = props => {
           state,
           pincode: zipCode,
         },
-        { abortEarly: false, context: { isSignup: true } },
+        { abortEarly: false },
       )
       .then(res => {
         Keyboard.dismiss();
@@ -174,6 +174,7 @@ const UploadUserDetail: FC<Props> = props => {
           <TouchableOpacity onPress={() => setAddressModal('pick')}>
             <TextField
               editable={false}
+              pointerEvents='none'
               onPress={() => setAddressModal('pick')}
               value={streetAddress?.address}
               containerStyle={styles.inputContainer}

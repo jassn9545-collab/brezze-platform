@@ -43,6 +43,9 @@ export const images = {
   downArrow: require('../assets/images/downArrow.png'),
   address: require('../assets/images/address.png'),
   myLocationRounded: require('../assets/images/my-location-rounded.png'),
+  locationPin: require('../assets/images/locationPin.png'),
+  camera: require('../assets/images/camera.png'),
+  info: require('../assets/images/info.png'),
 
 
   // Homepage
@@ -64,7 +67,6 @@ export const images = {
   checkIcon: require('../assets/images/checkIcon.png'),
   switchbox: require('../assets/images/switchbox.png'),
   searchService: require('../assets/images/SearchServiceIcon1.png'),
-  map: require('../assets/images/map.png'),
 
   // side menu icons
 

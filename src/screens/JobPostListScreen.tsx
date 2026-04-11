@@ -1,10 +1,5 @@
 import { BackButtom, Screen, Text } from '../components';
-import {
-  StyleSheet,
-  View,
-  Image,
-  TouchableOpacity,
-} from 'react-native';
+import { StyleSheet, View, Image, TouchableOpacity } from 'react-native';
 import React, { FC } from 'react';
 import { spacing, images, colors } from '../theme';
 import { translate } from '../i18n';
@@ -13,8 +8,7 @@ import { AppStackScreenProps } from '../navigators/AppStack';
 type NavigationProps = AppStackScreenProps<'JobPostList'>;
 type Props = NavigationProps;
 
-const JobPostList: FC<Props> = (props) => {
-
+const JobPostList: FC<Props> = props => {
   const jobs = [
     {
       status: 'IN PROGRESS',
@@ -45,11 +39,20 @@ const JobPostList: FC<Props> = (props) => {
   const getStatusStyle = (type: string) => {
     switch (type) {
       case 'progress':
-        return { backgroundColor: colors.palette.startColor + '33', color: colors.palette.primaryBlue };
+        return {
+          backgroundColor: colors.palette.startColor,
+          color: colors.palette.primaryBlue,
+        };
       case 'pending':
-        return { backgroundColor: colors.palette.centerColor + '33', color: colors.palette.warning || '#FEF3C7' };
+        return {
+          backgroundColor: colors.palette.centerColor,
+          color: colors.palette.warning,
+        };
       default:
-        return { backgroundColor: colors.palette.lightGray, color: colors.palette.grayLight2 || '#666' };
+        return {
+          backgroundColor: colors.palette.lightGray,
+          color: colors.palette.grayLight2,
+        };
     }
   };
 
@@ -69,11 +72,19 @@ const JobPostList: FC<Props> = (props) => {
 
           return (
             <View key={index} style={styles.card}>
-
               {/* TOP ROW */}
               <View style={styles.topRow}>
-                <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor }]}>
-                  <Text text={item.status} size="xxs" style={{ color: statusStyle.color }} />
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: statusStyle.backgroundColor },
+                  ]}
+                >
+                  <Text
+                    text={item.status}
+                    size="xxs"
+                    style={{ color: statusStyle.color }}
+                  />
                 </View>
                 <Text text={item.time} size="xxs" style={styles.timeText} />
               </View>
@@ -86,19 +97,26 @@ const JobPostList: FC<Props> = (props) => {
 
               {/* BOTTOM ROW */}
               <View style={styles.bottomRow}>
-
                 {/* Avatars */}
                 <View style={styles.avatarRow}>
                   <Image source={images.profile1} style={styles.avatar} />
                   <Image source={images.profile2} style={styles.avatar} />
                   <View style={styles.plusAvatar}>
-                    <Text text="+12" size="xxs" style={{ color: colors.palette.white }} />
+                    <Text
+                      text="+12"
+                      size="xxs"
+                      style={{ color: colors.palette.white }}
+                    />
                   </View>
                 </View>
 
                 {/* Proposals */}
                 <View style={styles.alignRight}>
-                  <Text tx="jobPostList.proposals" size="xxs" style={styles.proposalLabel} />
+                  <Text
+                    tx="jobPostList.proposals"
+                    size="xxs"
+                    style={styles.proposalLabel}
+                  />
                   <Text
                     text={item.proposals}
                     weight="semiBold"
@@ -113,10 +131,13 @@ const JobPostList: FC<Props> = (props) => {
               {/* Draft Button */}
               {/* {item.type === 'draft' && ( */}
               <TouchableOpacity style={styles.draftBtn}>
-                <Text tx="jobPostList.completeButton" style={styles.draftBtnText} onPress={() => props.navigation.navigate('jobPostDetails')} />
+                <Text
+                  tx="jobPostList.completeButton"
+                  style={styles.draftBtnText}
+                  onPress={() => props.navigation.navigate('jobPostDetails')}
+                />
               </TouchableOpacity>
               {/* )} */}
-
             </View>
           );
         })}
@@ -126,7 +147,6 @@ const JobPostList: FC<Props> = (props) => {
 };
 
 const styles = StyleSheet.create({
-
   container: {
     flexGrow: 1,
 
@@ -224,7 +244,6 @@ const styles = StyleSheet.create({
   draftBtnText: {
     color: colors.palette.primaryBlue,
   },
-
 });
 
 export const jobPostListScreen = JobPostList;
