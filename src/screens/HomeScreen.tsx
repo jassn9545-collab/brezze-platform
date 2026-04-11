@@ -1,10 +1,12 @@
 import {
+  Loader,
   Screen,
   Text,
   TextField,
   TextFieldAccessoryProps,
 } from '../components';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   ListRenderItemInfo,
@@ -12,14 +14,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useRef, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBottomTabScreenProps } from '../navigators';
+import { getJobList, JobListParams } from '../slices/home.slice';
+import { RootState } from '../store';
+import { connect, ConnectedProps } from 'react-redux';
+import ListEmptyComponent from '../components/ListEmptyComponent';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-type Props = NavigationProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 export const searchLeftAccessory = (props: TextFieldAccessoryProps) => {
   return (
@@ -31,18 +37,28 @@ export const searchLeftAccessory = (props: TextFieldAccessoryProps) => {
 
 const jobQuickPoints = ['Contract Job', 'Experience', 'Payment Verified'];
 
+let page = 1;
 const Home: FC<Props> = props => {
   const insets = useSafeAreaInsets();
+  const flatlist = useRef<FlatList>(null);
   const [search, setSearch] = useState('');
+  const fetching = props.loading === 'loading';
 
-  //   const [activeIndex, setActiveIndex] = useState(0);
+  const loadMore = () => {
+    if (!fetching && props.totalcount > props.data.length) {
+      page++;
+      getData();
+    }
+  };
 
-  //   useEffect(() => {
-  //     props.getHomeData();
-  //     props.getCategories();
-  //     props.getProfile();
-  //     // eslint-disable-next-line react-hooks/exhaustive-deps
-  //   }, []);
+  const load = () => {
+    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
+    page = 1;
+    getData();
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(load, []);
 
   const onPressFilter = () => {
     props.navigation.navigate('AdvanceFilter');
@@ -50,7 +66,13 @@ const Home: FC<Props> = props => {
 
   const onPressJob = () => {
     props.navigation.navigate('JobDetail', {
-      from: 'Home'
+      from: 'Home',
+    });
+  };
+  const getData = () => {
+    props.get({
+      page: page,
+      limit: 10,
     });
   };
 
@@ -88,27 +110,34 @@ const Home: FC<Props> = props => {
         </View>
 
         <FlatList
-          // ref={flatlist}
-          data={[1, 1, 1, 1, 1]}
+          ref={flatlist}
+          data={props.data}
           style={styles.flatlist}
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
-          // keyExtractor={item => item?.id?.toString()}
-          // onEndReached={loadMore}
-          // onEndReachedThreshold={0.8}
+          keyExtractor={item => item?.id?.toString()}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.8}
           renderItem={info => <JobCard {...info} onPressJob={onPressJob} />}
-          // ListEmptyComponent={
-          //   <View style={styles.empty}>
-          //     <ListEmptyComponent tx="common.noDataFound" />
-          //   </View>
-          // }
-          // ListFooterComponent={
-          //   <View style={styles.extaFetch}>
-          //     {page !== 1 && fetching ? (
-          //       <ActivityIndicator size="small" color={colors.primary} />
-          //     ) : null}
-          //   </View>
-          // }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              {fetching ? (
+                <Loader
+                  loading={fetching}
+                  backgroundColor={colors.transparent}
+                />
+              ) : (
+                <ListEmptyComponent tx="common.noDataFound" />
+              )}
+            </View>
+          }
+          ListFooterComponent={
+            <View style={styles.extaFetch}>
+              {page !== 1 && fetching ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : null}
+            </View>
+          }
         />
       </Screen>
     </>
@@ -220,6 +249,14 @@ const styles = StyleSheet.create({
   flatlist: {
     flex: 1,
   },
+  empty: {
+    flex: 1,
+  },
+  extaFetch: {
+    height: spacing.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   card: {
     gap: spacing.xs,
     padding: spacing.sm,
@@ -254,19 +291,14 @@ const styles = StyleSheet.create({
   },
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   data: state.home.homeData,
-// });
+const mapState = (state: RootState) => ({
+  data: state.home.jobList,
+  loading: state.home.jobListLoading,
+  totalcount: state.home.totalCountJobs,
+});
 
-// const mapDispatch = {
-//   getProfile,
-//   getHomeData,
-//   getCategories,
-//   addToCart: (params: AddCartParams) => addToCart(params),
-//   addToWishlist: (params: WishlistParams) => addToWishlist(params),
-//   removeToWishlist: (params: WishlistParams) => removeToWishlist(params),
-// };
-
-// const connector = connect(mapStateToProps, mapDispatch);
-
-export const HomeScreen = Home;
+const mapDispatch = {
+  get: (params: JobListParams) => getJobList(params),
+};
+const connector = connect(mapState, mapDispatch);
+export const HomeScreen = connector(Home);
