@@ -22,7 +22,7 @@ const ForgotPassword: FC<Props> = () => {
   const loadingState = useAppSelector(
     store => store.auth.forgotPasswordLoading,
   );
-  const [email, setEmail] = useState(__DEV__ ? 'smandeep5510@gmail.com' : '');
+  const [email, setEmail] = useState(__DEV__ ? 'mandeep.swt.suffescom+05@gmail.com' : '');
   const [error, setError] = useState<FieldError>({});
 
   useEffect(() => {
@@ -36,6 +36,7 @@ const ForgotPassword: FC<Props> = () => {
       .validate(
         {
           email,
+          user_type: 'client',
         },
         { abortEarly: false },
       )
