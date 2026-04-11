@@ -105,7 +105,7 @@ const UploadDocument: FC<Props> = props => {
           front_image: frontImageFormData?.uri,
           back_image: backImageFormData?.uri,
         },
-        { abortEarly: false, context: { isSignup: true } },
+        { abortEarly: false},
       )
       .then(res => {
         Keyboard.dismiss();

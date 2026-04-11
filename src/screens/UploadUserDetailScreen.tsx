@@ -123,7 +123,7 @@ const UploadUserDetail: FC<Props> = props => {
           state,
           pincode: zipCode,
         },
-        { abortEarly: false, context: { isSignup: true } },
+        { abortEarly: false},
       )
       .then(res => {
         Keyboard.dismiss();

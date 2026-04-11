@@ -158,7 +158,7 @@ const Signup: FC<Props> = props => {
           user_type: 'freelancer',
           //   firebaseToken,
         },
-        { abortEarly: false, context: { isSignup: true } },
+        { abortEarly: false },
       )
       .then(res => {
         if (tnc === false) {
