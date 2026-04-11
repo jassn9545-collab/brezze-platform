@@ -26,7 +26,7 @@ export type AuthStackParamList = {
   Walkthrough: undefined;
   Login: undefined;
   Signup: undefined;
-  Verification: Screens.VerificationParams;
+  Verification: Screens.ForgotPasswordParams | Screens.SignupParams;
   ForgotPassword: undefined;
   ResetPassword: Screens.ResetParams;
   CommonSucess: Screens.CommonSucessParams;

@@ -42,8 +42,8 @@ export type ForgotPasswordParams = {
 };
 
 export type SignupParams = {
-  serviceSid: string;
-  user_id: number;
+  serviceSid?: string;
+  user_id?: number;
   from: 'signup';
 } & Registration;
 
@@ -108,7 +108,7 @@ const Verification: FC<Props> = props => {
       props.resetVerifyOtp();
       if (props.route.params.from === 'forgotPassword') {
         props.navigation.replace('ResetPassword', {
-          user_id: params.user_id,
+          user_id: params.user_id!,
         });
       }
     }

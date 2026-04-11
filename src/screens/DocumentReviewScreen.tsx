@@ -108,15 +108,4 @@ const styles = StyleSheet.create({
   },
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.loading,
-// });
-
-// const mapDispatch = {
-//   user_Login: (params: Signin) => userLogin(params),
-//   clearLoginLoading: () => authActions.clearLoginLoading(),
-// };
-
-// const connector = connect(mapStateToProps, mapDispatch);
-
 export const DocumentReviewScreen = DocumentReview;
