@@ -41,3 +41,23 @@ export interface User {
   profile_image: any
   proof: any
 }
+
+export interface Job {
+  id: number
+  title: string
+  slug: string
+  category: string
+  description: string
+  address: string
+  city: any
+  country: any
+  pincode: any
+  latitude: string
+  longitude: string
+  budget: string
+  status: string
+  created_at: string
+  modify_id: string
+  user_id: string
+  job_applied: boolean
+}

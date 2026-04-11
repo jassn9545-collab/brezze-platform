@@ -33,6 +33,7 @@ const URLs = {
 
   // job
   createJob: '/client/new-job',
+  jobList: '/client/my-jobs',
 };
 
 export default URLs;

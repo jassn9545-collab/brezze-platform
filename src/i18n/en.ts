@@ -239,6 +239,7 @@ const en = {
     inProgress: 'IN PROGRESS',
     pendingReview: 'PENDING REVIEW',
     draft: 'DRAFT',
+    posted: 'Posted {{value}}'
   },
   jobPostDetails: {
     heading: 'Job Posting Details',
