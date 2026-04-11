@@ -13,7 +13,6 @@ import {
 import {
   Image,
   Keyboard,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -24,7 +23,6 @@ import moment from 'moment';
 
 import { AuthStackScreenProps } from '../navigators';
 import { TxKeyPath } from '../i18n';
-import { commonStyle } from '../theme/style';
 import {
   basicDetailSchema,
   BasicUserDetailParams,
@@ -35,7 +33,6 @@ import { RootState } from '../store';
 import { connect, ConnectedProps } from 'react-redux';
 import { AddressType } from '../slices/address.types';
 import { userBasicDetail } from '../slices/auth.slice';
-import { Skill } from '../slices/setting.slice';
 
 type NavigationProps = AuthStackScreenProps<'UploadUserDetail'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -46,7 +43,6 @@ type FieldError = {
   phone?: TxKeyPath | undefined;
   email?: TxKeyPath | undefined;
   dob?: TxKeyPath | undefined;
-  skills?: TxKeyPath | undefined;
   street_address?: TxKeyPath | undefined;
   state?: TxKeyPath | undefined;
   pincode?: TxKeyPath | undefined;
@@ -71,8 +67,6 @@ const UploadUserDetail: FC<Props> = props => {
   const [mobile, setMobile] = useState(oldMobileNumber ?? '');
   const [dob, setDOB] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const [streetAddress, setStreetAddress] = useState<AddressParam>();
   const [addressModal, setAddressModal] = useState<AddressType>('none');
   const [state, setState] = useState('');
@@ -93,20 +87,6 @@ const UploadUserDetail: FC<Props> = props => {
     [oldCountryCode],
   );
 
-  const onSelectSkill = (item: Skill) => {
-    if (skills.includes(item)) {
-      setSkills(skills.filter(i => i !== item));
-    } else {
-      if (skills.length < 5) {
-        setSkills([...skills, item]);
-      }
-    }
-  };
-
-  const removeSkill = (item: Skill) => {
-    setSkills(skills.filter(i => i !== item));
-  };
-
   const validate = () => {
     basicDetailSchema
       .validate(
@@ -116,7 +96,6 @@ const UploadUserDetail: FC<Props> = props => {
           phone: mobile,
           country_code: oldCountryCode,
           dob: dob ? moment(dob).format('YYYY-MM-DD') : undefined,
-          skills: skills.map(i => i.slug).join(","),
           street_address: streetAddress?.address,
           latitude: streetAddress?.location?.lat,
           longitude: streetAddress?.location?.lng,
@@ -191,84 +170,6 @@ const UploadUserDetail: FC<Props> = props => {
               status={error?.dob ? 'error' : undefined}
             />
           </TouchableOpacity>
-
-          <View style={styles.skillContainer}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={[
-                styles.skillInput,
-                error.skills && { borderColor: colors.error },
-              ]}
-              onPress={() => setShowSkillDropdown(!showSkillDropdown)}
-            >
-              <View style={styles.skillWrapper}>
-                {(skills?.length ?? 0) > 0 ? (
-                  skills.map(item => (
-                    <View key={item.id} style={styles.skillChip}>
-                      <TouchableOpacity
-                        onPress={() => removeSkill(item)}
-                        style={styles.crossIcon}
-                      >
-                        <Text
-                          size="xs"
-                          weight="bold"
-                          text="✕"
-                          style={{ color: colors.primaryDimmed }}
-                        />
-                      </TouchableOpacity>
-                      <Text size="sm" text={item.name} />
-                    </View>
-                  ))
-                ) : (
-                  <Text
-                    size="sm"
-                    tx="document.selectSkillsPlaceholder"
-                    style={{ color: colors.textDim }}
-                  />
-                )}
-              </View>
-              <Image source={images.downArrow} />
-            </TouchableOpacity>
-
-            {error.skills && (
-              <Text
-                preset="formHelper"
-                tx={error.skills}
-                style={{ color: colors.error }}
-              />
-            )}
-            {showSkillDropdown && (
-              <View style={[styles.dropdownContainer, commonStyle.lightShadow]}>
-                <ScrollView
-                  style={styles.dropdown}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {props.skills!.map(item => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.dropdownItem,
-                        skills.includes(item) && {
-                          backgroundColor: colors.primaryDimmed,
-                        },
-                      ]}
-                      onPress={() => onSelectSkill(item)}
-                    >
-                      <Text
-                        size="xs"
-                        text={item.name}
-                        style={{
-                          color: skills.includes(item)
-                            ? colors.primary
-                            : colors.text,
-                        }}
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-          </View>
 
           <TouchableOpacity onPress={() => setAddressModal('pick')}>
             <TextField

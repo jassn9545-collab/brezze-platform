@@ -67,7 +67,7 @@ const Login: FC<Props> = (
 
   useEffect(() => {
     if (__DEV__) {
-      setEmail('smandeep5510@gmail.com');
+      setEmail('mandeep.swt.suffescom+05@gmail.com');
       setPassword('Admin@123');
     }
   }, []);
@@ -106,6 +106,7 @@ const Login: FC<Props> = (
     let loginParams: Signin = {
       email,
       password,
+      user_type: 'client',
       //   firebaseToken,
     };
     loginSchema

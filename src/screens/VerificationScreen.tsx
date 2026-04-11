@@ -154,7 +154,7 @@ import {
                     serviceSid: params.serviceSid,
                     otp: otpInput,
                     user_id: params.user_id,
-                    user_type: 'freelancer',
+                    user_type: 'client',
                     ...props.route.params,
                   });
                 }

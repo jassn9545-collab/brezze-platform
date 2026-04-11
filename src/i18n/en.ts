@@ -175,6 +175,8 @@ const en = {
     review1: 'Face verification: Your face capture has been verified.',
     review2:
       'Your Basic details are being checked and will be verified within 24 Hours.',
+    review3:
+      'ID Card verification: Your details are being checked and will be verified within 24 Hours.',
   },
   ride: {
     currentAddress: 'Current Address',

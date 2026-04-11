@@ -23,10 +23,16 @@ const progressList: Progress[] = [
     review: true,
     text: 'review.review2',
   },
+  {
+    id: 3,
+    review: true,
+    text: 'review.review3',
+  },
 ];
 type NavigationProps = AuthStackScreenProps<'DocumentReview'>;
 
 const DocumentReview: FC<NavigationProps> = () => {
+
   return (
     <Screen
       preset="auto"
@@ -101,16 +107,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
 });
-
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.loading,
-// });
-
-// const mapDispatch = {
-//   user_Login: (params: Signin) => userLogin(params),
-//   clearLoginLoading: () => authActions.clearLoginLoading(),
-// };
-
-// const connector = connect(mapStateToProps, mapDispatch);
 
 export const DocumentReviewScreen = DocumentReview;

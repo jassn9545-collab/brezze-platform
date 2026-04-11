@@ -21,6 +21,7 @@ export const images = {
   user: require('../assets/images/user.png'),
   tickIcon: require('../assets/images/tickIcon.png'),
   share: require('../assets/images/share.png'),
+  uploadingIcon: require('../assets/images/uploadingIcon.png'),
 
   //
   smileIcon: require('../assets/images/smileIcon.png'),

@@ -19,7 +19,7 @@ const BaseConfig: ConfigBaseProps = {
   /**
    * Google Map API Key to fetch google map data
    */
-  GOOGLE_API_KEY: '',
+  GOOGLE_API_KEY: 'AIzaSyDNTfjQV3HyxQQrQsjFtFrNv06Lu67AdvM',
 };
 
 export default BaseConfig;

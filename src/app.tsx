@@ -14,7 +14,6 @@ import { toastProps } from './utils/toast';
 import { Provider } from 'react-redux';
 import { store } from './store';
 // import {UpdateView} from './screens/UpdateView';
-// import {store} from './store';
 // import {AnimatedBootSplash, AnimatedBootSplashRef} from './components';
 // import BootSplash from 'react-native-bootsplash';
 // import { getMessaging, onMessage, setBackgroundMessageHandler } from '@react-native-firebase/messaging';
@@ -66,7 +65,6 @@ function App(): React.JSX.Element {
   const hideSplash = async () => {
     // onReady();
     // await BootSplash.hide();
-
     // setTimeout(() => {
     //   BootSplash.hide();
     // }, 2000);
@@ -80,7 +78,7 @@ function App(): React.JSX.Element {
             <AppNavigator
               // onReady={() => animatedBootSplash.current?.hide()}
               onReady={hideSplash}
-            // onStateChange={onStateChange}
+              // onStateChange={onStateChange}
             />
             {/* <AnimatedBootSplash
               ref={animatedBootSplash}

@@ -155,6 +155,7 @@ import {
             country_code: country.dial_code.replace('+', ''),
             password,
             confirm_password: confirmPassword,
+            user_type: 'client',
             //   firebaseToken,
           },
           { abortEarly: false, context: { isSignup: true } },

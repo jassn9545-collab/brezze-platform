@@ -24,7 +24,7 @@ type Props = NavigationProps & StoreProps;
 interface DocumentTypes {
   title: TxKeyPath;
   description: TxKeyPath;
-  screen?: 'UploadUserDetail';
+  screen?: 'UploadUserDetail' | 'UploadDocument';
   status: boolean;
 }
 
@@ -41,7 +41,13 @@ const MyDocuments: FC<Props> = props => {
       title: 'document.faceVerification',
       description: 'document.faceVerificationDesc',
       status: !!props.myProfile?.profile_pic,
-    }
+    },
+    {
+      title: 'document.IDVerification',
+      description: 'document.IDVerificationDesc',
+      screen: 'UploadDocument',
+      status: !!props.myProfile?.proof,
+    },
   ];
 
   const uploadImage = (image: ImagePickerResponse) => {

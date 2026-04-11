@@ -6,7 +6,7 @@ export * from './Loader';
 export * from './CountryPickerModal';
 export * from './AuthHeader';
 export * from './AddressSearchModal';
-// export * from './TapRating';
+export * from './DropDownList';
 export * from './DashedLine';
 export * from './SlideUpModal';
 // export * from './SucessModal';

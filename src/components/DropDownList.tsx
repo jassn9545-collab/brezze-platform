@@ -48,7 +48,7 @@ export const sizeForSheet = (
   length: number,
   insets: Insets = { bottom: 0, top: 0 },
 ) => {
-  const platformExtra = Platform.OS === 'android' ? insets.bottom ?? 0 : 0;
+  const platformExtra = Platform.OS === 'android' ? (insets.bottom ?? 0) + spacing.md : 0;
   const heightMain = length * itemHeight + headerHeight + platformExtra;
   const safeHeight = screenHeight - (insets.top ?? 0);
   return [heightMain > safeHeight ? safeHeight : heightMain];

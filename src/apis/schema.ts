@@ -68,6 +68,7 @@ export const loginSchema = yup.object().shape({
   password: yup.string().required('validation.required'),
   firebaseToken: yup.string(),
   checked: yup.boolean(),
+  user_type: yup.string()
 });
 
 export type Signin = yup.InferType<typeof loginSchema>;
@@ -129,13 +130,22 @@ export const basicDetailSchema = yup.object().shape({
     .email('validation.invalidEmail')
     .required('validation.required'),
   dob: yup.string().required('validation.required'),
-  skills: yup.string().required('validation.required'),
   street_address: yup.string().required('validation.required'),
   state: yup.string().required('validation.required'),
   pincode: yup.string().required('validation.required'),
 });
 
 export type BasicUserDetailParams = yup.InferType<typeof basicDetailSchema>;
+
+export const cardDetailSchema = yup.object().shape({
+  proof_type: yup.string().required('validation.required'),
+  id_number: yup.string().required('validation.required'),
+  expiry_date: yup.string().required('validation.required'),
+  front_image: yup.string().required('validation.required'),
+  back_image: yup.string().required('validation.required'),
+});
+
+export type CardDetailParams = yup.InferType<typeof cardDetailSchema>;
 
 export const helpSchema = yup.object().shape({
   name: yup.string().required('validation.required'),

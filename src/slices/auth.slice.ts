@@ -164,6 +164,26 @@ export const uploadProfilePhoto = createAsyncThunk(
   },
 );
 
+export const uploadUserVerificationID = createAsyncThunk(
+  'auth/upload-verification-id',
+  async (data: FormData, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.userVerificationID,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        data,
+      });
+      navigationRef.goBack();
+      return response.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
 export const forgotPassword = createAsyncThunk(
   'auth/forgot-password',
   async (params: ForgotPasswordParam, thunkAPI) => {
@@ -436,6 +456,7 @@ export type AuthState = {
   userVerificationLoading: LoadStatus;
   userBasicDetailLoading: LoadStatus;
   uploadProfilePhotoLoading: LoadStatus;
+  uploadUserVerificationIDLoading: LoadStatus;
 
   loading: LoadStatus;
   myProfile?: UserDetailsResponse;
@@ -468,6 +489,7 @@ const authState: AuthState = {
   userVerificationLoading: 'idle',
   userBasicDetailLoading: 'idle',
   uploadProfilePhotoLoading: 'idle',
+  uploadUserVerificationIDLoading: 'idle',
 
   loading: 'idle',
   updateLoading: 'idle',
@@ -620,6 +642,22 @@ export const authSlice = createSlice({
       })
       .addCase(uploadProfilePhoto.rejected, (state, action) => {
         state.uploadProfilePhotoLoading = 'failed';
+        state.error = action.payload;
+      });
+
+    // User Verification By ID
+    builder
+      .addCase(uploadUserVerificationID.pending, state => {
+        state.uploadUserVerificationIDLoading = 'loading';
+      })
+      .addCase(uploadUserVerificationID.fulfilled, state => {
+        if (state.myProfile) {
+          state.myProfile.proof = true;
+        }
+        state.uploadUserVerificationIDLoading = 'loaded';
+      })
+      .addCase(uploadUserVerificationID.rejected, (state, action) => {
+        state.uploadUserVerificationIDLoading = 'failed';
         state.error = action.payload;
       });
 
