@@ -155,6 +155,7 @@ const Signup: FC<Props> = props => {
           country_code: country.dial_code.replace('+', ''),
           password,
           confirm_password: confirmPassword,
+          user_type: 'freelancer',
           //   firebaseToken,
         },
         { abortEarly: false, context: { isSignup: true } },

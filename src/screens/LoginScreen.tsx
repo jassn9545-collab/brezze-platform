@@ -106,6 +106,7 @@ const Login: FC<Props> = (
     let loginParams: Signin = {
       email,
       password,
+      user_type: 'freelancer',
       //   firebaseToken,
     };
     loginSchema

@@ -68,6 +68,7 @@ export const loginSchema = yup.object().shape({
   password: yup.string().required('validation.required'),
   firebaseToken: yup.string(),
   checked: yup.boolean(),
+  user_type: yup.string()
 });
 
 export type Signin = yup.InferType<typeof loginSchema>;
