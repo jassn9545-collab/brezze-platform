@@ -36,6 +36,7 @@ const ForgotPassword: FC<Props> = () => {
       .validate(
         {
           email,
+          user_type: 'freelancer',
         },
         { abortEarly: false },
       )
