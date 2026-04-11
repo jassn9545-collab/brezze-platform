@@ -43,7 +43,7 @@ const JobPostList: FC<Props> = props => {
   const getData = () => {
     props.get({
       page: page,
-      limit: 12,
+      limit: 10,
     });
   };
 
