@@ -118,9 +118,15 @@ const JobPostStep2: FC<Props> = props => {
         formData.append('title', props.route.params.title);
         formData.append('budget', res.budget);
         formData.append('address', res.address);
-        formData.append('images', res.images);
+        res.images.forEach((img) => {
+          formData.append('images[]', {
+            uri: img.uri,
+            name: img.name,
+            type: img.type,
+          });
+        });        
         formData.append('latitude', selectedAddress?.location.lat);
-        formData.append('longitude', selectedAddress?.location.lat);
+        formData.append('longitude', selectedAddress?.location.lng);
 
         props.createJob(formData)
         setError({});
