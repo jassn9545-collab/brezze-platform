@@ -45,13 +45,15 @@ export interface User {
 export interface Job {
   id: number
   title: string
+  base_url: string
+  images: Image[]
   slug: string
   category: string
   description: string
   address: string
-  city: any
-  country: any
-  pincode: any
+  city?: string
+  country?: string
+  pincode?: string
   latitude: string
   longitude: string
   budget: string
@@ -60,4 +62,9 @@ export interface Job {
   modify_id: string
   user_id: string
   job_applied: boolean
+  saved: boolean
+}
+
+export interface Image {
+  image: string
 }

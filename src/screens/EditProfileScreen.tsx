@@ -14,14 +14,16 @@ import {
   View,
 } from 'react-native';
 import { TxKeyPath } from '../i18n';
-import { skillsList } from './UploadUserDetailScreen';
 import { commonStyle } from '../theme/style';
 import { Service } from './ProfileScreen';
 import { buildError, editProfile, EditProfileParams } from '../apis/schema';
+import { connect, ConnectedProps } from 'react-redux';
+import { RootState } from '../store';
+import { Skill } from '../slices/setting.slice';
 
 type NavigationProps = AppStackScreenProps<'EditProfile'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 type FieldError = {
   name?: TxKeyPath | undefined;
@@ -38,14 +40,14 @@ export const locationLeftAccessory = (props: TextFieldAccessoryProps) => {
     </View>
   );
 };
-const EditProfile: FC<NavigationProps> = (props) => {
+const EditProfile: FC<Props> = (props) => {
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
   const [professionalHeading, setProfessionalHeading] = useState('');
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
-  const [skills, setSkills] = useState<string[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
 
   const [error, setError] = useState<FieldError>({});
@@ -57,7 +59,7 @@ const EditProfile: FC<NavigationProps> = (props) => {
     },
   };
 
-  const onSelectSkill = (item: string) => {
+  const onSelectSkill = (item: Skill) => {
     if (skills.includes(item)) {
       setSkills(skills.filter(i => i !== item));
     } else {
@@ -67,7 +69,7 @@ const EditProfile: FC<NavigationProps> = (props) => {
     }
   };
 
-  const removeSkill = (item: string) => {
+  const removeSkill = (item: Skill) => {
     setSkills(skills.filter(i => i !== item));
   };
 
@@ -77,7 +79,7 @@ const EditProfile: FC<NavigationProps> = (props) => {
       professionalHeading,
       bio,
       location,
-      skills,
+      skills: skills.map(i => i.id).join(","),
     };
     editProfile
       .validate(loginParams, { abortEarly: false })
@@ -176,7 +178,7 @@ const EditProfile: FC<NavigationProps> = (props) => {
               <View style={styles.skillWrapper}>
                 {(skills?.length ?? 0) > 0 ? (
                   skills.map(item => (
-                    <View key={item} style={styles.skillChip}>
+                    <View key={item.id} style={styles.skillChip}>
                       <TouchableOpacity
                         onPress={() => removeSkill(item)}
                         style={styles.crossIcon}
@@ -188,7 +190,7 @@ const EditProfile: FC<NavigationProps> = (props) => {
                           style={{ color: colors.primaryDimmed }}
                         />
                       </TouchableOpacity>
-                      <Text size="xs" text={item} />
+                      <Text size="xs" text={item.name} />
                     </View>
                   ))
                 ) : (
@@ -215,9 +217,9 @@ const EditProfile: FC<NavigationProps> = (props) => {
                   style={styles.dropdown}
                   showsVerticalScrollIndicator={false}
                 >
-                  {skillsList.map(item => (
+                  {props?.skills!.map(item => (
                     <TouchableOpacity
-                      key={item}
+                      key={item.id}
                       style={[
                         styles.dropdownItem,
                         skills.includes(item) && {
@@ -228,7 +230,7 @@ const EditProfile: FC<NavigationProps> = (props) => {
                     >
                       <Text
                         size="xs"
-                        text={item}
+                        text={item.name}
                         style={{
                           color: skills.includes(item)
                             ? colors.primary
@@ -372,11 +374,11 @@ const styles = StyleSheet.create({
   }
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   profile: state.auth.myProfile?.data,
-//   loading: state.auth.updateLoading,
-//   baseUrl: state.home.baseURl,
-// });
+const mapStateToProps = (state: RootState) => ({
+  skills: state.setting.basic?.skills,
+  // profile: state.auth.myProfile?.data,
+  // loading: state.auth.updateLoading,
+});
 
 // const mapDispatch = {
 //   getProfile,
@@ -384,6 +386,6 @@ const styles = StyleSheet.create({
 //   reset: () => authActions.resetUpdateLoading(),
 // };
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps);
 
-export const EditProfileScreen = EditProfile;
+export const EditProfileScreen = connector(EditProfile);

@@ -30,8 +30,10 @@ const URLs = {
 
   jobList: '/freelancer/latest-jobs',
   jobDetail: '/freelancer/job-detail',
-  jobApply: '/freelancer/apply-job'
- 
+  jobApply: '/freelancer/apply-job',
+  addSavedJob: '/freelancer/saved-jobs',
+  removeSavedJob: '/freelancer/remove-job',
+  mySavedJobs: '/freelancer/saved-jobs',
 };
 
 export default URLs;

@@ -3,15 +3,17 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { Job, LoadStatus } from './types';
 import URLs from '../config/urls';
 import api from '../apis/api';
+import { navigationRef } from '../navigators';
+import { updateItemById } from './schema';
 
-export type JobListParams = {
+export type Pagination = {
   page: number;
   limit: number;
 };
 
 export const getJobList = createAsyncThunk(
   'home/job-list',
-  async (params: JobListParams, thunkAPI) => {
+  async (params: Pagination, thunkAPI) => {
     try {
       const response = await api({
         method: 'POST',
@@ -59,7 +61,68 @@ export const jobApply = createAsyncThunk(
         },
         data,
       });
+      navigationRef.navigate('JobApplySucessModal');
       return response.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export type JobSavedParams = {
+  product_id: number;
+};
+
+export const addToSavedJob = createAsyncThunk(
+  'home/add-to-saved',
+  async (params: JobSavedParams, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.addSavedJob,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export const removeFromSavedJob = createAsyncThunk(
+  'home/remove-from-saved',
+  async (params: JobSavedParams, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.removeSavedJob,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export const mySavedJobs = createAsyncThunk(
+  'home/my-saved-jobs',
+  async (params: Pagination, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.mySavedJobs,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data.data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }
@@ -70,10 +133,15 @@ export type homeState = {
   jobListLoading: LoadStatus;
   jobDetailLoading: LoadStatus;
   jobApplyLoading: LoadStatus;
+  savedJobsLoading: LoadStatus;
 
   jobList: Job[];
   totalCountJobs: number;
   jobDetail: Job | undefined;
+
+  savedJobs: Job[];
+  savedJobTotalCount: number;
+
   error: any;
 };
 
@@ -81,10 +149,14 @@ const homeState: homeState = {
   jobListLoading: 'idle',
   jobDetailLoading: 'idle',
   jobApplyLoading: 'idle',
+  savedJobsLoading: 'idle',
 
   jobList: [],
   totalCountJobs: 10,
   jobDetail: undefined,
+
+  savedJobs: [],
+  savedJobTotalCount: 10,
 
   error: null,
 };
@@ -131,14 +203,69 @@ export const homeSlice = createSlice({
 
     // Job Apply
     builder
-      .addCase(jobApply.pending, (state) => {
+      .addCase(jobApply.pending, state => {
         state.jobApplyLoading = 'loading';
       })
-      .addCase(jobApply.fulfilled, (state) => {
+      .addCase(jobApply.fulfilled, state => {
         state.jobApplyLoading = 'loaded';
       })
       .addCase(jobApply.rejected, (state, action) => {
         state.jobApplyLoading = 'failed';
+        state.error = action.error;
+      });
+
+    // add to saved jobs
+    builder.addCase(addToSavedJob.fulfilled, (state, action) => {
+      const { product_id } = action.meta.arg;
+      // HOME
+      if (state.jobList) {
+        updateItemById(state.jobList, product_id, job => {
+          job.saved = true;
+        });
+      }
+      // JOB DETAIL
+      if (state.jobDetail?.id === product_id) {
+        state.jobDetail.saved = true;
+      }
+    });
+
+    // remove to wishlist
+    builder.addCase(removeFromSavedJob.fulfilled, (state, action) => {
+      const { product_id } = action.meta.arg;
+      // HOME
+      if (state.jobList) {
+        updateItemById(state.jobList, product_id, job => {
+          job.saved = false;
+        });
+      }
+      // JOB DETAIL
+      if (state.jobDetail?.id === product_id) {
+        state.jobDetail.saved = false;
+      }
+      // SAVED LISTING
+      if (state.savedJobs) {
+        state.savedJobs = state.savedJobs.filter(
+          item => item.id !== product_id,
+        );
+      }
+    });
+
+    // My Saved Jobs
+    builder
+      .addCase(mySavedJobs.pending, state => {
+        state.savedJobsLoading = 'loading';
+      })
+      .addCase(mySavedJobs.fulfilled, (state, action) => {
+        state.savedJobsLoading = 'loaded';
+        if (action.meta.arg.page === 1) {
+          state.savedJobs = action.payload.jobs;
+        } else {
+          state.savedJobs = state.jobList.concat(action.payload.jobs);
+        }
+        state.totalCountJobs = action.payload.total ?? 10;
+      })
+      .addCase(mySavedJobs.rejected, (state, action) => {
+        state.savedJobsLoading = 'failed';
         state.error = action.error;
       });
   },

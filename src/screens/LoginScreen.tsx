@@ -67,7 +67,7 @@ const Login: FC<Props> = (
 
   useEffect(() => {
     if (__DEV__) {
-      setEmail('smandeep5510@gmail.com');
+      setEmail('smandeep5510+05@gmail.com');
       setPassword('Admin@123');
     }
   }, []);

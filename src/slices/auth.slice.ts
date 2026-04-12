@@ -46,7 +46,7 @@ export const userLogin = createAsyncThunk(
         data: JSON.stringify(params),
       });
       const data = response?.data?.data;
-      if (data?.is_verification_completed) {
+      if (data.is_verification_completed) {
         await AsyncStorage.setItem('authorized', 'true');
       } else if (data?.basic_info && data?.profile_pic && data?.proof) {
         navigationRef.navigate('DocumentReview');
@@ -54,6 +54,7 @@ export const userLogin = createAsyncThunk(
         navigationRef.navigate('MyDocuments');
       }
       await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('user_id', data?.user?.id?.toString());
       return data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
@@ -108,9 +109,6 @@ export const userVerification = createAsyncThunk(
         data: JSON.stringify(params),
       });
       const data = response.data.data;
-      await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('user_id', data?.user?.id?.toString());
-
       navigationRef.resetRoot({
         index: 1,
         routes: [{ name: 'Signup' }, { name: 'MyDocuments' }],
@@ -574,7 +572,7 @@ export const authSlice = createSlice({
       })
       .addCase(userLogin.fulfilled, (state, action) => {
         state.loading = 'loaded';
-        if (action.payload?.is_verification_completed) {
+        if (action.payload.is_verification_completed) {
           state.isAuthorized = true;
         }
         api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
@@ -604,7 +602,6 @@ export const authSlice = createSlice({
         state.userVerificationLoading = 'loading';
       })
       .addCase(userVerification.fulfilled, (state, action) => {
-        api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
         state.myProfile = action.payload;
         state.userVerificationLoading = 'loaded';
       })

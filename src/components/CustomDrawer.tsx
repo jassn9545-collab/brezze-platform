@@ -66,7 +66,7 @@ const CustomDrawer: FC<DrawerContentComponentProps> = props => {
           <DrawerItem
             image={images.savedIcon}
             tx="drawer.savedJobs"
-            onPress={() => props.navigation.navigate('ApplyJob')}
+            onPress={() => props.navigation.navigate('SavedJob')}
           />
 
           <DrawerItem

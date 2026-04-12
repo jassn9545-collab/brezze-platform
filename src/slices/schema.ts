@@ -1,24 +1,13 @@
-// import { MyAccountResponse } from "./payment.slice";
-// import { Product } from "./types";
+import { Job } from "./types";
 
-// export const updateProductById = (
-//     products: Product[],
-//     product_id: number,
-//     updater: (p: Product) => void
-//   ) => {
-//     const product = products.find(p => p.id === product_id);
-//     if (product) {
-//       updater(product);
-//     }
-//   };
 
-//   export const updateBankById = (
-//     accounts: MyAccountResponse[],
-//     account_id: number,
-//     updater: (p: MyAccountResponse) => void
-//   ) => {
-//     const account = accounts.find(a => a.id === account_id);
-//     if (account) {
-//       updater(account);
-//     }
-//   };
+export const updateItemById = (
+    jobs: Job[],
+    id: number,
+    updater: (j: Job) => void
+  ) => {
+    const product = jobs.find(j => j.id === id);
+    if (product) {
+      updater(product);
+    }
+  };

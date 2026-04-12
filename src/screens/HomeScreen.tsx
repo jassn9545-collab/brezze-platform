@@ -1,5 +1,6 @@
 import {
   Loader,
+  ReadMore,
   Screen,
   Text,
   TextField,
@@ -18,10 +19,20 @@ import React, { FC, useEffect, useRef, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBottomTabScreenProps } from '../navigators';
-import { getJobList, JobListParams } from '../slices/home.slice';
+import {
+  addToSavedJob,
+  getJobList,
+  Pagination,
+  JobSavedParams,
+  removeFromSavedJob,
+} from '../slices/home.slice';
 import { RootState } from '../store';
 import { connect, ConnectedProps } from 'react-redux';
 import ListEmptyComponent from '../components/ListEmptyComponent';
+import moment from 'moment';
+import { Job } from '../slices/types';
+import { Currency } from '../config/defaults';
+import { HITSLOP } from '../utils/util';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -35,7 +46,7 @@ export const searchLeftAccessory = (props: TextFieldAccessoryProps) => {
   );
 };
 
-const jobQuickPoints = ['Contract Job', 'Experience', 'Payment Verified'];
+// const jobQuickPoints = ['Contract Job', 'Experience', 'Payment Verified'];
 
 let page = 1;
 const Home: FC<Props> = props => {
@@ -60,20 +71,34 @@ const Home: FC<Props> = props => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(load, []);
 
-  const onPressFilter = () => {
-    props.navigation.navigate('AdvanceFilter');
-  };
-
-  const onPressJob = () => {
-    props.navigation.navigate('JobDetail', {
-      from: 'Home',
-    });
-  };
   const getData = () => {
     props.get({
       page: page,
       limit: 10,
     });
+  };
+
+  const onPressFilter = () => {
+    props.navigation.navigate('AdvanceFilter');
+  };
+
+  const onPressJob = (data: Job) => {
+    props.navigation.navigate('JobDetail', {
+      from: 'Home',
+      id: data.id,
+    });
+  };
+
+  const onPressSavedJob = (data: Job) => {
+    if (data.saved) {
+      props.removeFromSavedJob({
+        product_id: data.id,
+      });
+    } else {
+      props.addToSavedJob({
+        product_id: data.id,
+      });
+    }
   };
 
   return (
@@ -118,7 +143,13 @@ const Home: FC<Props> = props => {
           keyExtractor={item => item?.id?.toString()}
           onEndReached={loadMore}
           onEndReachedThreshold={0.8}
-          renderItem={info => <JobCard {...info} onPressJob={onPressJob} />}
+          renderItem={info => (
+            <JobCard
+              {...info}
+              onPressJob={onPressJob}
+              onPressSavedJob={onPressSavedJob}
+            />
+          )}
           ListEmptyComponent={
             <View style={styles.empty}>
               {fetching ? (
@@ -144,62 +175,68 @@ const Home: FC<Props> = props => {
   );
 };
 
-type JobCardProps = ListRenderItemInfo<any> & {
-  onPressJob?: () => void;
+type JobCardProps = ListRenderItemInfo<Job> & {
+  onPressJob?: (data: Job) => void;
+  onPressSavedJob: (data: Job) => void;
 };
-export const JobCard = ({ item, onPressJob }: JobCardProps) => {
+export const JobCard = ({
+  item,
+  onPressJob,
+  onPressSavedJob,
+}: JobCardProps) => {
   return (
     <TouchableOpacity
       key={item.id}
       activeOpacity={0.9}
       style={styles.card}
-      onPress={onPressJob}
+      onPress={() => onPressJob?.(item)}
     >
       <View style={styles.spaceBetween}>
         <Text
           size="xxs"
           weight="medium"
           style={styles.flexOne}
-          text="Posted 10 minutes ago"
+          tx="home.posted"
+          txOptions={{
+            value: moment(item.created_at).fromNow(),
+          }}
         />
-        <Image source={images.unsavedIcon} />
+        <TouchableOpacity
+          hitSlop={HITSLOP.MEDIUM}
+          onPress={() => onPressSavedJob(item)}
+        >
+          <Image source={item.saved ? images.savedIcon : images.unsavedIcon} />
+        </TouchableOpacity>
       </View>
 
-      <Text
-        size="sm"
-        weight="medium"
-        text="Electrician Need for House Pipe Fitting"
-      />
-      <Text>
-        <Text
-          style={[styles.extraSmallText, { color: colors.textDim }]}
-          text="By clicking on Accept and Proceed, you consent to provide us with the requested data. By clicking on Accept and Proceed, you consent to provide us with the Accept and Proceed, requested data"
-        />
-        <Text style={styles.extraSmallText} weight="medium" tx="home.more" />
-      </Text>
+      <Text size="sm" weight="medium" text={item.title} />
+      <ReadMore text={item.description} style={styles.extraSmallText} />
 
       <Text
         size="xxs"
         weight="medium"
-        text="Fixed Price - Est Budget AUD 500"
+        tx="home.fixedPrice"
+        txOptions={{
+          value: Currency.code + ' ' + item.budget,
+        }}
       />
 
-      <View style={styles.jobPoints}>
+      {/* <View style={styles.jobPoints}>
         {jobQuickPoints?.map((data, index) => (
           <View key={index} style={styles.jobQuickPoint}>
             <Text size="xxs" weight="medium" text={data} />
           </View>
         ))}
-      </View>
+      </View> */}
 
       <View style={styles.spaceBetween}>
         <Text
           size="xxs"
           weight="medium"
           style={styles.flexOne}
-          text="42 Hebbard Street, Victoria"
+          text={item.address}
         />
-        <Text size="xxs" weight="medium" text="30+ Job Apply" />
+        {/* <Text size="xxs" weight="medium" text="30+ Job Apply" /> */}
       </View>
     </TouchableOpacity>
   );
@@ -298,7 +335,9 @@ const mapState = (state: RootState) => ({
 });
 
 const mapDispatch = {
-  get: (params: JobListParams) => getJobList(params),
+  get: (params: Pagination) => getJobList(params),
+  addToSavedJob: (params: JobSavedParams) => addToSavedJob(params),
+  removeFromSavedJob: (params: JobSavedParams) => removeFromSavedJob(params),
 };
 const connector = connect(mapState, mapDispatch);
 export const HomeScreen = connector(Home);

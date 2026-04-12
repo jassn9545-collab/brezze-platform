@@ -1,4 +1,4 @@
-import { BackButtom, Button, Screen, Text, TextField } from '../components';
+import { BackButtom, Button, Loader, Screen, Text, TextField } from '../components';
 import { FlatList, Keyboard, StyleSheet, View } from 'react-native';
 import React, { FC, useState } from 'react';
 import { AppStackScreenProps } from '../navigators';
@@ -9,10 +9,14 @@ import { Currency } from '../config/defaults';
 import { TxKeyPath } from '../i18n';
 import { buildError, JobApplyParams, jobApplySchema } from '../apis/schema';
 import { commonStyle } from '../theme/style';
+import { RootState } from '../store';
+import { connect, ConnectedProps } from 'react-redux';
+import { addToSavedJob, jobApply, JobSavedParams, removeFromSavedJob } from '../slices/home.slice';
+import { Job } from '../slices/types';
 
 type NavigationProps = AppStackScreenProps<'JobApply'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-type Props = NavigationProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 type FieldError = {
   bidAmount?: TxKeyPath | undefined;
@@ -22,20 +26,36 @@ type FieldError = {
 const JobDetail: FC<Props> = props => {
   const insets = useSafeAreaInsets();
   const [bidAmount, setBidAmount] = useState('');
-  const [estimatedTime, setEstimatedTime] = useState('');
+  // const [estimatedTime, setEstimatedTime] = useState('');
   const [error, setError] = useState<FieldError>({});
+
+  const onPressSavedJob = (data: Job) => {
+    if (data.saved) {
+      props.removeFromSavedJob({
+        product_id: data.id,
+      });
+    } else {
+      props.addToSavedJob({
+        product_id: data.id,
+      });
+    }
+  }
+
 
   const onPressJob = () => {
     let loginParams: JobApplyParams = {
       bidAmount,
-      estimatedTime,
+      project_id: props.data?.id!,
     };
     jobApplySchema
       .validate(loginParams, { abortEarly: false })
-      .then(params => {
+      .then(res => {
         Keyboard.dismiss();
-        console.log('params', params);
-        props.navigation.navigate('JobApplySucessModal');
+        const formData = new FormData();
+        formData.append('project_id', res.project_id);
+        formData.append('bid_amount', res.bidAmount);
+        props.apply(formData)
+
         setError({});
       })
       .catch(errors => {
@@ -56,9 +76,9 @@ const JobDetail: FC<Props> = props => {
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.main}>
           <FlatList
-            data={[1]}
+            data={[props.data!]}
             scrollEnabled={false}
-            renderItem={info => <JobCard {...info} />}
+            renderItem={info => <JobCard {...info} onPressSavedJob={onPressSavedJob} />}
           />
           <View style={styles.jobSingleDetailWrapper}>
             <Text size="sm" weight="semiBold" tx="home.yourTerms" />
@@ -89,11 +109,11 @@ const JobDetail: FC<Props> = props => {
                 <Text
                   size="xxs"
                   weight="medium"
-                  text={Currency.code + ' 500'}
+                  text={Currency.code + ' ' + props.data?.budget}
                 />
               </Text>
             </View>
-            <View style={styles.jobSingleDetail}>
+            {/* <View style={styles.jobSingleDetail}>
               <TextField
                 value={estimatedTime}
                 onChangeText={setEstimatedTime}
@@ -117,15 +137,15 @@ const JobDetail: FC<Props> = props => {
                 <Text
                   size="xxs"
                   weight="medium"
-                  text={Currency.code + ' 500'}
+                  text={Currency.code + ' ' + job.budget}
                 />
               </Text>
-            </View>
+            </View> */}
           </View>
         </View>
       </Screen>
       <View style={[styles.bottomContainer, commonStyle.customShadow]}>
-        <View style={styles.jobPricing}>
+        {/* <View style={styles.jobPricing}>
           <Text
             size="xs"
             weight="medium"
@@ -145,7 +165,7 @@ const JobDetail: FC<Props> = props => {
             style={{ color: colors.primary }}
             text={Currency.sign + '450.00'}
           />
-        </View>
+        </View> */}
 
         <Button
           tx="home.submitProposal"
@@ -153,6 +173,7 @@ const JobDetail: FC<Props> = props => {
           style={{ marginBottom: insets.bottom + spacing.sm }}
         />
       </View>
+      <Loader loading={props.fetching === 'loading'} />
     </>
   );
 };
@@ -187,16 +208,17 @@ const styles = StyleSheet.create({
   },
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   totalcount: state.auth.totalNotifications,
-//   notification: state.auth.userNotifications,
-//   fetching: state.auth.userNotificationsLoading,
-// });
+const mapStateToProps = (state: RootState) => ({
+  fetching: state.home.jobApplyLoading,
+  data: state.home.jobDetail
+});
 
-// const mapDispatch = {
-//   get: getNotifications,
-// };
+const mapDispatch = {
+  apply: jobApply,
+  addToSavedJob: (params: JobSavedParams) => addToSavedJob(params),
+  removeFromSavedJob: (params: JobSavedParams) => removeFromSavedJob(params),
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps, mapDispatch);
 
-export const JobApplyScreen = JobDetail;
+export const JobApplyScreen = connector(JobDetail);

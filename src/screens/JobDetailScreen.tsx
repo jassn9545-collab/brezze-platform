@@ -1,48 +1,70 @@
-import { BackButtom, Button, Screen, Text } from '../components';
-import { Image, StyleSheet, View } from 'react-native';
-import React, { FC } from 'react';
+import { BackButtom, Button, Loader, Screen, Text } from '../components';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { FC, useEffect } from 'react';
 import { AppStackScreenProps } from '../navigators';
 import { colors, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TxKeyPath } from '../i18n';
+import { connect, ConnectedProps } from 'react-redux';
+import { RootState } from '../store';
+import { getJobDetail } from '../slices/home.slice';
+import { Currency } from '../config/defaults';
+import FastImage from '@d11/react-native-fast-image';
 
 type NavigationProps = AppStackScreenProps<'JobDetail'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-type Props = NavigationProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 interface JobQuichPointType {
   key: TxKeyPath;
   value: string;
 }
-const jobQuickPoints: JobQuichPointType[] = [
-  {
-    key: 'home.jobType',
-    value: 'Contract',
-  },
-  {
-    key: 'home.paymentVerified',
-    value: 'Verified',
-  },
-  {
-    key: 'home.experienceLevel',
-    value: 'Experience',
-  },
-  {
-    key: 'home.projectCost',
-    value: 'AUD 500',
-  },
-];
 
 export type JobDetailParams = {
+  id: number;
   from: 'ActiveJob' | 'Home' | 'SavedJob';
 };
 
 const JobDetail: FC<Props> = props => {
   const insets = useSafeAreaInsets();
+  const jobQuickPoints: JobQuichPointType[] = [
+    {
+      key: 'home.category',
+      value: props.setting?.skills.find(
+        item => item?.id === Number(props?.data?.category),
+      )?.name!,
+    },
+    // {
+    //   key: 'home.paymentVerified',
+    //   value: 'Verified',
+    // },
+    // {
+    //   key: 'home.experienceLevel',
+    //   value: 'Experience',
+    // },
+    {
+      key: 'home.projectCost',
+      value: Currency.code + props.data?.budget,
+    },
+  ];
+
+  useEffect(() => {
+    if (props.route.params?.id) {
+      props.get({ project_id: props.route.params?.id });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.route.params?.id]);
+
+  const onPressLogo = () => {
+    props.navigation.navigate('ImageViewer', {
+      urls: [props.data?.base_url! + '/' + props.data?.images?.[0]?.image],
+      initialIndex: 0,
+    });
+  }
 
   const onPressJob = () => {
     if (props.route.params.from === 'ActiveJob') {
-      props.navigation.navigate('SubmitWork')
+      props.navigation.navigate('SubmitWork');
     } else {
       props.navigation.navigate('JobApply');
     }
@@ -59,20 +81,30 @@ const JobDetail: FC<Props> = props => {
       />
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.main}>
-          <View style={styles.jobLogo}>
-            <Image source={require('../assets/images/dummy/jobLogo.png')} />
-          </View>
+          <TouchableOpacity
+            style={styles.jobLogo}
+            onPress={onPressLogo}
+          >
+            <FastImage
+              resizeMode="cover"
+              style={styles.jobLogoStyle}
+              source={{
+                uri:
+                  props.data?.base_url! + '/' + props.data?.images?.[0]?.image,
+              }}
+            />
+          </TouchableOpacity>
           <Text
             size="md"
             weight="medium"
             style={styles.textCenter}
-            text="Electrician Need for House Pipe Fitting"
+            text={props.data?.title}
           />
           <Text
             size="sm"
             weight="medium"
             style={styles.textCenter}
-            text="42 Hebbard Street, Victoria, Australia"
+            text={props.data?.address}
           />
           <View style={styles.jobPoints}>
             {jobQuickPoints?.map((data, index) => (
@@ -85,14 +117,10 @@ const JobDetail: FC<Props> = props => {
 
           <View style={styles.wrapHeadingText}>
             <Text size="md" weight="semiBold" tx="home.description" />
-            <Text
-              size="xxs"
-              weight="medium"
-              text="By clicking on Accept and Proceed, you consent to provide us with the requested data. By clicking on Accept and Proceed, you consent to provide us with the Accept and Proceed, requested data"
-            />
+            <Text size="xxs" weight="medium" text={props.data?.description} />
           </View>
 
-          <View style={styles.wrapHeadingText}>
+          {/* <View style={styles.wrapHeadingText}>
             <Text size="md" weight="semiBold" tx="home.requirement" />
             <View style={styles.singleDescription}>
               <View style={styles.bulletPoint} />
@@ -120,9 +148,9 @@ const JobDetail: FC<Props> = props => {
                 text="By clicking on Accept and Proceed, you consent to provide us with the requested data. By clicking on Accept and Proceed requested data."
               />
             </View>
-          </View>
+          </View> */}
 
-          <View style={styles.wrapHeadingText}>
+          {/* <View style={styles.wrapHeadingText}>
             <Text size="md" weight="semiBold" tx="home.responsibilities" />
             <View style={styles.singleDescription}>
               <View style={styles.bulletPoint} />
@@ -150,7 +178,7 @@ const JobDetail: FC<Props> = props => {
                 text="By clicking on Accept and Proceed, you consent to provide us with the requested data. By clicking on Accept and Proceed requested data."
               />
             </View>
-          </View>
+          </View> */}
         </View>
       </Screen>
       <Button
@@ -165,6 +193,7 @@ const JobDetail: FC<Props> = props => {
           { marginBottom: insets.bottom + spacing.sm },
         ]}
       />
+      <Loader loading={props.loading === 'loading'} />
     </>
   );
 };
@@ -182,11 +211,14 @@ const styles = StyleSheet.create({
     borderRadius: 45,
     overflow: 'hidden',
     alignSelf: 'center',
-    padding: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
     backgroundColor: colors.palette.offWhite2,
+  },
+  jobLogoStyle: {
+    width: '100%',
+    height: '100%',
   },
   textCenter: {
     textAlign: 'center',
@@ -227,16 +259,16 @@ const styles = StyleSheet.create({
   },
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   totalcount: state.auth.totalNotifications,
-//   notification: state.auth.userNotifications,
-//   fetching: state.auth.userNotificationsLoading,
-// });
+const mapStateToProps = (state: RootState) => ({
+  data: state.home.jobDetail,
+  setting: state.setting.basic,
+  loading: state.home.jobDetailLoading,
+});
 
-// const mapDispatch = {
-//   get: getNotifications,
-// };
+const mapDispatch = {
+  get: getJobDetail,
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps, mapDispatch);
 
-export const JobDetailScreen = JobDetail;
+export const JobDetailScreen = connector(JobDetail);

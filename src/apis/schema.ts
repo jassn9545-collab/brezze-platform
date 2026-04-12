@@ -190,18 +190,14 @@ export const editProfile = yup.object().shape({
   professionalHeading: yup.string().required('validation.required'),
   bio: yup.string().required('validation.required'),
   location: yup.string().required('validation.required'),
-  skills: yup
-    .array()
-    .of(yup.string())
-    .min(1, 'validation.required')
-    .required('validation.required'),
+  skills: yup.string().required('validation.required'),
 });
 
 export type EditProfileParams = yup.InferType<typeof editProfile>;
 
 export const jobApplySchema = yup.object().shape({
   bidAmount: yup.string().required('validation.required'),
-  estimatedTime: yup.string().required('validation.required'),
+  project_id: yup.number().required('validation.required'),
 });
 
 export type JobApplyParams = yup.InferType<typeof jobApplySchema>;

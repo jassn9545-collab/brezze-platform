@@ -6,6 +6,7 @@ import { FC } from 'react';
 import { TxKeyPath } from '../i18n';
 import { useAppDispatch } from '../store/hooks';
 import { authActions } from '../slices/auth.slice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = AppStackScreenProps<'CenterModal'>;
 
@@ -26,6 +27,8 @@ export const CenterModal: FC<Props> = props => {
 
   const onConfirm = () => {
     dispatch(authActions.setAuthroized(false));
+    AsyncStorage.setItem('authorized', 'false');
+
     // if (props.route.params.modalType === 'logout') {
     //   dispatch(userLogout())
     // }

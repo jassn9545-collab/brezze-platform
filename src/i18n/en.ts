@@ -20,6 +20,8 @@ const en = {
     noDataFound: 'No results found',
     confirm: 'Confirm',
     submit: 'Submit',
+    readMore: '...More',
+    readLess: 'Less',
   },
   walkthrough: {
     first: 'Hire Top Talent, Instantly',
@@ -183,9 +185,9 @@ const en = {
   home: {
     jobs: 'Jobs',
     searchJobs: 'Search For Jobs',
-    more: ' More....',
     jobDetails: 'Job Details',
     jobType: 'Job Type',
+    category: 'Category',
     paymentVerified: 'Payment Verified',
     experienceLevel: 'Experience Level',
     projectCost: 'Project Cost',
@@ -209,6 +211,8 @@ const en = {
     notification: 'Notification',
     markRead: 'Mark as read',
     submitWork: 'Submit Work',
+    posted: 'Posted {{value}}',
+    fixedPrice: 'Fixed Price - Est Budget {{value}}'
   },
   job: {
     hireJob: 'Hire Job List',

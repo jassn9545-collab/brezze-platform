@@ -12,6 +12,7 @@ import {
   BottomTabNavigator,
   BottomTabNavigatorParamList,
 } from './BottomTabNavigator';
+import { ImageViewerParams, ImageViewerScreen } from '../components/ImageViewer';
 
 // import { useAppDispatch } from '../store/hooks';
 // import { getProfile } from '../slices/auth.slice';
@@ -49,7 +50,8 @@ export type AppStackParamList = {
   //modal
   JobApplySucessModal: undefined;
   AddCatalogModal: undefined;
-  CenterModal: Screens.CenterModalParams
+  CenterModal: Screens.CenterModalParams;
+  ImageViewer: ImageViewerParams;
 
   //   PrivacyPolicy:
   //     | { title: TxKeyPath; type: Screens.StaticType; data?: string }
@@ -126,7 +128,10 @@ export const AppStack: FC = () => {
       <Stack.Screen name="ApplyJob" component={Screens.ApplyJobScreen} />
       <Stack.Screen name="SavedJob" component={Screens.SavedJobScreen} />
       <Stack.Screen name="SubmitWork" component={Screens.SubmitWorkScreen} />
-      <Stack.Screen name="ServiceCatalog" component={Screens.ServiceCatalogScreen} />
+      <Stack.Screen
+        name="ServiceCatalog"
+        component={Screens.ServiceCatalogScreen}
+      />
       <Stack.Screen name="Wallet" component={Screens.WalletScreen} />
       <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
       <Stack.Screen
@@ -151,44 +156,17 @@ export const AppStack: FC = () => {
           name="AddCatalogModal"
           component={Screens.AddCatalogModal}
         />
-        <Stack.Screen
-          name="CenterModal"
-          component={Screens.CenterModal}
-        />
+        <Stack.Screen name="CenterModal" component={Screens.CenterModal} />
       </Stack.Group>
 
-      {/* 
-      <Stack.Screen
-        name="SavedAddress"
-        component={Screens.SavedAddressScreen}
-      />
-      <Stack.Screen name="AddAddress" component={Screens.AddAddressScreen} />
-     
-      <Stack.Screen name="ReferEarn" component={Screens.ReferEarnScreen} />
-     
-      <Stack.Screen name="FAQ" component={Screens.FAQScreen} />
-      <Stack.Screen
-        name="ChangeLanguage"
-        component={Screens.ChangeLanguageScreen}
-      />
-
-      <Stack.Screen
-        name="PrivacyPolicy"
-        component={Screens.StaticScreen<'PrivacyPolicy'>}
-        initialParams={{ type: 'privacy', title: 'profile.privacyPolicyTitle' }}
-      />
-      <Stack.Screen
-        name="TermsCondition"
-        component={Screens.StaticScreen<'TermsCondition'>}
-        initialParams={{ type: 'terms', title: 'profile.termsConditionsTitle' }}
-      />
-      <Stack.Screen
-        name="AboutUs"
-        component={Screens.StaticScreen<'AboutUs'>}
-        initialParams={{ type: 'about', title: 'profile.aboutUsTitle' }}
-      />
-
-    */}
+      <Stack.Group
+        screenOptions={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom',
+        }}
+      >
+        <Stack.Screen name="ImageViewer" component={ImageViewerScreen} />
+      </Stack.Group>
     </Stack.Navigator>
   );
 };

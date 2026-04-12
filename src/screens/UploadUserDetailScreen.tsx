@@ -116,7 +116,7 @@ const UploadUserDetail: FC<Props> = props => {
           phone: mobile,
           country_code: oldCountryCode,
           dob: dob ? moment(dob).format('YYYY-MM-DD') : undefined,
-          skills: skills.map(i => i.slug).join(","),
+          skills: skills.map(i => i.id).join(","),
           street_address: streetAddress?.address,
           latitude: streetAddress?.location?.lat,
           longitude: streetAddress?.location?.lng,
