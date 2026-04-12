@@ -92,8 +92,8 @@ const JobPostStep2: FC<Props> = props => {
         name: asset.fileName ?? `image_${Date.now()}.jpg`,
         type: asset.type ?? 'image/jpeg',
       };
-
-      setSelectedImages(prev => [...prev, body]);
+      setSelectedImages([body]);
+      // setSelectedImages(prev => [...prev, body]);
     }
   };
 
