@@ -32,11 +32,11 @@ const JobDetail: FC<Props> = props => {
   const onPressSavedJob = (data: Job) => {
     if (data.saved) {
       props.removeFromSavedJob({
-        product_id: data.id,
+        project_id: data.id,
       });
     } else {
       props.addToSavedJob({
-        product_id: data.id,
+        project_id: data.id,
       });
     }
   }

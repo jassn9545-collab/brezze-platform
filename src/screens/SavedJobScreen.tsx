@@ -56,7 +56,7 @@ const SavedJob: FC<Props> = props => {
 
   const onPressSavedJob = (data: Job) => {
     props.removeFromSavedJob({
-      product_id: data.id,
+      project_id: data.id,
     });
   };
 

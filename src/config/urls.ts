@@ -31,7 +31,7 @@ const URLs = {
   jobList: '/freelancer/latest-jobs',
   jobDetail: '/freelancer/job-detail',
   jobApply: '/freelancer/apply-job',
-  addSavedJob: '/freelancer/saved-jobs',
+  addSavedJob: '/freelancer/save-job',
   removeSavedJob: '/freelancer/remove-job',
   mySavedJobs: '/freelancer/saved-jobs',
 };

@@ -70,7 +70,7 @@ export const jobApply = createAsyncThunk(
 );
 
 export type JobSavedParams = {
-  product_id: number;
+  project_id: number;
 };
 
 export const addToSavedJob = createAsyncThunk(
@@ -216,36 +216,36 @@ export const homeSlice = createSlice({
 
     // add to saved jobs
     builder.addCase(addToSavedJob.fulfilled, (state, action) => {
-      const { product_id } = action.meta.arg;
+      const { project_id } = action.meta.arg;
       // HOME
       if (state.jobList) {
-        updateItemById(state.jobList, product_id, job => {
+        updateItemById(state.jobList, project_id, job => {
           job.saved = true;
         });
       }
       // JOB DETAIL
-      if (state.jobDetail?.id === product_id) {
+      if (state.jobDetail?.id === project_id) {
         state.jobDetail.saved = true;
       }
     });
 
     // remove to wishlist
     builder.addCase(removeFromSavedJob.fulfilled, (state, action) => {
-      const { product_id } = action.meta.arg;
+      const { project_id } = action.meta.arg;
       // HOME
       if (state.jobList) {
-        updateItemById(state.jobList, product_id, job => {
+        updateItemById(state.jobList, project_id, job => {
           job.saved = false;
         });
       }
       // JOB DETAIL
-      if (state.jobDetail?.id === product_id) {
+      if (state.jobDetail?.id === project_id) {
         state.jobDetail.saved = false;
       }
       // SAVED LISTING
       if (state.savedJobs) {
         state.savedJobs = state.savedJobs.filter(
-          item => item.id !== product_id,
+          item => item.id !== project_id,
         );
       }
     });
