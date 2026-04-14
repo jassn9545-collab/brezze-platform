@@ -52,12 +52,33 @@ export const getJobList = createAsyncThunk(
   },
 );
 
+export const getJobDetail = createAsyncThunk(
+  'job/product-detail',
+  async (params: { job_id: number }, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.jobDetail,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data.job;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
 export type JobState = {
   createloading: LoadStatus;
   jobListLoading: LoadStatus;
+  jobDetailLoading: LoadStatus;
 
   jobList: Job[];
   totalCountJobs: number;
+  jobDetail: Job | undefined;
 
   error: any;
 };
@@ -65,9 +86,11 @@ export type JobState = {
 const jobState: JobState = {
   createloading: 'idle',
   jobListLoading: 'idle',
+  jobDetailLoading: 'idle',
 
   jobList: [],
   totalCountJobs: 10,
+  jobDetail: undefined,
 
   error: null,
 };
@@ -100,15 +123,29 @@ export const jobSlice = createSlice({
         if (action.meta.arg.page === 1) {
           state.jobList = action.payload.jobs;
         } else {
-          state.jobList = state.jobList.concat(
-            action.payload.jobs,
-          );
+          state.jobList = state.jobList.concat(action.payload.jobs);
         }
-
         state.totalCountJobs = action.payload.total ?? 10;
       })
       .addCase(getJobList.rejected, state => {
         state.jobListLoading = 'failed';
+      });
+
+    // Job Details
+    builder
+      .addCase(getJobDetail.pending, (state, action) => {
+        state.jobDetailLoading = 'loading';
+        if (state.jobDetail?.id !== action.meta.arg.job_id) {
+          state.jobDetail = undefined;
+        }
+      })
+      .addCase(getJobDetail.fulfilled, (state, action) => {
+        state.jobDetailLoading = 'loaded';
+        state.jobDetail = action.payload;
+      })
+      .addCase(getJobDetail.rejected, (state, action) => {
+        state.jobDetailLoading = 'failed';
+        state.error = action.error;
       });
   },
 });

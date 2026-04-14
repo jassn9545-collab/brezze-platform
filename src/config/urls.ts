@@ -34,6 +34,7 @@ const URLs = {
   // job
   createJob: '/client/new-job',
   jobList: '/client/my-jobs',
+  jobDetail: 'client/job-details',
 };
 
 export default URLs;

@@ -42,7 +42,7 @@ export type AppStackParamList = {
   JobPost: undefined;
   JobPostStep2: JobPostFirstParams;
   JobPostList: undefined;
-  jobPostDetails: undefined;
+  jobPostDetails: Screens.JobPostDetailParams;
   HireHistory: undefined;
   Categories: undefined;
   HireHistoryDetails: undefined;

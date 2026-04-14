@@ -41,7 +41,6 @@ export interface User {
   profile_image: any
   proof: any
 }
-
 export interface Job {
   id: number
   title: string
@@ -60,4 +59,14 @@ export interface Job {
   modify_id: string
   user_id: string
   job_applied: boolean
+  bids: Bid[]
+}
+export interface Bid {
+  id: number
+  project_id: string
+  user_id: number
+  freelancer_name: string
+  freelancer_image: string
+  date_time: string
+  is_hired: boolean
 }

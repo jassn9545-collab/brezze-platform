@@ -5,6 +5,7 @@ import {
   FlatList,
   ActivityIndicator,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import React, { FC, useEffect, useRef } from 'react';
 import { spacing, colors, images } from '../theme';
@@ -15,6 +16,7 @@ import { RootState } from '../store';
 import { getJobList, JobListParams } from '../slices/job.slice';
 import { Job } from '../slices/types';
 import moment from 'moment';
+import FastImage from '@d11/react-native-fast-image';
 
 type NavigationProps = AppStackScreenProps<'JobPostList'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
@@ -47,6 +49,12 @@ const JobPostList: FC<Props> = props => {
     });
   };
 
+  const onPressJob = (data: Job) => {
+    props.navigation.navigate('jobPostDetails', {
+      id: data.id,
+    });
+  };
+
   return (
     <Screen
       preset="fixed"
@@ -65,7 +73,7 @@ const JobPostList: FC<Props> = props => {
         onEndReachedThreshold={0.2}
         contentContainerStyle={styles.contentContainer}
         renderItem={({ item, index }) => (
-          <SingleJob item={item} index={index} />
+          <SingleJob item={item} index={index} onPress={onPressJob} />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -88,10 +96,22 @@ const JobPostList: FC<Props> = props => {
   );
 };
 
-export const SingleJob = ({ item, index }: { item: Job; index: number }) => {
+export const SingleJob = ({
+  item,
+  index,
+  onPress,
+}: {
+  item: Job;
+  index: number;
+  onPress: (data: Job) => void;
+}) => {
   const statusStyle = getStatusStyle(item.status);
   return (
-    <View key={index} style={styles.card}>
+    <TouchableOpacity
+      key={index}
+      style={styles.card}
+      onPress={() => onPress(item)}
+    >
       <View style={styles.topRow}>
         <View
           style={[
@@ -125,42 +145,57 @@ export const SingleJob = ({ item, index }: { item: Job; index: number }) => {
         <Text text={item.address} size="xxs" />
       </View>
 
-      {/* <View style={styles.bottomRow}>
-        <View style={styles.avatarRow}>
-          <Image source={images.profile1} style={styles.avatar} />
-          <Image source={images.profile2} style={styles.avatar} />
-          <View style={styles.plusAvatar}>
+      {(item?.bids?.length ?? 0) > 0 && (
+        <View style={styles.bottomRow}>
+          <View style={styles.imageWrapper}>
+            {item.bids.slice(0, 3).map((data, indx) => (
+              <View
+                key={data.id}
+                style={[
+                  styles.avatarWrapper,
+                  indx !== 0 && styles.avatarOverlap,
+                ]}
+              >
+                <FastImage
+                  source={{ uri: data.freelancer_image }}
+                  style={styles.avatar}
+                />
+              </View>
+            ))}
+
+            {(item?.bids?.length ?? 0) > 3 && (
+              <View
+                style={[
+                  styles.avatarWrapper,
+                  styles.avatarOverlap,
+                  styles.moreCircle,
+                ]}
+              >
+                <Text
+                  size="xxs"
+                  weight="semiBold"
+                  text={'+' + ((item?.bids?.length ?? 0) - 3)}
+                  style={{ color: colors.palette.white }}
+                />
+              </View>
+            )}
+          </View>
+
+          <View>
+            <Text tx="jobPostList.proposals" style={styles.extraSmallText} />
             <Text
-              text="+12"
               size="xxs"
-              style={{ color: colors.palette.white }}
+              weight="bold"
+              tx="jobPostList.recevied"
+              style={{ color: colors.primary }}
+              txOptions={{
+                value: item?.bids?.length ?? 0,
+              }}
             />
           </View>
         </View>
-        <View style={styles.alignRight}>
-          <Text
-            tx="jobPostList.proposals"
-            size="xxs"
-            style={styles.proposalLabel}
-          />
-          <Text
-            text={item.proposals}
-            weight="semiBold"
-            style={[
-              styles.proposalText,
-              item.type === 'draft' && styles.proposalDraftText,
-            ]}
-          />
-        </View>
-      </View> */}
-
-      {/* <TouchableOpacity style={styles.draftBtn}>
-        <Text
-          tx="jobPostList.completeButton"
-          style={styles.draftBtnText}
-        />
-      </TouchableOpacity> */}
-    </View>
+      )}
+    </TouchableOpacity>
   );
 };
 
@@ -235,31 +270,44 @@ const styles = StyleSheet.create({
     height: spacing.sm,
     marginTop: spacing.xxs,
   },
-
-  // bottomRow: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   alignItems: 'center',
-  //   marginTop: spacing.md,
-  // },
-  // avatarRow: {
-  //   flexDirection: 'row',
-  // },
-  // avatar: {
-  //   width: 30,
-  //   height: 30,
-  //   borderRadius: 15,
-  //   marginRight: -8,
-  // },
-  // plusAvatar: {
-  //   width: 30,
-  //   height: 30,
-  //   borderRadius: 15,
-  //   backgroundColor: colors.palette.primaryBlue,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   marginLeft: 4,
-  // },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    justifyContent: 'space-between',
+  },
+  extraSmallText: {
+    fontSize: spacing.xs + 2,
+    lineHeight: spacing.sm + 2,
+    color: colors.palette.grayLight,
+  },
+  imageWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarWrapper: {
+    zIndex: 1,
+  },
+  avatarOverlap: {
+    marginLeft: -10,
+  },
+  avatar: {
+    width: spacing.lg,
+    height: spacing.lg,
+    borderRadius: spacing.sm,
+  },
+  moreCircle: {
+    width: spacing.lg,
+    height: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: spacing.sm,
+    backgroundColor: colors.primary,
+  },
+  moreText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });
 
 const mapState = (state: RootState) => ({

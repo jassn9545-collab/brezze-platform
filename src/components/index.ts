@@ -14,4 +14,5 @@ export * from './CustomImagePicker';
 export * from './OTPTextView';
 export * from './DatePicker/DatePickerModal';
 export * from './BackButtom';
+export * from './ReadMore';
 

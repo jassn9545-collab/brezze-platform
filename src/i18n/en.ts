@@ -102,6 +102,8 @@ const en = {
     noDataFound: 'No results found',
     confirm: 'Confirm',
     submit: 'Submit',
+    readMore: '...More',
+    readLess: 'Less',
   },
   update: {
     new: 'NEW UPDATE',
@@ -239,7 +241,8 @@ const en = {
     inProgress: 'IN PROGRESS',
     pendingReview: 'PENDING REVIEW',
     draft: 'DRAFT',
-    posted: 'Posted {{value}}'
+    posted: 'Posted {{value}}',
+    recevied: "{{value}} Received",
   },
   jobPostDetails: {
     heading: 'Job Posting Details',
@@ -249,13 +252,13 @@ const en = {
     tagContract: 'Contract Job',
     tagExperience: 'Experience',
     tagPayment: 'Payment Verified',
-    location: '42 Hebbard Street, Victoria',
-    proposalsHeader: 'Proposals Received (12)',
+    proposalsHeader: 'Proposals Received {{value}}',
     viewAll: 'View All',
     price: '$85 /hr',
     bioQuote: '"I have worked on several commercial high-rises in Manhattan..."',
     viewProfile: 'View Profile',
     hire: 'Hire Marcus',
+    fixedPrice: 'Fixed Price - Est Budget {{value}}'
   },
   hireHistory: {
     heading: 'Hire History',
