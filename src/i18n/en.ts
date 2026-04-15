@@ -254,10 +254,8 @@ const en = {
     tagPayment: 'Payment Verified',
     proposalsHeader: 'Proposals Received {{value}}',
     viewAll: 'View All',
-    price: '$85 /hr',
-    bioQuote: '"I have worked on several commercial high-rises in Manhattan..."',
     viewProfile: 'View Profile',
-    hire: 'Hire Marcus',
+    hire: 'Hire {{value}}',
     fixedPrice: 'Fixed Price - Est Budget {{value}}'
   },
   hireHistory: {

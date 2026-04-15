@@ -1,9 +1,5 @@
-// import {AppUrl, LoyaltyPoints, VersionSetting} from './setting.types';
-
-// import {AddressParam} from '../components';
-// import {LatLng} from '../components/Address.types';
-
 export type LoadStatus = 'idle' | 'loading' | 'loaded' | 'failed';
+
 export interface UserDetailsResponse {
   user: User
   token: string
@@ -65,8 +61,10 @@ export interface Bid {
   id: number
   project_id: string
   user_id: number
+  bid_amount: string
   freelancer_name: string
   freelancer_image: string
   date_time: string
   is_hired: boolean
+  description: string
 }

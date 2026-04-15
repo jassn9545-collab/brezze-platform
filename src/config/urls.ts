@@ -9,7 +9,7 @@ const URLs = {
     'com.gandharva://invite/link',
     'https://hirephpdeveloperindia.com/referral',
   ],
- 
+
   // API end points
   basicSetting: '/setting',
   registration: '/register',
@@ -34,7 +34,8 @@ const URLs = {
   // job
   createJob: '/client/new-job',
   jobList: '/client/my-jobs',
-  jobDetail: 'client/job-details',
+  jobDetail: '/client/job-details',
+  hireJob: '/client/hire-now',
 };
 
 export default URLs;

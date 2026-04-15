@@ -71,10 +71,38 @@ export const getJobDetail = createAsyncThunk(
   },
 );
 
+export type HireJobParams = {
+  job_id: number;
+  bid_id: number;
+};
+export const hireJob = createAsyncThunk(
+  'job/hire-job',
+  async (params: HireJobParams, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.hireJob,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      navigationRef.resetRoot({
+        index: 1,
+        routes: [{ name: 'Drawer' }, { name: 'HireHistory' }],
+      });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
 export type JobState = {
   createloading: LoadStatus;
   jobListLoading: LoadStatus;
   jobDetailLoading: LoadStatus;
+  hireJobLoading: LoadStatus;
 
   jobList: Job[];
   totalCountJobs: number;
@@ -87,6 +115,7 @@ const jobState: JobState = {
   createloading: 'idle',
   jobListLoading: 'idle',
   jobDetailLoading: 'idle',
+  hireJobLoading: 'idle',
 
   jobList: [],
   totalCountJobs: 10,
@@ -146,6 +175,20 @@ export const jobSlice = createSlice({
       .addCase(getJobDetail.rejected, (state, action) => {
         state.jobDetailLoading = 'failed';
         state.error = action.error;
+      });
+
+
+    // Hire Job
+    builder
+      .addCase(hireJob.pending, state => {
+        state.hireJobLoading = 'loading';
+      })
+      .addCase(hireJob.fulfilled, state => {
+        state.hireJobLoading = 'loaded';
+      })
+      .addCase(hireJob.rejected, (state, action) => {
+        state.hireJobLoading = 'failed';
+        state.error = action.payload;
       });
   },
 });

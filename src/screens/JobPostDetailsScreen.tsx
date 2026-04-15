@@ -1,14 +1,15 @@
-import { BackButtom, ReadMore, Screen, Text } from '../components';
-import { StyleSheet, View, Image, TouchableOpacity } from 'react-native';
+import { BackButtom, Loader, ReadMore, Screen, Text } from '../components';
+import { StyleSheet, View, TouchableOpacity, FlatList, ListRenderItemInfo } from 'react-native';
 import React, { FC, useEffect } from 'react';
 import { spacing, colors } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
-import { translate } from '../i18n';
 import { Currency } from '../config/defaults';
-import { Job } from '../slices/types';
+import { Bid, Job } from '../slices/types';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
-import { getJobDetail } from '../slices/job.slice';
+import { getJobDetail, hireJob, HireJobParams } from '../slices/job.slice';
+import FastImage from '@d11/react-native-fast-image';
+import ListEmptyComponent from '../components/ListEmptyComponent';
 
 type NavigationProps = AppStackScreenProps<'jobPostDetails'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
@@ -18,6 +19,7 @@ export type JobPostDetailParams = {
 };
 
 const JobPostDetails: FC<Props> = props => {
+
   useEffect(() => {
     if (props.route.params?.id) {
       props.get({ job_id: props.route.params?.id });
@@ -25,71 +27,47 @@ const JobPostDetails: FC<Props> = props => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.route.params?.id]);
 
+  const onPressProfile = (data: Bid) => {
+    // props.navigation.navigate('professionalProfile', { id: data.freelancer_id });
+  };
+
+  const onPressHire = (data: Bid) => {
+    props.hireJob({ job_id: props.route.params?.id, bid_id: data.id });
+  };
+
   return (
-    <Screen
-      preset="auto"
-      safeAreaEdges={['top']}
-      contentContainerStyle={styles.container}
-    >
-      <BackButtom headingTx="jobPostDetails.heading" />
-      <View style={styles.main}>
-        {props.data && <JobCard item={props.data!} />}
-        <Text
-          weight="semiBold"
-          tx="jobPostDetails.proposalsHeader"
-          txOptions={{
-            value: props?.data?.bids ?? 0,
-          }}
-        />
-
-        {props.data?.bids.map(item => (
-          <View key={item.id} style={styles.proposalCard}>
-            <View style={styles.row}>
-              <Image source={{uri: item.freelancer_image}} style={styles.avatar} />
-
-              <View style={styles.flex1}>
-                <Text text="Marcus Thorne" weight="semiBold" />
-                <Text
-                  text="⭐ 4.9 (124 reviews)"
-                  size="xs"
-                  // style={styles.gray}
-                />
+    <>
+      <Screen
+        preset="fixed"
+        safeAreaEdges={['top']}
+        contentContainerStyle={styles.container}
+      >
+        <BackButtom headingTx="jobPostDetails.heading" />
+        <View style={styles.main}>
+          {props.data && <JobCard item={props.data!} />}
+          <Text
+            weight="semiBold"
+            tx="jobPostDetails.proposalsHeader"
+            txOptions={{
+              value: '(' + (props?.data?.bids?.length ?? 0) + ')',
+            }}
+          />
+          <FlatList
+            data={props.data?.bids!}
+            showsVerticalScrollIndicator={false}
+            keyExtractor={item => item.id.toString()}
+            renderItem={info => <BidCard {...info} onPressProfile={onPressProfile} onPressHire={onPressHire} />}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <ListEmptyComponent tx="common.noDataFound" />
               </View>
+            }
+          />
 
-              <Text
-                text={translate('jobPostDetails.price')}
-                weight="semiBold"
-                style={styles.price}
-              />
-            </View>
-
-            <Text
-              text={translate('jobPostDetails.bioQuote')}
-              // style={styles.gray}
-            />
-
-            <View style={styles.btnRow}>
-              <TouchableOpacity
-                style={styles.outlineBtn}
-                onPress={() => props.navigation.navigate('ProfessionalProfile')}
-              >
-                <Text text={translate('jobPostDetails.viewProfile')} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.primaryBtn}
-                onPress={() => props.navigation.navigate('JobPostList')}
-              >
-                <Text
-                  text={translate('jobPostDetails.hire')}
-                  style={styles.primaryBtnText}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-      </View>
-    </Screen>
+        </View>
+      </Screen>
+      <Loader loading={props.hireJobLoading === 'loading' || props.loading === 'loading'} />
+    </>
   );
 };
 
@@ -108,13 +86,72 @@ const JobCard = ({ item }: { item: Job }) => {
         }}
       />
 
-      <View style={styles.spaceBetween}>
-        <Text
-          size="xxs"
-          weight="medium"
-          style={styles.flexOne}
-          text={item.address}
-        />
+      <Text
+        size="xxs"
+        weight="medium"
+        text={item.address}
+      />
+    </View>
+  );
+};
+
+type BidCardProps = ListRenderItemInfo<Bid> & {
+  onPressProfile: (data: Bid) => void;
+  onPressHire: (data: Bid) => void;
+};
+
+const BidCard = ({
+  item,
+  onPressProfile,
+  onPressHire,
+}: BidCardProps) => {
+  return (
+    <View key={item.id} style={styles.proposalCard}>
+      <View style={styles.row}>
+        <FastImage source={{ uri: item.freelancer_image }} resizeMode='cover' style={styles.avatar} />
+        <View style={styles.flexOne}>
+          <View style={styles.spaceBetween}>
+            <Text
+              weight="bold"
+              style={styles.flexOne}
+              text={item.freelancer_name}
+            />
+            <Text
+              size='md'
+              weight="bold"
+              style={{ color: colors.primary }}
+              text={Currency.sign + item.bid_amount}
+            />
+          </View>
+          <View style={styles.btnRow}>
+            <TouchableOpacity
+              style={styles.outlineBtn}
+              onPress={() => onPressProfile(item)}
+            >
+              <Text
+                size='xxs'
+                weight='semiBold'
+                numberOfLines={1}
+                tx="jobPostDetails.viewProfile"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => onPressHire(item)}
+            >
+              <Text
+                size='xxs'
+                weight='semiBold'
+                tx="jobPostDetails.hire"
+                txOptions={{
+                  value: item.freelancer_name.split(' ')[0]
+                }}
+                numberOfLines={1}
+                style={{ color: colors.palette.white }}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -138,6 +175,7 @@ const styles = StyleSheet.create({
   spaceBetween: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: spacing.xs,
     justifyContent: 'space-between',
   },
   extraSmallText: {
@@ -159,85 +197,67 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     backgroundColor: colors.palette.white,
   },
+  empty: {
+    flex: 1,
+  },
   proposalCard: {
+    flex: 1,
     borderWidth: 1,
     padding: spacing.md,
+    marginTop: spacing.md,
     borderRadius: spacing.md,
-    marginBottom: spacing.md,
     borderColor: colors.palette.grayLight,
+  },
+  row: {
+    gap: spacing.sm,
+    flexDirection: 'row',
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: spacing.lg,
+    backgroundColor: colors.palette.offWhite2,
   },
-
-
-  price: {
-    color: colors.palette.primaryBlue,
-  },
-
-  primaryBtnText: {
-    color: colors.palette.white,
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: spacing.md,
-  },
-
-
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-
-
   btnRow: {
+    gap: spacing.xs,
     flexDirection: 'row',
-    gap: spacing.sm,
     marginTop: spacing.sm,
   },
-
   outlineBtn: {
     flex: 1,
+    flexBasis: 0,
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: spacing.xs,
+    minHeight: 36,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+    borderColor: colors.palette.borderColor,
   },
-
   primaryBtn: {
     flex: 1,
-    backgroundColor: colors.palette.primaryBlue,
-    padding: 10,
-    borderRadius: 8,
+    flexBasis: 0,
     alignItems: 'center',
-  },
-
-  statusText: {
-    color: colors.palette.primaryBlue,
-  },
-
-  link: {
-    color: colors.palette.primaryBlue,
-  },
-
-  flex1: {
-    flex: 1,
-  },
+    justifyContent: 'center',
+    borderRadius: spacing.xs,
+    minHeight: 36,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.primary,
+  }
 });
 
 const mapStateToProps = (state: RootState) => ({
   data: state.job.jobDetail,
   setting: state.setting.basic,
   loading: state.job.jobDetailLoading,
+  hireJobLoading: state.job.hireJobLoading,
 });
 
 const mapDispatch = {
   get: getJobDetail,
+  hireJob: (params: HireJobParams) => hireJob(params),
 };
 
 const connector = connect(mapStateToProps, mapDispatch);
