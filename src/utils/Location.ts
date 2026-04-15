@@ -2,7 +2,7 @@ import Geolocation, {
   GeolocationResponse,
 } from '@react-native-community/geolocation';
 
-import {LatLng} from '../components/Address.types';
+import { LatLng } from '../components/Address.types';
 
 Geolocation.setRNConfiguration({
   skipPermissionRequests: true,
@@ -11,9 +11,13 @@ Geolocation.setRNConfiguration({
   locationProvider: 'auto',
 });
 
-export const requestPermission = (success: () => void) => {
+export const requestPermission = (
+  success: () => void,
+  failed?: (message: string) => void,
+) => {
   Geolocation.requestAuthorization(success, error => {
-    toast.show(error.message, {type: 'danger'});
+    failed?.(error.message);
+    toast.show(error.message, { type: 'danger' });
   });
 };
 
@@ -33,7 +37,7 @@ export const getCurrentLoaction = (
     },
     error => {
       failed?.(error.message);
-      toast.show(error.message, {type: 'danger'});
+      toast.show(error.message, { type: 'danger' });
     },
     {
       timeout: 20000,

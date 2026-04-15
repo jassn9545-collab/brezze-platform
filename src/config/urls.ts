@@ -34,6 +34,9 @@ const URLs = {
   addSavedJob: '/freelancer/save-job',
   removeSavedJob: '/freelancer/remove-job',
   mySavedJobs: '/freelancer/saved-jobs',
+  applyJobs: '/freelancer/apply-jobs',
+  activeJobs: '/freelancer/active-jobs',
+  completeJobs: '/freelancer/complete-jobs',
 };
 
 export default URLs;

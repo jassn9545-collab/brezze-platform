@@ -4,8 +4,8 @@ import {
   createMaterialTopTabNavigator,
 } from '@react-navigation/material-top-tabs';
 import * as Screens from '../screens';
-import { Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, images, spacing, typography } from '../theme';
+import { StyleSheet } from 'react-native';
+import { colors, spacing, typography } from '../theme';
 import { BackButtom, Screen } from '../components';
 import { CompositeScreenProps, RouteProp } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -74,14 +74,14 @@ const screenOptions = ({
 };
 
 export const BookingTabbar: FC<Props> = () => {
-  const rightHeaderComponent = React.useMemo(
-    () => (
-      <TouchableOpacity>
-        <Image resizeMode="contain" source={images.threeDotIcon} />
-      </TouchableOpacity>
-    ),
-    [],
-  );
+  // const rightHeaderComponent = React.useMemo(
+  //   () => (
+  //     <TouchableOpacity>
+  //       <Image resizeMode="contain" source={images.threeDotIcon} />
+  //     </TouchableOpacity>
+  //   ),
+  //   [],
+  // );
 
   return (
     <Screen
@@ -91,7 +91,7 @@ export const BookingTabbar: FC<Props> = () => {
     >
       <BackButtom
         headingTx="job.hireJob"
-        rightComponent={rightHeaderComponent}
+      // rightComponent={rightHeaderComponent}
       />
       <Tab.Navigator screenOptions={screenOptions}>
         <Tab.Screen name="ActiveJob" component={Screens.ActiveJobScreen} />

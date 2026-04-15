@@ -10,10 +10,7 @@ import React, { FC } from 'react';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import TabBar from '../components/BottomTabs';
-// import {BookingTabbar} from './BookingNavigator';
-// import {EarningTabbar} from './EarningsNavigator';
 import { colors } from '../theme';
-// import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
 import { DrawerScreenProps } from '@react-navigation/drawer';
 import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
 import { BookingTabbar } from './BookingNavigator';
@@ -52,8 +49,8 @@ export const BottomTabNavigator: FC<NavigationProps> = () => {
     >
       <Tab.Screen name="Home" component={Screens.HomeScreen} />
       <Tab.Screen name="HireJobs" component={BookingTabbar} />
-       <Tab.Screen name="Chat" component={Screens.ChatScreen} />
-      <Tab.Screen name="Profile" component={Screens.ProfileScreen} /> 
+      <Tab.Screen name="Chat" component={Screens.ChatScreen} />
+      <Tab.Screen name="Profile" component={Screens.ProfileScreen} />
     </Tab.Navigator>
   );
 };

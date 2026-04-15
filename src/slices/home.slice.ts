@@ -9,6 +9,8 @@ import { updateItemById } from './schema';
 export type Pagination = {
   page: number;
   limit: number;
+  latitude?: number;
+  longitude?: number;
 };
 
 export const getJobList = createAsyncThunk(
@@ -121,6 +123,7 @@ export const mySavedJobs = createAsyncThunk(
         headers: {
           'Content-Type': 'application/json',
         },
+        data: JSON.stringify(params),
       });
       return response.data.data;
     } catch (error) {
@@ -129,11 +132,73 @@ export const mySavedJobs = createAsyncThunk(
   },
 );
 
+export const getApplyJobs = createAsyncThunk(
+  'home/apply-jobs',
+  async (params: Pagination, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.applyJobs,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+)
+
+export const getActiveJob = createAsyncThunk(
+  'home/active-jobs',
+  async (params: Pagination, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.activeJobs,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export const getCompleteJobs = createAsyncThunk(
+  'home/complete-jobs',
+  async (params: Pagination, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.completeJobs,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+
+
 export type homeState = {
   jobListLoading: LoadStatus;
   jobDetailLoading: LoadStatus;
   jobApplyLoading: LoadStatus;
   savedJobsLoading: LoadStatus;
+  applyJobsLoading: LoadStatus;
+  activeJobsLoading: LoadStatus;
+  completeJobsLoading: LoadStatus;
 
   jobList: Job[];
   totalCountJobs: number;
@@ -141,6 +206,15 @@ export type homeState = {
 
   savedJobs: Job[];
   savedJobTotalCount: number;
+
+  applyJobs: Job[];
+  applyJobTotalCount: number;
+
+  activeJobs: Job[];
+  totalActivePage: number;
+
+  completeJobs: Job[];
+  totalCompletePage: number;
 
   error: any;
 };
@@ -150,6 +224,9 @@ const homeState: homeState = {
   jobDetailLoading: 'idle',
   jobApplyLoading: 'idle',
   savedJobsLoading: 'idle',
+  activeJobsLoading: 'idle',
+  applyJobsLoading: 'idle',
+  completeJobsLoading: 'idle',
 
   jobList: [],
   totalCountJobs: 10,
@@ -157,6 +234,15 @@ const homeState: homeState = {
 
   savedJobs: [],
   savedJobTotalCount: 10,
+
+  applyJobs: [],
+  applyJobTotalCount: 10,
+
+  activeJobs: [],
+  totalActivePage: 10,
+
+  completeJobs: [],
+  totalCompletePage: 10,
 
   error: null,
 };
@@ -227,6 +313,12 @@ export const homeSlice = createSlice({
       if (state.jobDetail?.id === project_id) {
         state.jobDetail.saved = true;
       }
+      // APPLY JOBS LISTING
+      if (state.applyJobs) {
+        updateItemById(state.applyJobs, project_id, job => {
+          job.saved = true;
+        });
+      }
     });
 
     // remove to wishlist
@@ -248,6 +340,12 @@ export const homeSlice = createSlice({
           item => item.id !== project_id,
         );
       }
+      // APPLY JOBS LISTING
+      if (state.applyJobs) {
+        updateItemById(state.applyJobs, project_id, job => {
+          job.saved = false;
+        });
+      }
     });
 
     // My Saved Jobs
@@ -268,6 +366,63 @@ export const homeSlice = createSlice({
         state.savedJobsLoading = 'failed';
         state.error = action.error;
       });
+
+    // Apply Jobs
+    builder
+      .addCase(getApplyJobs.pending, state => {
+        state.applyJobsLoading = 'loading';
+      })
+      .addCase(getApplyJobs.fulfilled, (state, action) => {
+        state.applyJobsLoading = 'loaded';
+        if (action.meta.arg.page === 1) {
+          state.applyJobs = action.payload.jobs;
+        } else {
+          state.applyJobs = state.applyJobs.concat(action.payload.jobs);
+        }
+      })
+      .addCase(getApplyJobs.rejected, (state, action) => {
+        state.applyJobsLoading = 'failed';
+        state.error = action.error;
+      });
+
+    // Active Jobs
+    builder
+      .addCase(getActiveJob.pending, state => {
+        state.activeJobsLoading = 'loading';
+      })
+      .addCase(getActiveJob.fulfilled, (state, action) => {
+        state.activeJobsLoading = 'loaded';
+        if (action.meta.arg.page === 1) {
+          state.activeJobs = action.payload.jobs;
+        } else {
+          state.activeJobs = state.activeJobs.concat(action.payload.jobs);
+        }
+        state.totalActivePage = action.payload.total ?? 10;
+      })
+      .addCase(getActiveJob.rejected, (state, action) => {
+        state.activeJobsLoading = 'failed';
+        state.error = action.error;
+      });
+
+    // Complete Jobs
+    builder
+      .addCase(getCompleteJobs.pending, state => {
+        state.completeJobsLoading = 'loading';
+      })
+      .addCase(getCompleteJobs.fulfilled, (state, action) => {
+        state.completeJobsLoading = 'loaded';
+        if (action.meta.arg.page === 1) {
+          state.completeJobs = action.payload.jobs;
+        } else {
+          state.completeJobs = state.completeJobs.concat(action.payload.jobs);
+        }
+        state.totalCompletePage = action.payload.total ?? 10;
+      })
+      .addCase(getCompleteJobs.rejected, (state, action) => {
+        state.completeJobsLoading = 'failed';
+        state.error = action.error;
+      });
+
   },
 });
 

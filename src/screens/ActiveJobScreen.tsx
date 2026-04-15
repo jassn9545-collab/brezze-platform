@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   ImageStyle,
@@ -7,66 +8,61 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import React, { FC, useRef } from 'react';
+import React, { FC, useCallback, useRef } from 'react';
 import { colors, images, spacing } from '../theme';
 import { BookingScreenProps } from '../navigators';
-import { Text } from '../components';
+import { Loader, Text } from '../components';
 import { Currency } from '../config/defaults';
+import { RootState } from '../store';
+import { connect, ConnectedProps } from 'react-redux';
+import { getActiveJob, Pagination } from '../slices/home.slice';
+import { useFocusEffect } from '@react-navigation/native';
+import ListEmptyComponent from '../components/ListEmptyComponent';
+import { Job } from '../slices/types';
 
 type ScreenProps = BookingScreenProps<'ActiveJob'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-type Props = ScreenProps;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = ScreenProps & StoreProps;
 
-// let page = 1;
+let page = 1;
 const ActiveJob: FC<Props> = props => {
   const flatlist = useRef<FlatList>(null);
-  // const isFocused = useIsFocused();
 
-  // const loadMore = () => {
-  //   if (props.totalPage > page) {
-  //     page++;
-  //     getData();
-  //   }
-  // };
+  const loadMore = () => {
+    console.log('loadMore', props.totalPage, page);
+    if (props.totalPage > page && !loading && (props.activeJobs.length ?? 0) > 0) {
+      page++;
+      getData();
+    }
+  };
 
-  // const load = () => {
-  //   flatlist.current?.scrollToOffset({animated: true, offset: 0});
-  //   page = 1;
-  //   getData();
-  // };
+  const load = () => {
+    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
+    page = 1;
+    getData();
+  };
 
-  // // eslint-disable-next-line react-hooks/exhaustive-deps
-  // useFocusEffect(useCallback(load, []));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useFocusEffect(useCallback(load, []));
 
-  // const getData = () => {
-  //   props.get({
-  //     orderBy: 'date_created_utc',
-  //     order: -1,
-  //     page: page,
-  //     limit: 10,
-  //   });
-  // };
+  const getData = () => {
+    props.get({
+      page: page,
+      limit: 10,
+    });
+  };
 
-  // useEffect(() => {
-  //   if (props.canceling === 'loaded' && isFocused) {
-  //     props.resetCanceling();
-  //     load();
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [props.canceling]);
-
-  // const loading = props.fetching === 'loading';
+  const loading = props.fetching === 'loading';
   return (
     <FlatList
       ref={flatlist}
-      data={[1]}
+      data={props.activeJobs}
       contentContainerStyle={$container}
-      // keyExtractor={item => item._id}
-      keyExtractor={(_, index) => index.toString()}
-      // onEndReached={loadMore}
-      // refreshing={loading && page === 1 && props.trips.length > 0}
-      // onRefresh={load}
-      // onEndReachedThreshold={0.2}
+      keyExtractor={item => item._id}
+      onEndReached={loadMore}
+      refreshing={loading && page === 1 && props.activeJobs.length > 0}
+      onRefresh={load}
+      onEndReachedThreshold={0.8}
       renderItem={({ item, index }: { item: any; index: number }) => (
         <TripCell
           item={item}
@@ -74,52 +70,33 @@ const ActiveJob: FC<Props> = props => {
           viewDetail={() =>
             props.navigation.navigate('JobDetail', {
               from: 'ActiveJob',
+              id: item._id!,
             })
           }
-          // cancelAction={() => {
-          //   Alert.alert(
-          //     translate('ride.cancelRide'),
-          //     translate('ride.cancelTrip'),
-          //     [
-          //       {
-          //         text: translate('common.ok'),
-          //         onPress: () =>
-          //           props.cancelRide({
-          //             id: item._id!,
-          //             announce: true,
-          //           }),
-          //       },
-          //       {
-          //         text: translate('common.cancel'),
-          //         style: 'cancel',
-          //       },
-          //     ],
-          //   );
-          // }}
         />
       )}
-      // ListEmptyComponent={
-      //   <View style={$empty}>
-      //     {loading ? (
-      //       <Loader loading={loading} backgroundColor={colors.transparent} />
-      //     ) : (
-      //       <Text tx="trip.noUpcoming" style={$noText} />
-      //     )}
-      //   </View>
-      // }
-      // ListFooterComponent={
-      //   <View style={$extaFetch}>
-      //     {page !== 1 && loading ? (
-      //       <ActivityIndicator size="small" color={colors.primary} />
-      //     ) : null}
-      //   </View>
-      // }
+      ListEmptyComponent={
+        <View style={$empty}>
+          {loading ? (
+            <Loader loading={loading} backgroundColor={colors.transparent} />
+          ) : (
+            <ListEmptyComponent tx="common.noDataFound" />
+          )}
+        </View>
+      }
+      ListFooterComponent={
+        <View style={$extaFetch}>
+          {page !== 1 && loading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : null}
+        </View>
+      }
     />
   );
 };
 
 type TripCellProps = {
-  item: any;
+  item: Job;
   index: number;
   viewDetail?: () => void;
   cancelAction?: () => void;
@@ -209,11 +186,11 @@ const $container: ViewStyle = {
   paddingBottom: spacing.xl,
 };
 
-// const $extaFetch: ViewStyle = {
-//   height: spacing.xxl,
-//   justifyContent: 'center',
-//   alignItems: 'center',
-// };
+const $extaFetch: ViewStyle = {
+  height: spacing.xxl,
+  justifyContent: 'center',
+  alignItems: 'center',
+};
 
 const $cellStyle: ViewStyle = {
   gap: spacing.xs,
@@ -301,30 +278,20 @@ const $shrinkDimText: TextStyle = {
   color: colors.textDim,
 };
 
-// const $noText: TextStyle = {
-//   flex: 1,
-//   textAlign: 'center',
-//   marginTop: '50%',
-// };
+const $empty: ViewStyle = {
+  flex: 1,
+};
 
-// const $empty: ViewStyle = {
-//   flex: 1,
-// };
+const mapStateToProps = (state: RootState) => ({
+  fetching: state.home.activeJobsLoading,
+  activeJobs: state.home.activeJobs,
+  totalPage: state.home.totalActivePage,
+});
 
-// const mapStateToProps = (state: RootState) => ({
-//   fetching: state.ride.fetching,
-//   trips: state.ride.upcomingTrips,
-//   canceling: state.ride.canceling,
-//   totalPage: state.ride.totalUpcomingPage,
-// });
+const mapDispatch = {
+  get: (params: Pagination) => getActiveJob(params),
+};
 
-// const mapDispatch = {
-//   get: (params: ListPageParam) => getUpcomingTrips(params),
-//   tripDetails: (id: string) => getTripDetails(id),
-//   cancelRide: (arg: CancelTrip) => cancelTrip(arg),
-//   resetCanceling: () => rideActions.resetCanceling(),
-// };
+const connector = connect(mapStateToProps, mapDispatch);
 
-// const connector = connect(mapStateToProps, mapDispatch);
-
-export const ActiveJobScreen = ActiveJob;
+export const ActiveJobScreen = connector(ActiveJob);

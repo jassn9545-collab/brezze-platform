@@ -52,7 +52,7 @@ const JobDetail: FC<Props> = props => {
       .then(res => {
         Keyboard.dismiss();
         const formData = new FormData();
-        formData.append('project_id', res.project_id);
+        formData.append('project_id', res.project_id.toString());
         formData.append('bid_amount', res.bidAmount);
         props.apply(formData)
 

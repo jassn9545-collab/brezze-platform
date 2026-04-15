@@ -1,4 +1,5 @@
 import {
+  Button,
   Loader,
   ReadMore,
   Screen,
@@ -11,6 +12,9 @@ import {
   FlatList,
   Image,
   ListRenderItemInfo,
+  Linking,
+  PermissionsAndroid,
+  Platform,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -33,6 +37,7 @@ import moment from 'moment';
 import { Job } from '../slices/types';
 import { Currency } from '../config/defaults';
 import { HITSLOP } from '../utils/util';
+import { getCurrentLoaction, requestPermission } from '../utils/Location';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -53,9 +58,90 @@ const Home: FC<Props> = props => {
   const insets = useSafeAreaInsets();
   const flatlist = useRef<FlatList>(null);
   const [search, setSearch] = useState('');
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [checkingLocation, setCheckingLocation] = useState(true);
+  const [locationDenied, setLocationDenied] = useState(false);
   const fetching = props.loading === 'loading';
 
+  const getData = (
+    locationParams = location,
+    pageNumber = page,
+  ) => {
+    if (!locationParams) {
+      return;
+    }
+
+    props.get({
+      page: pageNumber,
+      limit: 10,
+      latitude: locationParams.latitude,
+      longitude: locationParams.longitude,
+    });
+  };
+
+  const fetchCurrentLocation = () => {
+    setCheckingLocation(true);
+    getCurrentLoaction(
+      position => {
+        const nextLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+
+        setLocation(nextLocation);
+        setLocationDenied(false);
+        setCheckingLocation(false);
+        getData(nextLocation, 1);
+      },
+      () => {
+        setLocation(null);
+        setLocationDenied(true);
+        setCheckingLocation(false);
+      },
+    );
+  };
+
+  const requestLocationAndLoad = async () => {
+    page = 1;
+    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
+
+    if (locationDenied) {
+      Linking.openSettings();
+      return;
+    }
+
+    if (Platform.OS === 'android') {
+      setCheckingLocation(true);
+      const permission = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      );
+
+      if (permission !== PermissionsAndroid.RESULTS.GRANTED) {
+        setLocation(null);
+        setLocationDenied(true);
+        setCheckingLocation(false);
+        return;
+      }
+
+      fetchCurrentLocation();
+      return;
+    }
+
+    requestPermission(fetchCurrentLocation, () => {
+      setLocation(null);
+      setLocationDenied(true);
+      setCheckingLocation(false);
+    });
+  };
+
   const loadMore = () => {
+    if (!location || checkingLocation) {
+      return;
+    }
+
     if (!fetching && props.totalcount > props.data.length) {
       page++;
       getData();
@@ -63,20 +149,11 @@ const Home: FC<Props> = props => {
   };
 
   const load = () => {
-    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
-    page = 1;
-    getData();
+    requestLocationAndLoad();
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(load, []);
-
-  const getData = () => {
-    props.get({
-      page: page,
-      limit: 10,
-    });
-  };
 
   const onPressFilter = () => {
     props.navigation.navigate('AdvanceFilter');
@@ -115,61 +192,89 @@ const Home: FC<Props> = props => {
         </TouchableOpacity>
       </View>
       <Screen preset="fixed" contentContainerStyle={styles.container}>
-        <View style={styles.wrapHeaderSearch}>
-          <TextField
-            value={search}
-            onChangeText={setSearch}
-            LeftAccessory={searchLeftAccessory}
-            placeholderTextColor={colors.palette.placeholderColor}
-            inputWrapperStyle={styles.inputWrapper}
-            style={{ color: colors.palette.white }}
-            containerStyle={styles.flexOne}
-            placeholderTx="home.searchJobs"
-          />
-          <TouchableOpacity
-            style={styles.wrapSearchIcon}
-            onPress={onPressFilter}
-          >
-            <Image source={images.filter} tintColor={colors.palette.white} />
-          </TouchableOpacity>
-        </View>
-
-        <FlatList
-          ref={flatlist}
-          data={props.data}
-          style={styles.flatlist}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-          keyExtractor={item => item?.id?.toString()}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.8}
-          renderItem={info => (
-            <JobCard
-              {...info}
-              onPressJob={onPressJob}
-              onPressSavedJob={onPressSavedJob}
+        {locationDenied ? (
+          <View style={styles.locationPrompt}>
+            <Text
+              tx="home.locationAccessTitle"
+              weight="medium"
+              size="md"
+              style={styles.locationPromptTitle}
             />
-          )}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              {fetching ? (
-                <Loader
-                  loading={fetching}
-                  backgroundColor={colors.transparent}
+            <Text
+              tx="home.locationAccessDescription"
+              size="xs"
+              style={styles.locationPromptDescription}
+            />
+            <Button
+              tx="home.locationAccessButton"
+              onPress={requestLocationAndLoad}
+              style={styles.locationPromptButton}
+              textStyle={styles.locationPromptButtonText}
+            />
+          </View>
+        ) : checkingLocation ? (
+          <View style={styles.empty}>
+            <Loader loading={true} backgroundColor={colors.transparent} />
+          </View>
+        ) : (
+          <>
+            <View style={styles.wrapHeaderSearch}>
+              <TextField
+                value={search}
+                onChangeText={setSearch}
+                LeftAccessory={searchLeftAccessory}
+                placeholderTextColor={colors.palette.placeholderColor}
+                inputWrapperStyle={styles.inputWrapper}
+                style={{ color: colors.palette.white }}
+                containerStyle={styles.flexOne}
+                placeholderTx="home.searchJobs"
+              />
+              <TouchableOpacity
+                style={styles.wrapSearchIcon}
+                onPress={onPressFilter}
+              >
+                <Image source={images.filter} tintColor={colors.palette.white} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              ref={flatlist}
+              data={props.data}
+              style={styles.flatlist}
+              contentContainerStyle={styles.contentContainer}
+              showsVerticalScrollIndicator={false}
+              keyExtractor={item => item?.id?.toString()}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.8}
+              renderItem={info => (
+                <JobCard
+                  {...info}
+                  onPressJob={onPressJob}
+                  onPressSavedJob={onPressSavedJob}
                 />
-              ) : (
-                <ListEmptyComponent tx="common.noDataFound" />
               )}
-            </View>
-          }
-          ListFooterComponent={
-            <View style={styles.extaFetch}>
-              {page !== 1 && fetching ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : null}
-            </View>
-          }
-        />
+              ListEmptyComponent={
+                <View style={styles.empty}>
+                  {fetching ? (
+                    <Loader
+                      loading={fetching}
+                      backgroundColor={colors.transparent}
+                    />
+                  ) : (
+                    <ListEmptyComponent tx="common.noDataFound" />
+                  )}
+                </View>
+              }
+              ListFooterComponent={
+                <View style={styles.extaFetch}>
+                  {page !== 1 && fetching ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : null}
+                </View>
+              }
+            />
+          </>
+        )}
       </Screen>
     </>
   );
@@ -205,7 +310,7 @@ export const JobCard = ({
           hitSlop={HITSLOP.MEDIUM}
           onPress={() => onPressSavedJob(item)}
         >
-          <Image source={item.saved ? images.savedIcon : images.unsavedIcon} />
+          <Image source={item.saved ?? true ? images.savedIcon : images.unsavedIcon} />
         </TouchableOpacity>
       </View>
 
@@ -288,6 +393,31 @@ const styles = StyleSheet.create({
   },
   empty: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  locationPrompt: {
+    marginTop: spacing.md,
+    marginHorizontal: spacing.md,
+    padding: spacing.md,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.palette.offWhite2,
+  },
+  locationPromptTitle: {
+    color: colors.palette.black,
+  },
+  locationPromptDescription: {
+    marginTop: spacing.xxs,
+    color: colors.textDim,
+  },
+  locationPromptButton: {
+    minHeight: 48,
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.lg,
+  },
+  locationPromptButtonText: {
+    fontSize: 16,
+    lineHeight: 22,
   },
   extaFetch: {
     height: spacing.xxl,

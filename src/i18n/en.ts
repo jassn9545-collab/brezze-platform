@@ -185,6 +185,10 @@ const en = {
   home: {
     jobs: 'Jobs',
     searchJobs: 'Search For Jobs',
+    locationAccessTitle: 'Provide location access',
+    locationAccessDescription:
+      'Allow location access to load jobs near your current location.',
+    locationAccessButton: 'Allow Location',
     jobDetails: 'Job Details',
     jobType: 'Job Type',
     category: 'Category',
