@@ -1949,7 +1949,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-pager-view (8.0.0):
+  - react-native-pager-view (8.0.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2752,7 +2752,7 @@ PODS:
     - SDWebImageWebPCoder (~> 0.14)
     - SocketRocket
     - Yoga
-  - RNGestureHandler (2.30.0):
+  - RNGestureHandler (2.31.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2781,7 +2781,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNReanimated (4.2.2):
+  - RNReanimated (4.3.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2808,11 +2808,12 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/reanimated (= 4.2.2)
+    - RNReanimated/apple (= 4.3.0)
+    - RNReanimated/common (= 4.3.0)
     - RNWorklets
     - SocketRocket
     - Yoga
-  - RNReanimated/reanimated (4.2.2):
+  - RNReanimated/apple (4.3.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2839,11 +2840,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/reanimated/apple (= 4.2.2)
     - RNWorklets
     - SocketRocket
     - Yoga
-  - RNReanimated/reanimated/apple (4.2.2):
+  - RNReanimated/common (4.3.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2932,7 +2932,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNWorklets (0.7.4):
+  - RNWorklets (0.8.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2959,10 +2959,11 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNWorklets/worklets (= 0.7.4)
+    - RNWorklets/apple (= 0.8.1)
+    - RNWorklets/common (= 0.8.1)
     - SocketRocket
     - Yoga
-  - RNWorklets/worklets (0.7.4):
+  - RNWorklets/apple (0.8.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2989,10 +2990,9 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNWorklets/worklets/apple (= 0.7.4)
     - SocketRocket
     - Yoga
-  - RNWorklets/worklets/apple (0.7.4):
+  - RNWorklets/common (0.8.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -3401,7 +3401,7 @@ SPEC CHECKSUMS:
   react-native-geolocation: 49d39b53dfeb6c22ff1ad69e71ac9c7981affdaa
   react-native-image-picker: 6051cfd030121b880a58f1cc0e5e33e9887804e4
   react-native-maps: eaa585c9d9f7e848d835839f18e108a8821ed9aa
-  react-native-pager-view: c62ab82db28e2d11e7809c59085e2984a45979c5
+  react-native-pager-view: 36069fc36a8dd0bb862eeb18617065cc50641167
   react-native-render-html: 5afc4751f1a98621b3009432ef84c47019dcb2bd
   react-native-safe-area-context: eda63a662750758c1fdd7e719c9f1026c8d161cb
   React-NativeModulesApple: efd0906463c79d9b86197dbcf0d58358dff8c5ed
@@ -3441,10 +3441,10 @@ SPEC CHECKSUMS:
   RNCClipboard: e560338bf6cc4656a09ff90610b62ddc0dbdad65
   RNDateTimePicker: bfb315bc0439c9aeb649fbf7944475a7f268f9f6
   RNFastImage: 674d5912e174468a60971d2ba9efc7bb43d116fa
-  RNGestureHandler: 91eb97c0546ba67b62cf7b96156c7361478a70bd
-  RNReanimated: bfcebdcb7a58c4514f06d1ffe9f3af7ece04331b
+  RNGestureHandler: de4375c25168dc88d886f75613bec94999b12e9a
+  RNReanimated: ecf18b922b76ec41a859143671a7841f68f899fd
   RNScreens: e902eba58a27d3ad399a495d578e8aba3ea0f490
-  RNWorklets: 15ae83e146222e29e0a9ee0cf3a2896dc4e8696d
+  RNWorklets: 9fe22307fb611f506096f854caace756c20aecb4
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   SDWebImageAVIFCoder: afe194a084e851f70228e4be35ef651df0fc5c57
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c

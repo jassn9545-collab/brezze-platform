@@ -191,6 +191,7 @@ export const editProfile = yup.object().shape({
   bio: yup.string().required('validation.required'),
   location: yup.string().required('validation.required'),
   skills: yup.string().required('validation.required'),
+  profile_image: yup.string(),
 });
 
 export type EditProfileParams = yup.InferType<typeof editProfile>;

@@ -12,10 +12,12 @@ import {
   BottomTabNavigator,
   BottomTabNavigatorParamList,
 } from './BottomTabNavigator';
-import { ImageViewerParams, ImageViewerScreen } from '../components/ImageViewer';
-
-// import { useAppDispatch } from '../store/hooks';
-// import { getProfile } from '../slices/auth.slice';
+import {
+  ImageViewerParams,
+  ImageViewerScreen,
+} from '../components/ImageViewer';
+import { useAppDispatch } from '../store/hooks';
+import { getProfile } from '../slices/auth.slice';
 
 /**
  * This type allows TypeScript to know what routes are defined in this navigator
@@ -76,7 +78,7 @@ export type AppStackScreenProps<T extends keyof AppStackParamList> =
 const Stack = createNativeStackNavigator<AppStackParamList, 'App'>();
 
 export const AppStack: FC = () => {
-  //   const dispatch = useAppDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     // bootstrap();
@@ -89,9 +91,9 @@ export const AppStack: FC = () => {
     // notifeeSubscribe();
   }, []);
 
-  //   useEffect(() => {
-  //     dispatch(getProfile());
-  //   }, [dispatch]);
+  useEffect(() => {
+    dispatch(getProfile());
+  }, [dispatch]);
 
   // const bootstrap = async () => {
   //   let messaging = getMessaging();

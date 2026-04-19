@@ -273,6 +273,7 @@ const UploadUserDetail: FC<Props> = props => {
           <TouchableOpacity onPress={() => setAddressModal('pick')}>
             <TextField
               editable={false}
+              pointerEvents="none"
               onPress={() => setAddressModal('pick')}
               value={streetAddress?.address}
               containerStyle={styles.inputContainer}

@@ -1,7 +1,18 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 
 import { AppStackScreenProps } from '../navigators';
-import { BackButtom, Button, Screen, Text, TextField, TextFieldAccessoryProps } from '../components';
+import {
+  AddressParam,
+  AddressSearchModal,
+  BackButtom,
+  Button,
+  CustomImagePicker,
+  Loader,
+  Screen,
+  Text,
+  TextField,
+  TextFieldAccessoryProps,
+} from '../components';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, images, spacing, typography } from '../theme';
 import {
@@ -20,6 +31,10 @@ import { buildError, editProfile, EditProfileParams } from '../apis/schema';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
 import { Skill } from '../slices/setting.slice';
+import { authActions, updateProfile } from '../slices/auth.slice';
+import { ImagePickerResponse } from 'react-native-image-picker';
+import FastImage from '@d11/react-native-fast-image';
+import { AddressType } from '../slices/address.types';
 
 type NavigationProps = AppStackScreenProps<'EditProfile'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -40,15 +55,46 @@ export const locationLeftAccessory = (props: TextFieldAccessoryProps) => {
     </View>
   );
 };
-const EditProfile: FC<Props> = (props) => {
+const EditProfile: FC<Props> = props => {
   const insets = useSafeAreaInsets();
+  const {
+    oldName = props.profile?.name,
+    oldProfileTitle = props.profile?.profile_title,
+    oldProfileDescription = props.profile?.profile_description,
+    oldAddress = {
+      address: props.profile?.street_address,
+      location: {
+        lat: props.profile?.latitude!,
+        lng: props.profile?.longitude!,
+      },
+    },
+    oldSkills = props.profile?.skills
+      ? props.profile.skills
+          .split(',')
+          .map((id: string) => props.skills!.find(s => s.id === Number(id)))
+          .filter((s): s is Skill => Boolean(s))
+      : [],
+  } = {};
 
-  const [name, setName] = useState('');
-  const [professionalHeading, setProfessionalHeading] = useState('');
-  const [bio, setBio] = useState('');
-  const [location, setLocation] = useState('');
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const [name, setName] = useState(oldName ?? '');
+  const [professionalHeading, setProfessionalHeading] = useState(
+    oldProfileTitle ?? '',
+  );
+  const [bio, setBio] = useState(oldProfileDescription ?? '');
+  const [location, setLocation] = useState<AddressParam>(oldAddress);
+  const [addressModal, setAddressModal] = useState<AddressType>('none');
+
+  const [skills, setSkills] = useState<Skill[]>(oldSkills ?? []);
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+  const [imagePickerVisible, setImagePickerVisible] = useState(false);
+  const [imageURI, setImageURI] = useState(
+    props.profile?.profile ? props.profile.profile : '',
+  );
+  const [imageFormData, setImageFormData] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
 
   const [error, setError] = useState<FieldError>({});
 
@@ -58,6 +104,20 @@ const EditProfile: FC<Props> = (props) => {
       fontFamily: typography.primary.regular,
     },
   };
+
+  useEffect(() => {
+    if (props.loading === 'loaded') {
+      if (props.navigation.canGoBack()) {
+        props.navigation.goBack();
+      } else {
+        props.navigation.reset({
+          index: 0,
+          routes: [{ name: 'Drawer' }],
+        });
+      }
+      props.reset();
+    }
+  }, [props]);
 
   const onSelectSkill = (item: Skill) => {
     if (skills.includes(item)) {
@@ -73,19 +133,47 @@ const EditProfile: FC<Props> = (props) => {
     setSkills(skills.filter(i => i !== item));
   };
 
+  const uploadImage = (image: ImagePickerResponse) => {
+    if ((image.assets?.length ?? 0) > 0) {
+      setImageURI(image.assets?.[0].uri!);
+      setImageFormData({
+        uri: image.assets?.[0].uri!,
+        name: image.assets?.[0].fileName!,
+        type: image.assets?.[0].type!,
+      });
+    }
+  };
+
   const validate = () => {
     let loginParams: EditProfileParams = {
       name,
       professionalHeading,
       bio,
-      location,
-      skills: skills.map(i => i.id).join(","),
+      location: location?.address!,
+      skills: skills.map(i => i.id).join(','),
+      profile_image: imageURI,
     };
     editProfile
       .validate(loginParams, { abortEarly: false })
       .then(params => {
+        const formData = new FormData();
+        formData.append('name', params.name);
+        formData.append('profile_title', params.professionalHeading);
+        formData.append('profile_description', params.bio);
+        formData.append('street_address', params.location);
+        formData.append('latitude', location.location.lat);
+        formData.append('longitude', location.location.lng);
+        formData.append('skills', params.skills);
+        if (imageFormData) {
+          formData.append('profile_image', {
+            uri: imageFormData.uri,
+            name: imageFormData.name,
+            type: imageFormData.type,
+          });
+        }
+
         Keyboard.dismiss();
-        console.log('params', params);
+        props.update(formData);
         setError({});
       })
       .catch(errors => {
@@ -105,12 +193,26 @@ const EditProfile: FC<Props> = (props) => {
       />
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.header}>
-          <Image
-            resizeMode="cover"
-            style={styles.userImage}
-            source={{ uri: 'https://i.pravatar.cc/300' }}
-          />
-          <Text size="md" weight="semiBold" text="Mandeep Saini" />
+          <View>
+            <FastImage
+              resizeMode="cover"
+              style={styles.userImage}
+              source={{ uri: imageURI }}
+            />
+            <TouchableOpacity
+              style={styles.editImageIcon}
+              onPress={() => setImagePickerVisible(true)}
+            >
+              <Image
+                resizeMode="contain"
+                source={images.camera}
+                style={styles.cameraIcon}
+                tintColor={colors.palette.white}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <Text size="md" weight="semiBold" text={props.profile?.name} />
         </View>
         <View style={styles.inputs}>
           <TextField
@@ -152,18 +254,21 @@ const EditProfile: FC<Props> = (props) => {
             style={{ marginVertical: spacing.xs }}
           />
 
-          <TextField
-            value={location}
-            onChangeText={setLocation}
-            LabelTextProps={labelStyle}
-            LeftAccessory={locationLeftAccessory}
-            containerStyle={styles.inputContainer}
-            labelTx="editProfile.location"
-            placeholderTx="editProfile.locationPlaceholder"
-            helperTx={error?.location}
-            status={error?.location ? 'error' : undefined}
-          />
-
+          <TouchableOpacity onPress={() => setAddressModal('pick')}>
+            <TextField
+              editable={false}
+              pointerEvents="none"
+              onPress={() => setAddressModal('pick')}
+              value={location?.address}
+              LabelTextProps={labelStyle}
+              LeftAccessory={locationLeftAccessory}
+              containerStyle={styles.inputContainer}
+              labelTx="editProfile.location"
+              placeholderTx="editProfile.locationPlaceholder"
+              helperTx={error?.location}
+              status={error?.location ? 'error' : undefined}
+            />
+          </TouchableOpacity>
           <View style={styles.skillContainer}>
             <Text tx="editProfile.services" style={styles.serviceLabel} />
 
@@ -268,6 +373,19 @@ const EditProfile: FC<Props> = (props) => {
           tx="editProfile.updateProfile"
         />
       </Screen>
+      <CustomImagePicker
+        imagePickerModal={imagePickerVisible}
+        onDismiss={() => setImagePickerVisible(false)}
+        callback={uploadImage}
+      />
+      <AddressSearchModal
+        showCurrent
+        onSelect={(address: AddressParam) => setLocation(address)}
+        isVisible={addressModal !== 'none'}
+        onClose={() => setAddressModal('none')}
+        title="ride.enterAddress"
+      />
+      <Loader loading={props.loading === 'loading'} />
     </>
   );
 };
@@ -289,6 +407,18 @@ const styles = StyleSheet.create({
     borderWidth: 5,
     borderRadius: 55,
     borderColor: colors.palette.offWhite2,
+  },
+  editImageIcon: {
+    top: 0,
+    right: 0,
+    padding: spacing.xs,
+    position: 'absolute',
+    borderRadius: spacing.md,
+    backgroundColor: colors.primary,
+  },
+  cameraIcon: {
+    width: spacing.md,
+    height: spacing.md,
   },
   inputs: {
     marginHorizontal: spacing.md,
@@ -371,21 +501,20 @@ const styles = StyleSheet.create({
   inputAccessoryStyle: {
     marginVertical: spacing.sm + 2,
     height: 24,
-  }
+  },
 });
 
 const mapStateToProps = (state: RootState) => ({
   skills: state.setting.basic?.skills,
-  // profile: state.auth.myProfile?.data,
-  // loading: state.auth.updateLoading,
+  profile: state.auth.myProfile?.user,
+  loading: state.auth.updateLoading,
 });
 
-// const mapDispatch = {
-//   getProfile,
-//   update: (params: FormData) => updateProfile(params),
-//   reset: () => authActions.resetUpdateLoading(),
-// };
+const mapDispatch = {
+  update: (params: FormData) => updateProfile(params),
+  reset: () => authActions.resetUpdateLoading(),
+};
 
-const connector = connect(mapStateToProps);
+const connector = connect(mapStateToProps, mapDispatch);
 
 export const EditProfileScreen = connector(EditProfile);

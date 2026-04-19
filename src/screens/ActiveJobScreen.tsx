@@ -29,7 +29,6 @@ const ActiveJob: FC<Props> = props => {
   const flatlist = useRef<FlatList>(null);
 
   const loadMore = () => {
-    console.log('loadMore', props.totalPage, page);
     if (props.totalPage > page && !loading && (props.activeJobs.length ?? 0) > 0) {
       page++;
       getData();

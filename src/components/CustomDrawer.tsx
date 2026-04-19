@@ -12,25 +12,32 @@ import { colors, images, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
 import { TxKeyPath } from '../i18n';
+import { useAppSelector } from '../store/hooks';
+import FastImage from '@d11/react-native-fast-image';
 
 const CustomDrawer: FC<DrawerContentComponentProps> = props => {
   const insets = useSafeAreaInsets();
+  const profile = useAppSelector(store => store.auth.myProfile?.user);
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
-        <Image
+        <FastImage
           resizeMode="cover"
           style={styles.userImage}
-          source={{ uri: 'https://i.pravatar.cc/300' }}
+          source={{ uri: profile?.profile_image }}
         />
         <View style={styles.userDetail}>
-          <Text size="md" text="Mandeep Saini" />
-          <Text size="xs" weight="semiBold" text="EXPERT ELECTRICIAN" />
-          <View style={styles.userBadge}>
-            <Text size="xxs" weight="semiBold" text="TOP RATED" />
-          </View>
+          <Text size="md" text={profile?.name} />
+          {profile?.profile_title && (
+            <Text size="xs" weight="semiBold" text={profile?.profile_title} numberOfLines={2} />
+          )}
+          {profile?.is_top_rated && (
+            <View style={styles.userBadge}>
+              <Text size="xxs" weight="semiBold" text="TOP RATED" />
+            </View>
+          )}
         </View>
       </View>
       <ScrollView

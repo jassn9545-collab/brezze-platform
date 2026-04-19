@@ -20,21 +20,16 @@ import { colors, images, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Currency } from '../config/defaults';
 import { HITSLOP, parseSource } from '../utils/util';
+import { connect, ConnectedProps } from 'react-redux';
+import { RootState } from '../store';
+import FastImage from '@d11/react-native-fast-image';
 
 type NavigationProps = AppBottomTabScreenProps<'Profile'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
-
-const jobQuickPoints: string[] = [
-  'House Pipe Fitting',
-  'Wire Fitting',
-  'Switch Install',
-  'Home Appliances Install',
-];
-
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 type VisibleMenuType = { visible: false } | { visible: true; anchor: number };
 
-const Profile: FC<NavigationProps> = (props) => {
+const Profile: FC<Props> = props => {
   const insets = useSafeAreaInsets();
   const [visibleMenu, setVisibleMenu] = useState<VisibleMenuType>({
     visible: false,
@@ -63,7 +58,7 @@ const Profile: FC<NavigationProps> = (props) => {
   return (
     <>
       <BackButtom
-        heading="Mandeep Saini"
+        heading={props.profileData?.name}
         style={{
           paddingHorizontal: spacing.md,
           paddingTop: insets.top + spacing.sm,
@@ -72,43 +67,53 @@ const Profile: FC<NavigationProps> = (props) => {
       />
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.header}>
-          <Image
+          <FastImage
             resizeMode="cover"
             style={styles.userImage}
-            source={{ uri: 'https://i.pravatar.cc/300' }}
+            source={{ uri: props.profileData?.profile_image }}
           />
           <View style={styles.userDetail}>
-            <Text size="md" weight="semiBold" text="Mandeep Saini" />
+            <Text size="md" weight="semiBold" text={props.profileData?.name} />
             <Text
               size="sm"
               style={styles.textDim}
-              text="42 Hebbard Street, Victoria"
+              text={props.profileData?.street_address}
             />
-            <View style={styles.userBadge}>
-              <Text
-                size="xxs"
-                weight="semiBold"
-                text="TOP RATED"
-                style={styles.greenText}
-              />
-            </View>
+            {props.profileData?.is_top_rated && (
+              <View style={styles.userBadge}>
+                <Text
+                  size="xxs"
+                  weight="semiBold"
+                  text="TOP RATED"
+                  style={styles.greenText}
+                />
+              </View>
+            )}
           </View>
         </View>
         <View style={styles.userProfile}>
           <View style={styles.singleProfileContent}>
-            <Text size="sm" weight="semiBold" text="$40K+" />
+            <Text
+              size="sm"
+              weight="semiBold"
+              text={Currency.sign + (props.profileData?.total_earnings ?? 0)}
+            />
             <Text size="xxs" weight="medium" tx="profile.totalEarnings" />
           </View>
           <View style={styles.singleProfileContent}>
-            <Text size="sm" weight="semiBold" text="450" />
+            <Text
+              size="sm"
+              weight="semiBold"
+              text={(props.profileData?.total_jobs ?? 0)?.toString()}
+            />
             <Text size="xxs" weight="medium" tx="profile.totalJobs" />
           </View>
           <View style={styles.singleProfileContent}>
             <Text
               size="sm"
               weight="semiBold"
-              text="98%"
               style={{ color: colors.primary }}
+              text={(props.profileData?.job_success_score ?? 0)?.toString() + '%'}
             />
             <Text size="xxs" weight="medium" tx="profile.jobSuccess" />
           </View>
@@ -116,7 +121,7 @@ const Profile: FC<NavigationProps> = (props) => {
         <View style={styles.servicesContainer}>
           <Text size="md" weight="semiBold" tx="profile.services" />
           <View style={styles.servicesWrapper}>
-            {jobQuickPoints?.map((data, index) => (
+            {props.profileData?.categories?.map((data, index) => (
               <View key={index} style={styles.service}>
                 <Text size="xs" text={data} />
                 <Image source={images.verified} />
@@ -283,6 +288,7 @@ const styles = StyleSheet.create({
     gap: spacing.xxs + 1,
   },
   textDim: {
+    textAlign: 'center',
     color: colors.textDim,
   },
   userBadge: {
@@ -432,12 +438,10 @@ const styles = StyleSheet.create({
   flexOne: { flex: 1 },
 });
 
-// const mapStateToProps = (state: RootState) => ({
-//   profileData: state.auth.myProfile?.data,
-//   logoutLoading: state.auth.logoutLoading,
-//   baseUrl: state.home.baseURl
-// });
+const mapStateToProps = (state: RootState) => ({
+  profileData: state.auth.myProfile?.user,
+});
 
-// const connector = connect(mapStateToProps);
+const connector = connect(mapStateToProps);
 
-export const ProfileScreen = Profile;
+export const ProfileScreen = connector(Profile);
