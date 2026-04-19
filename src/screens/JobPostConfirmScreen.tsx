@@ -65,10 +65,10 @@ const JobPostStep2: FC<Props> = props => {
   const [addressModal, setAddressModal] = useState<AddressType>('none');
   const [budget, setBudget] = useState('');
 
-  const [error, setError] = useState<FieldError>({});
   const [selectedImages, setSelectedImages] = useState<ImageItem[]>([]);
-
   const [imagePickerModal, setImagePickerModal] = useState(false);
+  
+  const [error, setError] = useState<FieldError>({});
 
   useEffect(() => {
     if (map.current && selectedAddress?.location) {

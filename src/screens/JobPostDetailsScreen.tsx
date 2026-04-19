@@ -34,7 +34,6 @@ const JobPostDetails: FC<Props> = props => {
   const onPressHire = (data: Bid) => {
     props.hireJob({ job_id: props.route.params?.id, bid_id: data.id });
   };
-
   return (
     <>
       <Screen
