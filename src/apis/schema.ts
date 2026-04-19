@@ -218,6 +218,10 @@ export type AddCatalogParams = yup.InferType<typeof addCatalogSchema>;
 
 export const submitWorkSchema = yup.object().shape({
   description: yup.string().required('validation.required'),
+  images: yup
+    .array()
+    .min(1, 'validation.required')
+    .required('validation.required'),
 });
 
 export type SubmitWorkParams = yup.InferType<typeof submitWorkSchema>;

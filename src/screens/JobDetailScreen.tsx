@@ -22,7 +22,7 @@ interface JobQuichPointType {
 
 export type JobDetailParams = {
   id: number;
-  from: 'ActiveJob' | 'Home' | 'SavedJob';
+  from: 'ActiveJob' | 'Home' | 'SavedJob' | 'ApplyJob';
 };
 
 const JobDetail: FC<Props> = props => {
@@ -60,7 +60,7 @@ const JobDetail: FC<Props> = props => {
       urls: [props.data?.base_url! + '/' + props.data?.images?.[0]?.image],
       initialIndex: 0,
     });
-  }
+  };
 
   const onPressJob = () => {
     if (props.route.params.from === 'ActiveJob') {
@@ -81,10 +81,7 @@ const JobDetail: FC<Props> = props => {
       />
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.main}>
-          <TouchableOpacity
-            style={styles.jobLogo}
-            onPress={onPressLogo}
-          >
+          <TouchableOpacity style={styles.jobLogo} onPress={onPressLogo}>
             <FastImage
               resizeMode="cover"
               style={styles.jobLogoStyle}
@@ -183,13 +180,18 @@ const JobDetail: FC<Props> = props => {
       </Screen>
       <Button
         tx={
-          props.route.params.from === 'ActiveJob'
+          props.route.params.from === 'ActiveJob' ||
+          props.route.params.from === 'ApplyJob'
             ? 'home.submitWork'
             : 'home.applyJob'
         }
         onPress={onPressJob}
+        disabled={props.route.params.from === 'ApplyJob'}
         style={[
           styles.buttonStyle,
+          props.route.params.from === 'ApplyJob' && {
+            backgroundColor: colors.primaryDimmed,
+          },
           { marginBottom: insets.bottom + spacing.sm },
         ]}
       />

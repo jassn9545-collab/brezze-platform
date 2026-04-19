@@ -8,7 +8,7 @@ import {
 
 import {LatLng} from '../components/Address.types';
 import URLs from '../config/urls';
-import {images} from '../theme';
+import {colors, images} from '../theme';
 
 export const hitSlop = {left: 10, top: 5, right: 10, bottom: 5};
 
@@ -182,4 +182,24 @@ export const HITSLOP = {
   SMALL: { top: 5, bottom: 5, left: 5, right: 5 },
   MEDIUM: { top: 10, bottom: 10, left: 10, right: 10 },
   LARGE: { top: 15, bottom: 15, left: 15, right: 15 },
+};
+
+export const getStatusStyle = (type: string) => {
+  switch (type) {
+    case 'active':
+      return {
+        backgroundColor: colors.palette.primaryDimmed,
+        color: colors.primary,
+      };
+    case 'inactive':
+      return {
+        backgroundColor: colors.palette.centerColor,
+        color: colors.error,
+      };
+    default:
+      return {
+        backgroundColor: colors.palette.borderColor,
+        color: colors.palette.black,
+      };
+  }
 };

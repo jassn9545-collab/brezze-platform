@@ -216,7 +216,10 @@ const en = {
     markRead: 'Mark as read',
     submitWork: 'Submit Work',
     posted: 'Posted {{value}}',
-    fixedPrice: 'Fixed Price - Est Budget {{value}}'
+    fixedPrice: 'Fixed Price - Est Budget {{value}}',
+    budget: 'Budget',
+    started: 'Started {{value}}',
+    client: 'Client'
   },
   job: {
     hireJob: 'Hire Job List',
@@ -261,7 +264,7 @@ const en = {
     walletEarning: 'Wallet & Earning',
     serviceCatalogs: 'Services Catalogs List',
     helpSupport: 'Help & Support',
-    logout: 'Logout'
+    logout: 'Logout',
   },
   profile: {
     totalEarnings: 'Total Earnings',
@@ -276,7 +279,7 @@ const en = {
     logoutConfirmation: 'Logout Confirmation',
     logoutConfirmationDesc: 'Are You Sure want to log out?',
     yesLogout: 'Yes, Log Out',
-    cancel: 'Cancel'
+    cancel: 'Cancel',
   },
   editProfile: {
     personalDetails: 'Personal Details',
@@ -311,7 +314,7 @@ const en = {
   },
   payment: {
     wallet: 'Wallet',
-    availableBalance: "AVAILABLE BALANCE"
+    availableBalance: 'AVAILABLE BALANCE',
   },
   helpSupport: {
     helpCenter: 'Help Center',
@@ -328,7 +331,7 @@ const en = {
     noAddresses: 'No suggested address(es) found',
     chooseAddress: 'Confirm Location',
     enterAddress: 'Enter an address',
-  }
+  },
 };
 
 export default en;

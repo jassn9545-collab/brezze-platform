@@ -29,6 +29,7 @@ import {
   Pagination,
   JobSavedParams,
   removeFromSavedJob,
+  homeActions,
 } from '../slices/home.slice';
 import { RootState } from '../store';
 import { connect, ConnectedProps } from 'react-redux';
@@ -51,8 +52,6 @@ export const searchLeftAccessory = (props: TextFieldAccessoryProps) => {
   );
 };
 
-// const jobQuickPoints = ['Contract Job', 'Experience', 'Payment Verified'];
-
 let page = 1;
 const Home: FC<Props> = props => {
   const insets = useSafeAreaInsets();
@@ -66,10 +65,7 @@ const Home: FC<Props> = props => {
   const [locationDenied, setLocationDenied] = useState(false);
   const fetching = props.loading === 'loading';
 
-  const getData = (
-    locationParams = location,
-    pageNumber = page,
-  ) => {
+  const getData = (locationParams = location, pageNumber = page) => {
     if (!locationParams) {
       return;
     }
@@ -90,7 +86,7 @@ const Home: FC<Props> = props => {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         };
-
+        props.setCalledHome(false);
         setLocation(nextLocation);
         setLocationDenied(false);
         setCheckingLocation(false);
@@ -135,6 +131,13 @@ const Home: FC<Props> = props => {
       setLocationDenied(true);
       setCheckingLocation(false);
     });
+
+    if (props.isCalled) {
+      return;
+    }
+    setTimeout(() => {
+      fetchCurrentLocation();
+    }, 500);
   };
 
   const loadMore = () => {
@@ -233,7 +236,10 @@ const Home: FC<Props> = props => {
                 style={styles.wrapSearchIcon}
                 onPress={onPressFilter}
               >
-                <Image source={images.filter} tintColor={colors.palette.white} />
+                <Image
+                  source={images.filter}
+                  tintColor={colors.palette.white}
+                />
               </TouchableOpacity>
             </View>
 
@@ -281,12 +287,14 @@ const Home: FC<Props> = props => {
 };
 
 type JobCardProps = ListRenderItemInfo<Job> & {
+  isSavedIcon?: boolean;
   onPressJob?: (data: Job) => void;
   onPressSavedJob: (data: Job) => void;
 };
 export const JobCard = ({
   item,
   onPressJob,
+  isSavedIcon = true,
   onPressSavedJob,
 }: JobCardProps) => {
   return (
@@ -306,12 +314,18 @@ export const JobCard = ({
             value: moment(item.created_at).fromNow(),
           }}
         />
-        <TouchableOpacity
-          hitSlop={HITSLOP.MEDIUM}
-          onPress={() => onPressSavedJob(item)}
-        >
-          <Image source={item.saved ?? true ? images.savedIcon : images.unsavedIcon} />
-        </TouchableOpacity>
+        {isSavedIcon && (
+          <TouchableOpacity
+            hitSlop={HITSLOP.MEDIUM}
+            onPress={() => onPressSavedJob(item)}
+          >
+            <Image
+              source={
+                item.saved ?? true ? images.savedIcon : images.unsavedIcon
+              }
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       <Text size="sm" weight="medium" text={item.title} />
@@ -462,9 +476,11 @@ const mapState = (state: RootState) => ({
   data: state.home.jobList,
   loading: state.home.jobListLoading,
   totalcount: state.home.totalCountJobs,
+  isCalled: state.home.isCalled,
 });
 
 const mapDispatch = {
+  setCalledHome: homeActions.setCalledHome,
   get: (params: Pagination) => getJobList(params),
   addToSavedJob: (params: JobSavedParams) => addToSavedJob(params),
   removeFromSavedJob: (params: JobSavedParams) => removeFromSavedJob(params),

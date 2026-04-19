@@ -56,6 +56,7 @@ const CompleteJob: FC<Props> = (props) => {
         <TripCell
           item={item}
           index={index}
+          baseURl={props.baseURl!}
         // onPress={() =>
         //   props.navigation.navigate('PastTripDetails', {
         //     tripId: item._id,
@@ -124,6 +125,7 @@ const mapStateToProps = (state: RootState) => ({
   fetching: state.home.completeJobsLoading,
   completeJobs: state.home.completeJobs,
   totalPage: state.home.totalCompletePage,
+  baseURl: state.setting.basic?.base_url
 });
 
 const mapDispatch = {

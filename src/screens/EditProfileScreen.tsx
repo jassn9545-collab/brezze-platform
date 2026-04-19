@@ -88,7 +88,7 @@ const EditProfile: FC<Props> = props => {
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
   const [imageURI, setImageURI] = useState(
-    props.profile?.profile ? props.profile.profile : '',
+    props.profile?.profile_image ? props.baseURl + '/' + props.profile.profile_image : '',
   );
   const [imageFormData, setImageFormData] = useState<{
     uri: string;
@@ -185,7 +185,7 @@ const EditProfile: FC<Props> = props => {
   return (
     <>
       <BackButtom
-        heading="Mandeep Saini"
+        heading={props.profile?.name}
         style={{
           paddingHorizontal: spacing.md,
           paddingTop: insets.top + spacing.sm,
@@ -508,6 +508,7 @@ const mapStateToProps = (state: RootState) => ({
   skills: state.setting.basic?.skills,
   profile: state.auth.myProfile?.user,
   loading: state.auth.updateLoading,
+  baseURl: state.setting.basic?.base_url
 });
 
 const mapDispatch = {

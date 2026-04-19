@@ -8,6 +8,7 @@ import { getAuthorization } from './auth.slice';
 export interface BasicData {
   skills: Skill[]
   proof_type: ProofType[]
+  base_url: string
 }
 
 export interface Skill {

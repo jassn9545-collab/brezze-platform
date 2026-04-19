@@ -45,7 +45,7 @@ const ApplyJob: FC<Props> = props => {
 
   const onPressJob = () => {
     props.navigation.navigate('JobDetail', {
-      from: 'ActiveJob',
+      from: 'ApplyJob',
       id: 9
     });
   };
@@ -86,6 +86,7 @@ const ApplyJob: FC<Props> = props => {
         renderItem={info => (
           <JobCard
             {...info}
+            isSavedIcon={false}
             onPressJob={onPressJob}
             onPressSavedJob={onPressSavedJob}
           />

@@ -144,12 +144,13 @@ export const getApplyJobs = createAsyncThunk(
         },
         data: JSON.stringify(params),
       });
+      console.log('response.data.data', response.data.data);
       return response.data.data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }
   },
-)
+);
 
 export const getActiveJob = createAsyncThunk(
   'home/active-jobs',
@@ -189,7 +190,28 @@ export const getCompleteJobs = createAsyncThunk(
   },
 );
 
-
+export const submitJob = createAsyncThunk(
+  'job/submit-job',
+  async (data: FormData, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.submitJob,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        data,
+      });
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: 'Drawer' }],
+      });
+      return response.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
 export type homeState = {
   jobListLoading: LoadStatus;
@@ -199,6 +221,7 @@ export type homeState = {
   applyJobsLoading: LoadStatus;
   activeJobsLoading: LoadStatus;
   completeJobsLoading: LoadStatus;
+  submitJobLoading: LoadStatus;
 
   jobList: Job[];
   totalCountJobs: number;
@@ -216,6 +239,8 @@ export type homeState = {
   completeJobs: Job[];
   totalCompletePage: number;
 
+  isCalled: boolean;
+
   error: any;
 };
 
@@ -227,6 +252,7 @@ const homeState: homeState = {
   activeJobsLoading: 'idle',
   applyJobsLoading: 'idle',
   completeJobsLoading: 'idle',
+  submitJobLoading: 'idle',
 
   jobList: [],
   totalCountJobs: 10,
@@ -244,13 +270,19 @@ const homeState: homeState = {
   completeJobs: [],
   totalCompletePage: 10,
 
+  isCalled: true,
+
   error: null,
 };
 
 export const homeSlice = createSlice({
   name: 'home',
   initialState: homeState,
-  reducers: {},
+  reducers: {
+    setCalledHome: (state, action) => {
+      state.isCalled = action.payload;
+    },
+  },
   extraReducers: builder => {
     // job list
     builder
@@ -360,7 +392,7 @@ export const homeSlice = createSlice({
         } else {
           state.savedJobs = state.jobList.concat(action.payload.jobs);
         }
-        state.totalCountJobs = action.payload.total ?? 10;
+        state.savedJobTotalCount = action.payload.total ?? 10;
       })
       .addCase(mySavedJobs.rejected, (state, action) => {
         state.savedJobsLoading = 'failed';
@@ -379,6 +411,7 @@ export const homeSlice = createSlice({
         } else {
           state.applyJobs = state.applyJobs.concat(action.payload.jobs);
         }
+        state.applyJobTotalCount = action.payload.total ?? 10;
       })
       .addCase(getApplyJobs.rejected, (state, action) => {
         state.applyJobsLoading = 'failed';
@@ -423,7 +456,20 @@ export const homeSlice = createSlice({
         state.error = action.error;
       });
 
+    // Submit Job
+    builder
+      .addCase(submitJob.pending, state => {
+        state.submitJobLoading = 'loading';
+      })
+      .addCase(submitJob.fulfilled, state => {
+        state.submitJobLoading = 'loaded';
+      })
+      .addCase(submitJob.rejected, (state, action) => {
+        state.submitJobLoading = 'failed';
+        state.error = action.error;
+      });
   },
 });
 
 export const homeReducer = homeSlice.reducer;
+export const homeActions = homeSlice.actions;

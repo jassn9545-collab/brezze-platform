@@ -18,15 +18,15 @@ import FastImage from '@d11/react-native-fast-image';
 const CustomDrawer: FC<DrawerContentComponentProps> = props => {
   const insets = useSafeAreaInsets();
   const profile = useAppSelector(store => store.auth.myProfile?.user);
+  const baseURl = useAppSelector(store => store.setting.basic?.base_url);
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
         <FastImage
           resizeMode="cover"
           style={styles.userImage}
-          source={{ uri: profile?.profile_image }}
+          source={{ uri: baseURl + '/' + profile?.profile_image }}
         />
         <View style={styles.userDetail}>
           <Text size="md" text={profile?.name} />
@@ -45,7 +45,6 @@ const CustomDrawer: FC<DrawerContentComponentProps> = props => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContainer}
       >
-        {/* Main Menu */}
         <View style={styles.menuContainer}>
           <DrawerItem
             image={images.drawerSearch}

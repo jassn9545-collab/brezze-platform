@@ -70,7 +70,7 @@ const Profile: FC<Props> = props => {
           <FastImage
             resizeMode="cover"
             style={styles.userImage}
-            source={{ uri: props.profileData?.profile_image }}
+            source={{ uri: props.baseURl + '/' + props.profileData?.profile_image }}
           />
           <View style={styles.userDetail}>
             <Text size="md" weight="semiBold" text={props.profileData?.name} />
@@ -440,6 +440,7 @@ const styles = StyleSheet.create({
 
 const mapStateToProps = (state: RootState) => ({
   profileData: state.auth.myProfile?.user,
+  baseURl: state.setting.basic?.base_url
 });
 
 const connector = connect(mapStateToProps);

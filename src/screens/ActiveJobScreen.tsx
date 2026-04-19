@@ -19,6 +19,9 @@ import { getActiveJob, Pagination } from '../slices/home.slice';
 import { useFocusEffect } from '@react-navigation/native';
 import ListEmptyComponent from '../components/ListEmptyComponent';
 import { Job } from '../slices/types';
+import { getStatusStyle } from '../utils/util';
+import moment from 'moment';
+import FastImage from '@d11/react-native-fast-image';
 
 type ScreenProps = BookingScreenProps<'ActiveJob'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -29,7 +32,11 @@ const ActiveJob: FC<Props> = props => {
   const flatlist = useRef<FlatList>(null);
 
   const loadMore = () => {
-    if (props.totalPage > page && !loading && (props.activeJobs.length ?? 0) > 0) {
+    if (
+      props.totalPage > page &&
+      !loading &&
+      (props.activeJobs.length ?? 0) > 0
+    ) {
       page++;
       getData();
     }
@@ -57,19 +64,20 @@ const ActiveJob: FC<Props> = props => {
       ref={flatlist}
       data={props.activeJobs}
       contentContainerStyle={$container}
-      keyExtractor={item => item._id}
+      keyExtractor={item => item.id.toString()}
       onEndReached={loadMore}
       refreshing={loading && page === 1 && props.activeJobs.length > 0}
       onRefresh={load}
       onEndReachedThreshold={0.8}
-      renderItem={({ item, index }: { item: any; index: number }) => (
+      renderItem={({ item, index }: { item: Job; index: number }) => (
         <TripCell
           item={item}
           index={index}
+          baseURl={props.baseURl!}
           viewDetail={() =>
             props.navigation.navigate('JobDetail', {
               from: 'ActiveJob',
-              id: item._id!,
+              id: item.id!,
             })
           }
         />
@@ -97,52 +105,58 @@ const ActiveJob: FC<Props> = props => {
 type TripCellProps = {
   item: Job;
   index: number;
+  baseURl: string;
   viewDetail?: () => void;
   cancelAction?: () => void;
 };
 
-export const TripCell: FC<TripCellProps> = ({ index, viewDetail }) => {
+export const TripCell: FC<TripCellProps> = ({ item, index,baseURl, viewDetail }) => {
+  const status = getStatusStyle(item?.status);
   return (
     <View key={index} style={$cellStyle}>
       <View style={$spaceBetween}>
-        <View style={$status}>
+        <View style={[$status, { backgroundColor: status.backgroundColor }]}>
           <Text
             size="xxs"
             weight="medium"
-            style={$shrinkPrimaryText}
-            text="In progress"
+            style={[$shrinkPrimaryText, { color: status.color }]}
+            text={item?.status.toUpperCase()}
           />
         </View>
         <Text
           size="xxs"
           weight="medium"
-          text="Started Oct 12 "
           style={$shrinkDimText}
+          tx="home.started"
+          txOptions={{
+            value: moment(item.created_at).format('MMM D'),
+          }}
         />
       </View>
-      <Text
-        size="sm"
-        weight="medium"
-        text="Electrician Need for House Pipe Fitting"
-      />
+      <Text size="sm" weight="medium" text={item.title} />
       <View style={$rowWrapper}>
-        <Image
+        <FastImage
           resizeMode="cover"
-          style={$userImage}
-          source={{ uri: 'https://i.pravatar.cc/300' }}
+          style={{
+            width: spacing.xl,
+            height: spacing.xl,
+            borderRadius: spacing.md,
+            backgroundColor: colors.primaryDimmed,
+          }}
+          source={{ uri: baseURl + '/' + (item.client_profile_pic ?? item.client.profile_image) }}
         />
         <Text
           size="xs"
           weight="medium"
-          text="Robert Johnson"
           style={$shrinkText}
+          text={item.client_name ?? item.client.name} 
         />
         <View style={$smallBox}>
           <Text
             size="xxs"
             weight="medium"
+            tx="home.client"
             style={{ color: colors.primary }}
-            text="Client"
           />
         </View>
       </View>
@@ -152,14 +166,14 @@ export const TripCell: FC<TripCellProps> = ({ index, viewDetail }) => {
             size="xxs"
             weight="medium"
             style={{ color: colors.primary }}
-            text="Budget"
+            tx="home.budget"
           />
         </View>
         <Text
           size="xs"
           weight="semiBold"
           style={$shrinkPrimaryText}
-          text={Currency.code + ' ' + Currency.sign + 200}
+          text={Currency.code + ' ' + Currency.sign + item.budget}
         />
 
         <TouchableOpacity onPress={viewDetail} style={$button}>
@@ -223,7 +237,6 @@ const $status: TextStyle = {
   borderRadius: spacing.sm,
   paddingVertical: spacing.xxs,
   paddingHorizontal: spacing.xs,
-  backgroundColor: colors.primaryDimmed,
 };
 
 const $rowWrapper: ViewStyle = {
@@ -234,15 +247,7 @@ const $rowWrapper: ViewStyle = {
   marginTop: spacing.xxs,
 };
 
-const $userImage: ImageStyle = {
-  width: spacing.xl,
-  height: spacing.xl,
-  borderRadius: spacing.md,
-  backgroundColor: colors.primaryDimmed,
-};
-
 const $smallBox: TextStyle = {
-  flexShrink: 1,
   borderRadius: spacing.xxs,
   paddingVertical: spacing.xxxs,
   paddingHorizontal: spacing.xs,
@@ -265,7 +270,6 @@ const $arrow: ImageStyle = {
 
 const $shrinkPrimaryText: TextStyle = {
   flexShrink: 1,
-  color: colors.primary,
 };
 
 const $shrinkText: TextStyle = {
@@ -285,6 +289,7 @@ const mapStateToProps = (state: RootState) => ({
   fetching: state.home.activeJobsLoading,
   activeJobs: state.home.activeJobs,
   totalPage: state.home.totalActivePage,
+  baseURl: state.setting.basic?.base_url
 });
 
 const mapDispatch = {
