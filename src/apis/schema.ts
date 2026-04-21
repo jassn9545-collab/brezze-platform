@@ -68,7 +68,7 @@ export const loginSchema = yup.object().shape({
   password: yup.string().required('validation.required'),
   firebaseToken: yup.string(),
   checked: yup.boolean(),
-  user_type: yup.string()
+  user_type: yup.string(),
 });
 
 export type Signin = yup.InferType<typeof loginSchema>;
@@ -218,10 +218,9 @@ export type AddCatalogParams = yup.InferType<typeof addCatalogSchema>;
 
 export const submitWorkSchema = yup.object().shape({
   description: yup.string().required('validation.required'),
-  images: yup
-    .array()
-    .min(1, 'validation.required')
-    .required('validation.required'),
+  images: yup.array().notRequired(),
+  // .min(1, 'validation.required')
+  // .required('validation.required'),
 });
 
 export type SubmitWorkParams = yup.InferType<typeof submitWorkSchema>;

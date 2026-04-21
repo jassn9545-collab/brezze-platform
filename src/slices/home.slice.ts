@@ -202,6 +202,7 @@ export const submitJob = createAsyncThunk(
         },
         data,
       });
+      toast.show(response.data.message, { type: 'success' });
       navigationRef.resetRoot({
         index: 0,
         routes: [{ name: 'Drawer' }],

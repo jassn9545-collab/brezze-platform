@@ -78,14 +78,15 @@ const SubmitWork: FC<Props> = props => {
       .then(res => {
         Keyboard.dismiss();
         const formData = new FormData();
-        formData.append('description', res.description);
-        res.images.forEach((img) => {
-          formData.append('images[]', {
-            uri: img.uri,
-            name: img.name,
-            type: img.type,
+        formData.append('project_id', props.data?.id?.toString() ?? '');
+        formData.append('work_description', res.description);
+        if (res.images) {
+          formData.append('work_attachment', {
+            uri: res.images?.[0]?.uri,
+            name: res.images?.[0]?.name,
+            type: res.images?.[0]?.type,
           });
-        });        
+        }    
         props.submit(formData);
         setError({});
       })
@@ -127,11 +128,11 @@ const SubmitWork: FC<Props> = props => {
               tx="job.proofWork"
               style={{ color: colors.textDim }}
             />
-            <Text
+            {/* <Text
               size="xxs"
               tx="job.maxphotos"
               style={{ color: colors.textDim }}
-            />
+            /> */}
           </View>
 
           <View style={$uploadRow}>
