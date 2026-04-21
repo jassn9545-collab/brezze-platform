@@ -3,21 +3,28 @@ import {
   StyleSheet,
   View,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import React, { FC } from 'react';
 import { spacing, images, colors } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
-import { translate } from '../i18n';
+// import { translate } from '../i18n';
 
 type Props = AppStackScreenProps<'HireHistory'>;
 
-const HireHistory: FC<Props> = () => {
+const HireHistory: FC<Props> = (props) => {
 
   const data = [
     { status: 'In Progress', color: '#2F6BFF' },
     { status: 'Completed', color: '#28A745' },
     { status: 'Completed', color: '#28A745' },
   ];
+
+  const handlePressItem = (item: any) => {
+    if (item.status === 'In Progress') {
+      props.navigation.navigate('HireHistoryDetails');
+    }
+  };
 
   return (
     <Screen preset="scroll" safeAreaEdges={['top']} contentContainerStyle={styles.container}>
@@ -26,7 +33,12 @@ const HireHistory: FC<Props> = () => {
 
       <View style={styles.main}>
         {data.map((item, index) => (
-          <View key={index} style={styles.card}>
+          <TouchableOpacity 
+            key={index} 
+            style={styles.card}
+            onPress={() => handlePressItem(item)}
+            activeOpacity={0.8}
+          >
 
             <View style={styles.rowBetween}>
               <View style={styles.row}>
@@ -55,7 +67,8 @@ const HireHistory: FC<Props> = () => {
               </View>
             </View>
 
-          </View>
+
+          </TouchableOpacity>
         ))}
 
       </View>

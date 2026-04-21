@@ -14,51 +14,62 @@ type Props = AppStackScreenProps<'HireHistoryDetails'>;
 const HireHistoryDetails: FC<Props> = () => {
 
   return (
-    <Screen preset="scroll" contentContainerStyle={styles.container}>
+   <Screen preset="fixed" contentContainerStyle={styles.container}>
+      
+      {/* TOP CONTENT */}
+      <View>
+        <BackButtom heading="Hire history Details" />
 
-      <BackButtom heading="Hire history Details" />
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <Image source={images.profile1} style={styles.avatar} />
-          <View style={{ flex: 1 }}>
-            <Text text="Austin Butler" weight="semiBold" />
-            <Text text="Master Electrician" size="xs" style={styles.gray} />
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <Image source={images.profile1} style={styles.avatar} />
+            <View style={{ flex: 1 }}>
+              <Text text="Austin Butler" weight="semiBold" />
+              <Text text="Master Electrician" size="xs" style={styles.gray} />
+            </View>
+
+            <View style={styles.badge}>
+              <Text text="IN PROGRESS" size="xxs" style={{ color: '#2F6BFF' }} />
+            </View>
           </View>
 
-          <View style={styles.badge}>
-            <Text text="IN PROGRESS" size="xxs" style={{ color: '#2F6BFF' }} />
+          <Text text="Fixed Amount: AUD $500.00" style={styles.amount} />
+          <Text text="Pro: Robert Johnson • Oct 24, 2023" size="xs" style={styles.gray} />
+
+          <Text text="Overall Progress" style={styles.progressLabel} />
+
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: '65%' }]} />
           </View>
-        </View>
-        <Text text="Fixed Amount: AUD $500.00" style={styles.amount} />
-
-        <Text text="Pro: Robert Johnson • Oct 24, 2023" size="xs" style={styles.gray} />
-
-        <Text text="Overall Progress" style={styles.progressLabel} />
-
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '65%' }]} />
         </View>
       </View>
 
-      <View style={styles.chatBox}>
-        <View>
-          <Text text="Need to clarify something?" weight="semiBold" />
-          <Text text="Message Robert directly for updates." size="xs" style={styles.gray} />
+      {/* BOTTOM CONTENT */}
+      <View>
+        <View style={styles.chatBox}>
+          <View>
+            <Text text="Need to clarify something?" weight="semiBold" />
+            <Text
+              text="Message Robert directly for updates."
+              size="xs"
+              style={styles.gray}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.chatBtn}>
+            <Text text="Chat" />
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.chatBtn}>
-          <Text text="Chat" />
+        <View style={styles.footer}>
+          <Text text="Pending Release:" style={styles.gray} />
+          <Text text="$280.00 AUD" weight="semiBold" style={styles.price} />
+        </View>
+
+        <TouchableOpacity style={styles.primaryBtn}>
+          <Text text="Release Payment" style={{ color: '#fff' }} />
         </TouchableOpacity>
       </View>
-
-      <View style={styles.footer}>
-        <Text text="Pending Release:" style={styles.gray} />
-        <Text text="$280.00 AUD" weight="semiBold" style={styles.price} />
-      </View>
-
-      <TouchableOpacity style={styles.primaryBtn}>
-        <Text text="Release Payment" style={{ color: '#fff' }} />
-      </TouchableOpacity>
 
     </Screen>
   );
@@ -66,10 +77,11 @@ const HireHistoryDetails: FC<Props> = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    padding: spacing.md,
-    backgroundColor: '#F5F6FA',
-  },
+  flex: 1,
+  padding: spacing.md,
+  backgroundColor: '#F5F6FA',
+  justifyContent: 'space-between',
+},
 
   card: {
     backgroundColor: '#fff',
@@ -156,6 +168,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
+  
+
 });
 
 export const HireHistoryDetailsScreen = HireHistoryDetails;

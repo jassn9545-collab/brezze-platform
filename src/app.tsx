@@ -8,11 +8,11 @@ import {
   initialWindowMetrics,
 } from 'react-native-safe-area-context';
 import Toast, { ToastProvider } from 'react-native-toast-notifications';
-import AppNavigator from './navigators/AppNavigator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { toastProps } from './utils/toast';
 import { Provider } from 'react-redux';
 import { store } from './store';
+import AppNavigator from './navigators/AppNavigator';
 // import {UpdateView} from './screens/UpdateView';
 // import {AnimatedBootSplash, AnimatedBootSplashRef} from './components';
 // import BootSplash from 'react-native-bootsplash';

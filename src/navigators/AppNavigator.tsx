@@ -3,12 +3,12 @@ import { navigationRef, RootStackParamList, useBackButtonHandler } from './navig
 import Config from '../config';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppStack } from './AppStack';
-import { AuthStack } from './AuthStack';
 import { RootState } from '../store';
 // import { AppStack } from './AppStack';
 import { connect, ConnectedProps } from 'react-redux';
 import { getBasicSettings } from '../slices/setting.slice';
 import { getAuthorization } from '../slices/auth.slice';
+import { AuthStack } from './AuthStack';
 // import { authActions, getAuthorization } from '../slices/auth.slice';
 // import { Linking } from 'react-native';
 // import { handleInviteURL } from '../utils/util';

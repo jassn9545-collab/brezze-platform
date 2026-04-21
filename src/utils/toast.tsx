@@ -11,9 +11,9 @@ import React, { FC, useEffect, useState } from 'react';
 import { Toast, ToastOptions } from 'react-native-toast-notifications';
 
 import { Props } from 'react-native-toast-notifications/lib/typescript/toast-container';
-import { Text } from '../components';
 import { ToastProps } from 'react-native-toast-notifications/lib/typescript/toast';
 import { AppImage, images } from '../theme/images';
+import { Text } from '../components';
 
 declare global {
   let toast: {

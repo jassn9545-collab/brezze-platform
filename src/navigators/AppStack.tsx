@@ -15,7 +15,7 @@ import {
   BottomTabNavigator,
   BottomTabNavigatorParamList,
 } from './BottomTabNavigator';
-import { HireHistoryScreen, JobPostConfirmScreen, jobPostDetailsScreen, jobPostListScreen, JobPostScreen, ProfessionalProfileScreen, HelpSupportScreen } from '../screens';
+import { HireHistoryScreen, JobPostConfirmScreen, jobPostDetailsScreen, jobPostListScreen, JobPostScreen, ProfessionalProfileScreen, HelpSupportScreen, HireHistoryDetailsScreen } from '../screens';
 import { CategoriesScreen } from '../screens';
 import { JobPostFirstParams } from '../apis/schema';
 
@@ -112,6 +112,7 @@ export const AppStack: FC = () => {
       <Stack.Screen name="JobPostList" component={jobPostListScreen} />
       <Stack.Screen name="jobPostDetails" component={jobPostDetailsScreen} />
       <Stack.Screen name="HireHistory" component={HireHistoryScreen} />
+      <Stack.Screen name="HireHistoryDetails" component={HireHistoryDetailsScreen} />
       <Stack.Screen name="ProfessionalProfile" component={ProfessionalProfileScreen} />
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
