@@ -1,7 +1,6 @@
 // import { search } from "../apis/googleAPIs";
 
 export const images = {
-
   // Toast
   success: require('../assets/images/success.png'),
   danger: require('../assets/images/danger.png'),
@@ -14,20 +13,21 @@ export const images = {
 
   //bottom tab icons
   home: require('../assets/images/home.png'),
-  categories: require('../assets/images/electrician.png'),
   service: require('../assets/images/serviceIcon.png'),
   chat: require('../assets/images/chat.png'),
-  ProfessionalProfile: require('../assets/images/profileIcon.png'),
+  professionalProfile: require('../assets/images/profileIcon.png'),
+  //
+
+  categories: require('../assets/images/electrician.png'),
   user: require('../assets/images/user.png'),
   tickIcon: require('../assets/images/tickIcon.png'),
   share: require('../assets/images/share.png'),
   uploadingIcon: require('../assets/images/uploadingIcon.png'),
 
-  //
   smileIcon: require('../assets/images/smileIcon.png'),
   smallTick: require('../assets/images/smallTick.png'),
   waitingIcon: require('../assets/images/waitingIcon.png'),
-  
+
   //common
   rightArrow: require('../assets/images/rightArrow.png'),
   emailIcon: require('../assets/images/emailIcon.png'),
@@ -46,7 +46,6 @@ export const images = {
   locationPin: require('../assets/images/locationPin.png'),
   camera: require('../assets/images/camera.png'),
   info: require('../assets/images/info.png'),
-
 
   // Homepage
   navbaricon: require('../assets/images/navbaricon.png'),
@@ -78,20 +77,7 @@ export const images = {
   privacyIcon: require('../assets/images/privacyIcon.png'),
   helpIcon: require('../assets/images/helpIcon.png'),
   passwordIcon: require('../assets/images/passwordIcon.png'),
-  greenCheckIcon: require('../assets/images/greenCheck.png')
-
-
-
-
-
-
-
-
-
-
-
-
-
+  greenCheckIcon: require('../assets/images/greenCheck.png'),
 
   // bottom tab icons
   // home: require('../assets/images/homeActive.png'),
