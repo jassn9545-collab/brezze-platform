@@ -16,7 +16,6 @@ import {
   Image,
   TouchableOpacity,
   Keyboard,
-  Alert,
 } from 'react-native';
 import React, { FC, useEffect, useRef, useState } from 'react';
 import { spacing, colors, images } from '../theme';
@@ -35,6 +34,7 @@ import { commonStyle } from '../theme/style';
 import { buildError, JobPostSecondSchema } from '../apis/schema';
 import { ValidationError } from 'yup';
 import { createJob } from '../slices/job.slice';
+import { reverseGeocoding } from '../apis/googleAPIs';
 
 type NavigationProps = AppStackScreenProps<'JobPostStep2'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -68,54 +68,21 @@ const JobPostStep2: FC<Props> = props => {
 
   const [selectedImages, setSelectedImages] = useState<ImageItem[]>([]);
   const [imagePickerModal, setImagePickerModal] = useState(false);
-  
+
   const [error, setError] = useState<FieldError>({});
 
-  const handleCurrentLocation = () => {
-    getCurrentLoaction(
-      (position) => {
-        console.log('Current location obtained:', position);
-        // Create address object from current location
-        const currentLocationAddress: AddressParam = {
-          address: 'Current Location',
-          location: {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          },
-        };
-        setSelectedAddress(currentLocationAddress);
-        
-        // Animate map to current location
-        if (map.current) {
-          map.current.animateToRegion(
-            {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              latitudeDelta: LATITUDE_DELTA,
-              longitudeDelta: LONGITUDE_DELTA,
-            },
-            1000
-          );
-        }
-      },
-      (error) => {
-        console.log('Location error:', error);
-        // Show error toast or alert
-        Alert.alert('Location Error', 'Unable to get current location: ' + error);
-      }
-    );
-  };
-
   useEffect(() => {
-    // Get current location on component mount
-    getCurrentLoaction(
-      (position) => {
-        console.log('Current location obtained:', position);
-      },
-      (error) => {
-        console.log('Location error:', error);
-      }
-    );
+    getCurrentLoaction(position => {
+      reverseGeocoding({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      }).then(address => {
+        setSelectedAddress({
+          address: address.formatted_address ?? '',
+          location: address.geometry.location,
+        });
+      });
+    });
   }, []);
 
   useEffect(() => {
@@ -166,17 +133,17 @@ const JobPostStep2: FC<Props> = props => {
         formData.append('title', props?.route?.params?.title);
         formData.append('budget', res.budget);
         formData.append('address', res.address);
-        res.images.forEach((img) => {
+        res.images.forEach(img => {
           formData.append('images[]', {
             uri: img.uri,
             name: img.name,
             type: img.type,
           });
-        });        
+        });
         formData.append('latitude', selectedAddress?.location.lat);
         formData.append('longitude', selectedAddress?.location.lng);
 
-        props.createJob(formData)
+        props.createJob(formData);
         setError({});
       })
       .catch((errors: ValidationError) => {
@@ -184,7 +151,6 @@ const JobPostStep2: FC<Props> = props => {
         setError(err);
       });
   };
-
 
   return (
     <>
@@ -226,45 +192,33 @@ const JobPostStep2: FC<Props> = props => {
                 showsMyLocationButton={false}
                 provider={PROVIDER_GOOGLE}
                 initialRegion={{
-                latitude:
-                  selectedAddress?.location.lat ??
-                  currentPosition?.lat ??
-                  0,
-                longitude:
-                  selectedAddress?.location.lng ??
-                  currentPosition?.lng ??
-                  0,
-                latitudeDelta: LATITUDE_DELTA,
-                longitudeDelta: LONGITUDE_DELTA,
-              }}
+                  latitude:
+                    selectedAddress?.location.lat ?? currentPosition?.lat ?? 0,
+                  longitude:
+                    selectedAddress?.location.lng ?? currentPosition?.lng ?? 0,
+                  latitudeDelta: LATITUDE_DELTA,
+                  longitudeDelta: LONGITUDE_DELTA,
+                }}
                 style={styles.mapView}
               >
                 {(selectedAddress?.location || currentPosition) && (
-                <Marker.Animated
-                  key={`${selectedAddress}`}
-                  coordinate={{
-                    latitude:
-                      selectedAddress?.location.lat ??
-                      currentPosition?.lat ??
-                      0,
-                    longitude:
-                      selectedAddress?.location.lng ??
-                      currentPosition?.lng ??
-                      0,
-                  }}
-                >
-                  <Image source={images.address} />
-                </Marker.Animated>
-              )}
+                  <Marker.Animated
+                    key={`${selectedAddress}`}
+                    coordinate={{
+                      latitude:
+                        selectedAddress?.location.lat ??
+                        currentPosition?.lat ??
+                        0,
+                      longitude:
+                        selectedAddress?.location.lng ??
+                        currentPosition?.lng ??
+                        0,
+                    }}
+                  >
+                    <Image source={images.address} />
+                  </Marker.Animated>
+                )}
               </MapView>
-              
-              {/* Current Location Button */}
-              <TouchableOpacity
-                style={styles.currentLocationButton}
-                onPress={handleCurrentLocation}
-              >
-                <Image source={images.locationPin} style={styles.currentLocationIcon} />
-              </TouchableOpacity>
             </View>
           </View>
 

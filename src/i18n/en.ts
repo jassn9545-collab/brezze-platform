@@ -213,7 +213,7 @@ const en = {
     step1Label: 'Step 1 of 2',
     step1Details: 'Job Details',
     jobTitleLabel: 'Job Title',
-    jobTitlePlaceholder: 'e.g. Electrician Need for House Pipe Fitting',
+    jobTitlePlaceholder: 'e.g. Electrician Needed',
     categoryLabel: 'Category Selection',
     selectCategory: 'Select a category',
     descriptionLabel: 'Detailed Description',

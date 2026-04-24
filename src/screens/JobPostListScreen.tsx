@@ -73,7 +73,12 @@ const JobPostList: FC<Props> = props => {
         onEndReachedThreshold={0.2}
         contentContainerStyle={styles.contentContainer}
         renderItem={({ item, index }) => (
-          <SingleJob item={item} index={index} onPress={onPressJob} />
+          <SingleJob
+            item={item}
+            baseURl={props.baseURl}
+            index={index}
+            onPress={onPressJob}
+          />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -99,10 +104,12 @@ const JobPostList: FC<Props> = props => {
 export const SingleJob = ({
   item,
   index,
+  baseURl,
   onPress,
 }: {
   item: Job;
   index: number;
+  baseURl: string;
   onPress: (data: Job) => void;
 }) => {
   const statusStyle = getStatusStyle(item.status);
@@ -157,7 +164,7 @@ export const SingleJob = ({
                 ]}
               >
                 <FastImage
-                  source={{ uri: data.freelancer_image }}
+                  source={{ uri: baseURl + '/' + data.freelancer_image }}
                   style={styles.avatar}
                 />
               </View>
@@ -181,18 +188,20 @@ export const SingleJob = ({
             )}
           </View>
 
-          <View>
-            <Text tx="jobPostList.proposals" style={styles.extraSmallText} />
-            <Text
-              size="xxs"
-              weight="bold"
-              tx="jobPostList.recevied"
-              style={{ color: colors.primary }}
-              txOptions={{
-                value: item?.bids?.length ?? 0,
-              }}
-            />
-          </View>
+          {item.status === 'active' && (
+            <View>
+              <Text tx="jobPostList.proposals" style={styles.extraSmallText} />
+              <Text
+                size="xxs"
+                weight="bold"
+                tx="jobPostList.recevied"
+                style={{ color: colors.primary }}
+                txOptions={{
+                  value: item?.bids?.length ?? 0,
+                }}
+              />
+            </View>
+          )}
         </View>
       )}
     </TouchableOpacity>
@@ -211,6 +220,16 @@ const getStatusStyle = (type: string) => {
         backgroundColor: colors.palette.centerColor,
         color: colors.error,
       };
+    case 'completed':
+      return {
+        backgroundColor: colors.palette.offGreen,
+        color: colors.palette.green,
+      };
+      case 'in progress':
+        return {
+          backgroundColor: colors.palette.yellowLight,
+          color: colors.palette.yellow,
+        };
     default:
       return {
         backgroundColor: colors.palette.lightGray,
@@ -314,6 +333,7 @@ const mapState = (state: RootState) => ({
   data: state.job.jobList,
   loading: state.job.jobListLoading,
   totalcount: state.job.totalCountJobs,
+  baseURl: state.setting.basic?.base_url ?? '',
 });
 
 const mapDispatch = {

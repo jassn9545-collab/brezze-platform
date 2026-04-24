@@ -1,5 +1,11 @@
 import { BackButtom, Loader, ReadMore, Screen, Text } from '../components';
-import { StyleSheet, View, TouchableOpacity, FlatList, ListRenderItemInfo } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  FlatList,
+  ListRenderItemInfo,
+} from 'react-native';
 import React, { FC, useEffect } from 'react';
 import { spacing, colors } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
@@ -10,6 +16,7 @@ import { RootState } from '../store';
 import { getJobDetail, hireJob, HireJobParams } from '../slices/job.slice';
 import FastImage from '@d11/react-native-fast-image';
 import ListEmptyComponent from '../components/ListEmptyComponent';
+import { BasicData } from '../slices/setting.slice';
 
 type NavigationProps = AppStackScreenProps<'jobPostDetails'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
@@ -19,7 +26,6 @@ export type JobPostDetailParams = {
 };
 
 const JobPostDetails: FC<Props> = props => {
-
   useEffect(() => {
     if (props.route.params?.id) {
       props.get({ job_id: props.route.params?.id });
@@ -34,6 +40,8 @@ const JobPostDetails: FC<Props> = props => {
   const onPressHire = (data: Bid) => {
     props.hireJob({ job_id: props.route.params?.id, bid_id: data.id });
   };
+
+  console.log('props.setting', props.data);
   return (
     <>
       <Screen
@@ -44,28 +52,43 @@ const JobPostDetails: FC<Props> = props => {
         <BackButtom headingTx="jobPostDetails.heading" />
         <View style={styles.main}>
           {props.data && <JobCard item={props.data!} />}
-          <Text
-            weight="semiBold"
-            tx="jobPostDetails.proposalsHeader"
-            txOptions={{
-              value: '(' + (props?.data?.bids?.length ?? 0) + ')',
-            }}
-          />
-          <FlatList
-            data={props.data?.bids!}
-            showsVerticalScrollIndicator={false}
-            keyExtractor={item => item.id.toString()}
-            renderItem={info => <BidCard {...info} onPressProfile={onPressProfile} onPressHire={onPressHire} />}
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <ListEmptyComponent tx="common.noDataFound" />
-              </View>
-            }
-          />
 
+          {props.data?.status === 'active' && (
+            <>
+              <Text
+                weight="semiBold"
+                tx="jobPostDetails.proposalsHeader"
+                txOptions={{
+                  value: '(' + (props?.data?.bids?.length ?? 0) + ')',
+                }}
+              />
+              <FlatList
+                data={props.data?.bids!}
+                showsVerticalScrollIndicator={false}
+                keyExtractor={item => item.id.toString()}
+                renderItem={info => (
+                  <BidCard
+                    {...info}
+                    setting={props.setting!}
+                    onPressProfile={onPressProfile}
+                    onPressHire={onPressHire}
+                  />
+                )}
+                ListEmptyComponent={
+                  <View style={styles.empty}>
+                    <ListEmptyComponent tx="common.noDataFound" />
+                  </View>
+                }
+              />
+            </>
+          )}
         </View>
       </Screen>
-      <Loader loading={props.hireJobLoading === 'loading' || props.loading === 'loading'} />
+      <Loader
+        loading={
+          props.hireJobLoading === 'loading' || props.loading === 'loading'
+        }
+      />
     </>
   );
 };
@@ -85,29 +108,31 @@ const JobCard = ({ item }: { item: Job }) => {
         }}
       />
 
-      <Text
-        size="xxs"
-        weight="medium"
-        text={item.address}
-      />
+      <Text size="xxs" weight="medium" text={item.address} />
     </View>
   );
 };
 
 type BidCardProps = ListRenderItemInfo<Bid> & {
+  setting: BasicData;
   onPressProfile: (data: Bid) => void;
   onPressHire: (data: Bid) => void;
 };
 
 const BidCard = ({
   item,
+  setting,
   onPressProfile,
   onPressHire,
 }: BidCardProps) => {
   return (
     <View key={item.id} style={styles.proposalCard}>
       <View style={styles.row}>
-        <FastImage source={{ uri: item.freelancer_image }} resizeMode='cover' style={styles.avatar} />
+        <FastImage
+          source={{ uri: setting.base_url + '/' + item?.freelancer_image }}
+          resizeMode="cover"
+          style={styles.avatar}
+        />
         <View style={styles.flexOne}>
           <View style={styles.spaceBetween}>
             <Text
@@ -116,7 +141,7 @@ const BidCard = ({
               text={item.freelancer_name}
             />
             <Text
-              size='md'
+              size="md"
               weight="bold"
               style={{ color: colors.primary }}
               text={Currency.sign + item.bid_amount}
@@ -128,8 +153,8 @@ const BidCard = ({
               onPress={() => onPressProfile(item)}
             >
               <Text
-                size='xxs'
-                weight='semiBold'
+                size="xxs"
+                weight="semiBold"
                 numberOfLines={1}
                 tx="jobPostDetails.viewProfile"
               />
@@ -139,11 +164,11 @@ const BidCard = ({
               onPress={() => onPressHire(item)}
             >
               <Text
-                size='xxs'
-                weight='semiBold'
+                size="xxs"
+                weight="semiBold"
                 tx="jobPostDetails.hire"
                 txOptions={{
-                  value: item.freelancer_name.split(' ')[0]
+                  value: item.freelancer_name.split(' ')[0],
                 }}
                 numberOfLines={1}
                 style={{ color: colors.palette.white }}
@@ -244,7 +269,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
     backgroundColor: colors.primary,
-  }
+  },
 });
 
 const mapStateToProps = (state: RootState) => ({

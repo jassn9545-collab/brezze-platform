@@ -1,5 +1,6 @@
 import { AddressPrediction, LatLng } from './Address.types';
 import {
+  Alert,
   FlatList,
   Image,
   Modal,
@@ -131,30 +132,52 @@ export const AddressSearchModal = ({
     }
   };
 
-  const onCurrentSelect = () => {
+  const onCurrentSelect = async () => {
     input.current?.blur();
     setLoading(true);
-    getCurrentLoaction(position => {
-      reverseGeocoding({
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      }).then(address => {
-        setQuery(address.formatted_address ?? '');
-        setSelectedAddress({
-          address: address.formatted_address ?? '',
-          location: address.geometry.location,
-        });
-        setTimeout(() => {
-          map.current?.animateToRegion({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            latitudeDelta: LATITUDE_DELTA,
-            longitudeDelta: LONGITUDE_DELTA,
-          });
+
+    try {
+      getCurrentLoaction(
+        async (position) => {
+          try {
+            const address = await reverseGeocoding({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+
+            setQuery(address.formatted_address ?? "");
+            setSelectedAddress({
+              address: address.formatted_address ?? "",
+              location: address.geometry.location,
+            });
+
+            setTimeout(() => {
+              map.current?.animateToRegion({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+              });
+              setLoading(false);
+            }, 2000);
+          } catch (err) {
+            console.error("Reverse geocoding failed:", err);
+            setLoading(false);
+          }
+        },
+        () => {
+          Alert.alert(
+            "Location Access Needed",
+            "Please enable location permissions in settings to use current location.",
+            [{ text: "OK" }]
+          );
           setLoading(false);
-        }, 2000);
-      });
-    });
+        }
+      );
+    } catch (err) {
+      console.error("getCurrentLoaction failed:", err);
+      setLoading(false);
+    }
   };
 
   const done = () => {

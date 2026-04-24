@@ -1,5 +1,5 @@
 import { BackButtom, Button, Screen, Text, TextField } from '../components';
-import { Alert, Keyboard, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Keyboard, StyleSheet, TouchableOpacity, View } from 'react-native';
 import React, { FC, useState, useRef } from 'react';
 import { spacing, colors } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
@@ -44,10 +44,7 @@ const JobPost: FC<Props> = props => {
     )
       .then(res => {
         Keyboard.dismiss();
-
-        console.log(res, "res")
-        Alert.alert("res")
-        props.navigation.navigate('JobPostStep2', res); 
+        props.navigation.navigate('JobPostStep2', res);
         setError({});
       })
       .catch((errors: ValidationError) => {

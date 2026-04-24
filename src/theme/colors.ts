@@ -16,9 +16,8 @@ const palette = {
 
   primaryColor: '#0054A5',
   primaryDimmed: '#EBF4FF',
-  borderColor: "#CACACA",
-  primarylight: "#DBEAFE",
-  
+  borderColor: '#CACACA',
+  primarylight: '#DBEAFE',
 
   secondaryFontColor: '#3E4958',
   wrapperFontColor: '#6C6C70',
@@ -68,7 +67,7 @@ const palette = {
   centerColor: '#FEF3C7',
   purple: '#40189D',
 
-  lightShadowPrimary: "#F8FAFC",
+  lightShadowPrimary: '#F8FAFC',
   // Screen specific colors
   jobPostBackground: '#F5F6FA',
   primaryBlue: '#2F6BFF',
@@ -80,6 +79,8 @@ const palette = {
   overlayDark50: 'rgba(0, 0, 0, 0.5)',
   grayText: '#8A94A6',
   borderGray: '#D4D4D4',
+  yellowLight: '#FFFFF0',
+  yellow: '#FFD600',
 } as const;
 
 export const colors = {
