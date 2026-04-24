@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
   },
   main: {
     marginVertical: spacing.md,
+    paddingBottom: spacing.xxl,
   },
   jobSingleDetailWrapper: {
     marginHorizontal: spacing.md,

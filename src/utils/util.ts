@@ -6,13 +6,13 @@ import {
   Platform,
 } from 'react-native';
 
-import {LatLng} from '../components/Address.types';
+import { LatLng } from '../components/Address.types';
 import URLs from '../config/urls';
-import {colors, images} from '../theme';
+import { colors, images } from '../theme';
 
-export const hitSlop = {left: 10, top: 5, right: 10, bottom: 5};
+export const hitSlop = { left: 10, top: 5, right: 10, bottom: 5 };
 
-export const {width: ScreenWidth, height: ScreenHeight} =
+export const { width: ScreenWidth, height: ScreenHeight } =
   Dimensions.get('window');
 
 export const LATITUDE_DELTA = 0.015;
@@ -36,7 +36,7 @@ export function parseSource(
   defaultSource: ImageURISource | number = images.user,
 ): AsyncImageProps {
   return {
-    source: !(uri && uri !== '') ? defaultSource : {uri: uri.toString()},
+    source: !(uri && uri !== '') ? defaultSource : { uri: uri.toString() },
     defaultSource: defaultSource,
   };
 }
@@ -155,7 +155,7 @@ export const secondFormat = (value: number): string => {
 
 export const formatTime = (seconds?: number) => {
   if (!seconds) {
-    return {formattedTime: '--:--', isNegative: false};
+    return { formattedTime: '--:--', isNegative: false };
   }
   const isNegative = seconds < 0;
   const absSeconds = Math.abs(seconds);
@@ -175,7 +175,7 @@ export const formatTime = (seconds?: number) => {
     ).padStart(2, '0')}`;
   }
 
-  return {formattedTime, isNegative};
+  return { formattedTime, isNegative };
 };
 
 export const HITSLOP = {
@@ -195,6 +195,16 @@ export const getStatusStyle = (type: string) => {
       return {
         backgroundColor: colors.palette.centerColor,
         color: colors.error,
+      };
+    case 'completed':
+      return {
+        backgroundColor: colors.palette.offGreen,
+        color: colors.palette.green,
+      };
+    case 'in progress':
+      return {
+        backgroundColor: colors.palette.yellowLight,
+        color: colors.palette.yellow,
       };
     default:
       return {
