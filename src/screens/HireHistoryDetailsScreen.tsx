@@ -14,6 +14,7 @@ type Props = AppStackScreenProps<'HireHistoryDetails'>;
 const HireHistoryDetails: FC<Props> = () => {
 
   return (
+    
    <Screen preset="fixed" contentContainerStyle={styles.container}>
       
       {/* TOP CONTENT */}
