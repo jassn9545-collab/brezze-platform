@@ -16,6 +16,7 @@ import {
   Image,
   TouchableOpacity,
   Keyboard,
+  Alert,
 } from 'react-native';
 import React, { FC, useEffect, useRef, useState } from 'react';
 import { spacing, colors, images } from '../theme';
@@ -26,7 +27,7 @@ import { TxKeyPath } from '../i18n';
 import { Currency } from '../config/defaults';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { LATITUDE_DELTA, LONGITUDE_DELTA } from '../utils/util';
-import { currentPosition } from '../utils/Location';
+import { getCurrentLoaction, currentPosition } from '../utils/Location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
@@ -69,6 +70,53 @@ const JobPostStep2: FC<Props> = props => {
   const [imagePickerModal, setImagePickerModal] = useState(false);
   
   const [error, setError] = useState<FieldError>({});
+
+  const handleCurrentLocation = () => {
+    getCurrentLoaction(
+      (position) => {
+        console.log('Current location obtained:', position);
+        // Create address object from current location
+        const currentLocationAddress: AddressParam = {
+          address: 'Current Location',
+          location: {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          },
+        };
+        setSelectedAddress(currentLocationAddress);
+        
+        // Animate map to current location
+        if (map.current) {
+          map.current.animateToRegion(
+            {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              latitudeDelta: LATITUDE_DELTA,
+              longitudeDelta: LONGITUDE_DELTA,
+            },
+            1000
+          );
+        }
+      },
+      (error) => {
+        console.log('Location error:', error);
+        // Show error toast or alert
+        Alert.alert('Location Error', 'Unable to get current location: ' + error);
+      }
+    );
+  };
+
+  useEffect(() => {
+    // Get current location on component mount
+    getCurrentLoaction(
+      (position) => {
+        console.log('Current location obtained:', position);
+      },
+      (error) => {
+        console.log('Location error:', error);
+      }
+    );
+  }, []);
 
   useEffect(() => {
     if (map.current && selectedAddress?.location) {
@@ -113,9 +161,9 @@ const JobPostStep2: FC<Props> = props => {
       .then(res => {
         Keyboard.dismiss();
         const formData = new FormData();
-        formData.append('category', props.route.params.category);
-        formData.append('description', props.route.params.description);
-        formData.append('title', props.route.params.title);
+        formData.append('category', props?.route?.params?.category);
+        formData.append('description', props?.route?.params?.description);
+        formData.append('title', props?.route?.params?.title);
         formData.append('budget', res.budget);
         formData.append('address', res.address);
         res.images.forEach((img) => {
@@ -136,6 +184,7 @@ const JobPostStep2: FC<Props> = props => {
         setError(err);
       });
   };
+
 
   return (
     <>
@@ -169,29 +218,28 @@ const JobPostStep2: FC<Props> = props => {
                 marginBottom: spacing.xs,
               }}
             />
-            <MapView
-              ref={map}
-              maxZoomLevel={17}
-              showsUserLocation={true}
-              showsMyLocationButton={false}
-              provider={PROVIDER_GOOGLE}
-              initialRegion={{
+            <View style={styles.mapContainer}>
+              <MapView
+                ref={map}
+                maxZoomLevel={17}
+                showsUserLocation={true}
+                showsMyLocationButton={false}
+                provider={PROVIDER_GOOGLE}
+                initialRegion={{
                 latitude:
                   selectedAddress?.location.lat ??
                   currentPosition?.lat ??
-                  props.myProfile?.latitude ??
                   0,
                 longitude:
                   selectedAddress?.location.lng ??
                   currentPosition?.lng ??
-                  props.myProfile?.longitude ??
                   0,
                 latitudeDelta: LATITUDE_DELTA,
                 longitudeDelta: LONGITUDE_DELTA,
               }}
-              style={styles.mapView}
-            >
-              {(selectedAddress?.location || currentPosition) && (
+                style={styles.mapView}
+              >
+                {(selectedAddress?.location || currentPosition) && (
                 <Marker.Animated
                   key={`${selectedAddress}`}
                   coordinate={{
@@ -208,7 +256,16 @@ const JobPostStep2: FC<Props> = props => {
                   <Image source={images.address} />
                 </Marker.Animated>
               )}
-            </MapView>
+              </MapView>
+              
+              {/* Current Location Button */}
+              <TouchableOpacity
+                style={styles.currentLocationButton}
+                onPress={handleCurrentLocation}
+              >
+                <Image source={images.locationPin} style={styles.currentLocationIcon} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity onPress={() => setAddressModal('pick')}>
@@ -424,11 +481,39 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     borderRadius: spacing.md,
   },
+  mapContainer: {
+    position: 'relative',
+    height: 200,
+  },
+  currentLocationButton: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.palette.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  currentLocationIcon: {
+    width: 24,
+    height: 24,
+    tintColor: colors.palette.primaryBlue,
+  },
 });
 
 const mapStateToProps = (state: RootState) => ({
   loading: state.job.createloading,
-  myProfile: state.auth.myProfile?.user,
+  myProfile: state.auth.myProfile?.user || {},
 });
 
 const mapDispatch = {

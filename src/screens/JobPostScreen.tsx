@@ -1,5 +1,5 @@
 import { BackButtom, Button, Screen, Text, TextField } from '../components';
-import { Keyboard, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Keyboard, StyleSheet, TouchableOpacity, View } from 'react-native';
 import React, { FC, useState, useRef } from 'react';
 import { spacing, colors } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
@@ -44,7 +44,10 @@ const JobPost: FC<Props> = props => {
     )
       .then(res => {
         Keyboard.dismiss();
-        props.navigation.navigate('JobPostStep2', res);
+
+        console.log(res, "res")
+        Alert.alert("res")
+        props.navigation.navigate('JobPostStep2', res); 
         setError({});
       })
       .catch((errors: ValidationError) => {
@@ -52,6 +55,7 @@ const JobPost: FC<Props> = props => {
         setError(err);
       });
   };
+
   return (
     <>
       <Screen
@@ -125,12 +129,12 @@ const JobPost: FC<Props> = props => {
       <DropDownList
         ref={dropDownRef}
         data={
-          props.skills?.map(skill => ({ id: skill.id, title: skill.name })) ??
+          props?.skills?.map(skill => ({ id: skill.id, title: skill.name })) ??
           []
         }
         selectedId={category?.id}
         onSelect={(data: DataType) => setCategory(data)}
-        sizes={sizeForSheet(props.skills!?.length ?? 0)}
+        sizes={sizeForSheet(props?.skills!?.length ?? 0)}
       />
     </>
   );
