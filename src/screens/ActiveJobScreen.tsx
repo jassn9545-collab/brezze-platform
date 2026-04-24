@@ -59,6 +59,7 @@ const ActiveJob: FC<Props> = props => {
   };
 
   const loading = props.fetching === 'loading';
+
   return (
     <FlatList
       ref={flatlist}
@@ -105,12 +106,19 @@ const ActiveJob: FC<Props> = props => {
 type TripCellProps = {
   item: Job;
   index: number;
+  from?: string;
   baseURl: string;
   viewDetail?: () => void;
   cancelAction?: () => void;
 };
 
-export const TripCell: FC<TripCellProps> = ({ item, index,baseURl, viewDetail }) => {
+export const TripCell: FC<TripCellProps> = ({
+  item,
+  index,
+  from,
+  baseURl,
+  viewDetail,
+}) => {
   const status = getStatusStyle(item?.status);
   return (
     <View key={index} style={$cellStyle}>
@@ -135,21 +143,39 @@ export const TripCell: FC<TripCellProps> = ({ item, index,baseURl, viewDetail })
       </View>
       <Text size="sm" weight="medium" text={item.title} />
       <View style={$rowWrapper}>
-        <FastImage
-          resizeMode="cover"
-          style={{
-            width: spacing.xl,
-            height: spacing.xl,
-            borderRadius: spacing.md,
-            backgroundColor: colors.primaryDimmed,
-          }}
-          source={{ uri: baseURl + '/' + (item.client_profile_pic ?? item.client.profile_image) }}
-        />
+        {item?.client_profile_pic || item?.client?.profile_image ? (
+          <FastImage
+            resizeMode="cover"
+            style={{
+              width: spacing.xl,
+              height: spacing.xl,
+              borderRadius: spacing.md,
+              backgroundColor: colors.primaryDimmed,
+            }}
+            source={{
+              uri:
+                baseURl +
+                '/' +
+                (item?.client_profile_pic ?? item?.client?.profile_image),
+            }}
+          />
+        ) : (
+          <View style={$imageName}>
+            <Text
+              size="xs"
+              weight="medium"
+              style={{ color: colors.primary }}
+              text={
+                item.client_name ? item.client_name[0] : item.client.name[0]
+              }
+            />
+          </View>
+        )}
         <Text
           size="xs"
           weight="medium"
           style={$shrinkText}
-          text={item.client_name ?? item.client.name} 
+          text={item.client_name ?? item.client.name}
         />
         <View style={$smallBox}>
           <Text
@@ -175,20 +201,21 @@ export const TripCell: FC<TripCellProps> = ({ item, index,baseURl, viewDetail })
           style={$shrinkPrimaryText}
           text={Currency.code + ' ' + Currency.sign + item.budget}
         />
-
-        <TouchableOpacity onPress={viewDetail} style={$button}>
-          <Text
-            size="xs"
-            weight="semiBold"
-            tx="job.viewDetails"
-            style={{ color: colors.palette.white }}
-          />
-          <Image
-            source={images.leftArrow}
-            style={$arrow}
-            tintColor={colors.palette.white}
-          />
-        </TouchableOpacity>
+        {from !== 'SubmitWork' && (
+          <TouchableOpacity onPress={viewDetail} style={$button}>
+            <Text
+              size="xs"
+              weight="semiBold"
+              tx="job.viewDetails"
+              style={{ color: colors.palette.white }}
+            />
+            <Image
+              source={images.leftArrow}
+              style={$arrow}
+              tintColor={colors.palette.white}
+            />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -284,12 +311,20 @@ const $shrinkDimText: TextStyle = {
 const $empty: ViewStyle = {
   flex: 1,
 };
+const $imageName: ViewStyle = {
+  width: spacing.xl,
+  height: spacing.xl,
+  borderRadius: spacing.md,
+  backgroundColor: colors.primaryDimmed,
+  justifyContent: 'center',
+  alignItems: 'center',
+};
 
 const mapStateToProps = (state: RootState) => ({
   fetching: state.home.activeJobsLoading,
   activeJobs: state.home.activeJobs,
   totalPage: state.home.totalActivePage,
-  baseURl: state.setting.basic?.base_url
+  baseURl: state.setting.basic?.base_url,
 });
 
 const mapDispatch = {

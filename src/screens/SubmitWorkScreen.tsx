@@ -106,7 +106,7 @@ const SubmitWork: FC<Props> = props => {
         }}
       />
       <Screen preset="auto" contentContainerStyle={$container}>
-        <TripCell item={props.data!} index={0} baseURl={props.baseURl!} />
+        <TripCell item={props.data!} index={0} baseURl={props.baseURl!} from="SubmitWork"  />
 
         <View style={$main}>
           <TextField
