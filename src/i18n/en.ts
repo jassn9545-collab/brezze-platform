@@ -296,7 +296,31 @@ const en = {
     logoutConfirmation: 'Logout Confirmation',
     logoutConfirmationDesc: 'Are You Sure want to log out?',
     yesLogout: 'Yes, Log Out',
-    cancel: 'Cancel'
+    cancel: 'Cancel',
+    editProfile: 'Edit Profile',
+    postAJob: 'Post a Job'
+  },
+  editProfile: {
+    heading: 'Edit Profile',
+    personalDetails: 'Personal Details',
+    fullName: 'Full Name',
+    mobileNumber: 'Mobile number',
+    email: 'Email',
+    location: 'Location',
+    address: 'Address',
+    state: 'State',
+    pincode: 'Pincode',
+    dateOfBirth: 'Date of Birth',
+    updateProfile: 'Update Profile',
+    defaultName: 'Profile',
+    enterFullName: 'Enter your full name',
+    enterMobileNumber: 'Enter mobile number',
+    enterEmail: 'Enter your email',
+    enterLocation: 'Enter your location',
+    enterAddress: 'Enter your address',
+    enterState: 'Enter your state',
+    enterPincode: 'Enter your pincode',
+    enterDateOfBirth: 'Enter your date of birth'
   },
 
   helpSupport: {

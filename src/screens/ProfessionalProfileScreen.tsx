@@ -1,4 +1,4 @@
-import { BackButtom, Screen, Text } from '../components';
+import { BackButtom, Screen, Text, Loader } from '../components';
 import {
   StyleSheet,
   View,
@@ -9,10 +9,32 @@ import {
 import React, { FC } from 'react';
 import { spacing, images, colors } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
+import { connect, ConnectedProps } from 'react-redux';
+import { RootState } from '../store';
+import { getFreelancerProfile } from '../slices/job.slice';
 
-type Props = AppStackScreenProps<'ProfessionalProfile'>;
+type NavigationProps = AppStackScreenProps<'ProfessionalProfile'>;
+type Props = NavigationProps & ConnectedProps<typeof connector>;
 
-const ProfessionalProfile: FC<Props> = () => {
+const ProfessionalProfile: FC<Props> = (props) => {
+  const { route, getFreelancerProfile, clientProfile, clientProfileLoading } = props;
+  
+  React.useEffect(() => {
+    if (route.params?.id) {
+      getFreelancerProfile({ id: route.params.id });
+    }
+  }, [route.params?.id, getFreelancerProfile]);
+
+  console.log('Loading State:', clientProfileLoading);
+  
+  if (clientProfileLoading === 'loading') {
+    return (
+      <Screen preset="fixed" contentContainerStyle={styles.container}>
+        <Loader loading={true} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container}>
       
@@ -29,13 +51,24 @@ const ProfessionalProfile: FC<Props> = () => {
         {/* PROFILE */}
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
-            <Image source={images.profile1} style={styles.avatar} />
+            <Image 
+              source={clientProfile?.profile_image ? { uri: props.setting?.base_url + "/" + clientProfile.profile_image } : images.profile1} 
+              style={styles.avatar} 
+            />
             <View style={styles.verifiedBadge}>
               <Text text="✓" style={styles.verifiedIcon} />
             </View>
           </View>
-          <Text text="Austin Butler" weight="semiBold" style={styles.name} />
-          <Text text="42 Hebbard Street, Victoria" size="xs" style={styles.gray} />
+          <Text text={clientProfile?.name} weight="semiBold" style={styles.name} />
+          <View style={styles.addressContainer}>
+            <Text 
+              text={clientProfile?.street_address || "No address available"} 
+              size="xs" 
+              style={styles.gray}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            />
+          </View>
 
           <View style={styles.badge}>
             <Text tx="professionalProfile.topRated" size="xxs" style={styles.topRatedText} />
@@ -45,29 +78,29 @@ const ProfessionalProfile: FC<Props> = () => {
         {/* STATS */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text text="$40K+" weight="semiBold" />
+            <Text text={`$${clientProfile?.total_earnings || 0}`} weight="semiBold" />
             <Text tx="professionalProfile.totalEarnings" size="xxs" style={styles.gray} />
           </View>
 
           <View style={styles.statBox}>
-            <Text text="450" weight="semiBold" />
+            <Text text={clientProfile?.total_jobs?.toString() || "0"} weight="semiBold" />
             <Text tx="professionalProfile.totalJobs" size="xxs" style={styles.gray} />
           </View>
 
           <View style={styles.statBox}>
-            <Text text="98%" weight="semiBold" />
+            <Text text={`${clientProfile?.job_success_score || 0}%`} weight="semiBold" />
             <Text tx="professionalProfile.jobSuccess" size="xxs" style={styles.gray} />
           </View>
         </View>
         {/* TITLE */}
         <View style={styles.section}>
           <View style={styles.rowBetween}>
-            <Text tx="professionalProfile.specialist" weight="semiBold" style={styles.specialistText} />
-            <Text text="$45.00/hr" style={styles.rateText} />
+            <Text text={clientProfile?.profile_title || "Professional"} weight="semiBold" style={styles.specialistText} />
+            <Text text={`${clientProfile?.experience || '0'} years experience`} style={styles.rateText} />
           </View>
 
           <Text
-            tx="professionalProfile.description"
+            text={clientProfile?.profile_description || "No description available"}
             size="xs"
             style={styles.gray}
           />
@@ -81,16 +114,10 @@ const ProfessionalProfile: FC<Props> = () => {
           <Text tx="professionalProfile.services" weight="semiBold" />
 
           <View style={styles.chipsRow}>
-            {[
-              { key: 'housePipeFitting', tx: 'professionalProfile.housePipeFitting' as const, text: images.greenCheckIcon },
-              { key: 'wireFitting', tx: 'professionalProfile.wireFitting' as const, text: images.greenCheckIcon },
-              { key: 'switchInstall', tx: 'professionalProfile.switchInstall' as const, text: images.greenCheckIcon },
-              { key: 'homeAppliancesInstall', tx: 'professionalProfile.homeAppliancesInstall' as const, text: images.greenCheckIcon }
-            ].map((item) => (
-              <View key={item.key} style={styles.chip}>
-                <Text tx={item.tx} size="xxs" />
-                <Image source={item.text} style={styles.checkIcon} />
-
+            {clientProfile?.categories?.map((category, index) => (
+              <View key={index} style={styles.chip}>
+                <Text text={category} size="xxs" />
+                <Image source={images.greenCheckIcon} style={styles.checkIcon} />
               </View>
             ))}
           </View>
@@ -249,6 +276,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 
+  addressContainer: {
+    width: '100%',
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.xs,
+    alignItems: 'center',
+  },
+
   gray: {
     color: colors.palette.grayText,
   },
@@ -373,4 +407,15 @@ const styles = StyleSheet.create({
 
 });
 
-export const ProfessionalProfileScreen = ProfessionalProfile;
+const mapStateToProps = (state: RootState) => ({
+  clientProfile: state.job.clientProfile,
+  setting: state.setting.basic,
+  clientProfileLoading: state.job.clientProfileLoading,
+});
+
+const mapDispatch = {
+  getFreelancerProfile,
+};
+
+const connector = connect(mapStateToProps, mapDispatch);
+export const ProfessionalProfileScreen = connector(ProfessionalProfile);

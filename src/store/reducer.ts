@@ -1,9 +1,11 @@
 import { authReducer } from '../slices/auth.slice';
 import { jobReducer } from '../slices/job.slice';
 import { settingReducer } from '../slices/setting.slice';
+import { profileReducer } from '../slices/profile.slice';
 
 export const reducer = {
     setting: settingReducer,
     auth: authReducer,
-    job: jobReducer
+    job: jobReducer,
+    profile: profileReducer
 };

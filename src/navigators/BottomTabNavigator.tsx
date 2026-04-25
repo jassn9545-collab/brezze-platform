@@ -22,7 +22,7 @@ export type BottomTabNavigatorParamList = {
   Home: undefined;
   Service: undefined;
   Chat: undefined;
-  ProfessionalProfile: undefined;
+  Profile: undefined;
 };
 
 // Documentation: https://reactnavigation.org/docs/tab-based-navigation/
@@ -53,7 +53,7 @@ export const BottomTabNavigator: FC<NavigationProps> = () => {
       <Tab.Screen name="Home" component={Screens.HomeScreen} /> 
       <Tab.Screen name="Service" component={Screens.ServiceListScreen} />
       <Tab.Screen name="Chat" component={Screens.ChatScreen} />
-      <Tab.Screen name="ProfessionalProfile" component={Screens.ProfessionalProfileScreen} />
+      <Tab.Screen name="Profile" component={Screens.ProfileScreen} />
     </Tab.Navigator>
   );
 };

@@ -1,365 +1,369 @@
-// import {
-//   Image,
-//   ImageSourcePropType,
-//   ScrollView,
-//   Share,
-//   StyleSheet,
-//   TextStyle,
-//   TouchableOpacity,
-//   View,
-//   ViewStyle,
-// } from 'react-native';
-// import { Loader, Screen, Text } from '../components';
-// import React, { FC } from 'react';
-// import { colors, images, spacing } from '../theme';
 
-// import { scale } from 'react-native-size-matters';
-// import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
-// import { translate, TxKeyPath } from '../i18n';
-// import { AppStackParamList } from '../navigators';
-// import { RootState } from '../store';
-// import { connect, ConnectedProps } from 'react-redux';
-// import FastImage, { ImageStyle } from '@d11/react-native-fast-image';
+import {
+  StyleSheet,
+  View,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import React, { FC, useEffect } from 'react';
+import { Screen, Text, Loader, BackButtom } from '../components';
+import { spacing,  images } from '../theme';
+import { connect, ConnectedProps } from 'react-redux';
+import { RootState } from '../store';
+import { getCustomerProfile } from '../slices/profile.slice';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../navigators/AppStack';
 
-// type NavigationProps = AppBottomTabScreenProps<'Profile'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+type Props = ConnectedProps<typeof connector>;
 
-// type KeysWithUndefinedValues<T> = {
-//   [K in keyof T]: T[K] extends undefined ? K : never;
-// }[keyof T];
+const ClientProfileScreen: FC<Props> = props => {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const { getCustomerProfile, customerProfile, customerProfileLoading,  } = props;
+  useEffect(() => {
+    getCustomerProfile();
+  }, [getCustomerProfile]);
 
-// type Screens =
-//   | KeysWithUndefinedValues<AppStackParamList>
-//   | 'TermsCondition'
-//   | 'PrivacyPolicy'
-//   | 'AboutUs';
+  console.log('Customer Profile Data:', customerProfile);
+  console.log('Loading State:', customerProfileLoading);
+  
+  if (customerProfileLoading === 'loading') {
+    return (
+      <Screen preset="fixed" contentContainerStyle={styles.container}>
+        <Loader loading={true} />
+      </Screen>
+    );
+  }
+  
+  console.log(props.setting,"asa")
 
-// type DrawerDataType = {
-//   title: TxKeyPath;
-//   description?: TxKeyPath;
-//   image?: ImageSourcePropType;
-//   screen?: Screens;
-//   type?: 'heading';
-// };
 
-// const DrawerData: DrawerDataType[] = [
-//   {
-//     title: 'profile.ordersTitle',
-//     description: 'profile.ordersDesc',
-//     image: images.yourOrder,
-//     screen: 'Orders',
-//   },
-//   {
-//     title: 'profile.wishlistTitle',
-//     description: 'profile.wishlistDesc',
-//     image: images.yourWishlist,
-//     screen: 'Wishlist',
-//   },
-//   // {
-//   //   title: 'profile.savedAddressTitle',
-//   //   description: 'profile.savedAddressDesc',
-//   //   image: images.savedAddress,
-//   //   screen: 'SavedAddress',
-//   // },
-//   {
-//     title: 'profile.cartTitle',
-//     description: 'profile.cartDesc',
-//     image: images.cartIcon,
-//     screen: 'Cart',
-//   },
-//   {
-//     title: 'profile.referEarn',
-//     description: 'profile.referEarnDesc',
-//     image: images.referEarnIcon,
-//     screen: 'ReferEarn',
-//   },
-//   {
-//     title: 'profile.bankAccounts',
-//     description: 'profile.bankAccountDesc',
-//     image: images.bank2Icon,
-//     screen: 'BankAccounts',
-//   },
-//   {
-//     title: 'profile.changeLanguage',
-//     description: 'profile.changeLanguageDesc',
-//     image: images.languageIcon,
-//     screen: 'ChangeLanguage',
-//   },
-//   // {
-//   //   title: 'profile.shareTitle',
-//   //   description: 'profile.shareDesc',
-//   //   image: images.shareIcon,
-//   // },
-//   {
-//     type: 'heading',
-//     title: 'profile.supportLegal',
-//   },
-//   {
-//     title: 'profile.aboutUsTitle',
-//     description: 'profile.aboutUsDesc',
-//     image: images.aboutIcon,
-//     screen: 'AboutUs',
-//   },
-//   // {
-//   //   title: 'profile.contactUsTitle',
-//   //   description: 'profile.contactUsDesc',
-//   //   image: images.helpCenterIcon,
-//   //   screen: 'ContactUs',
-//   // },
-//   {
-//     title: 'profile.privacyPolicyTitle',
-//     description: 'profile.privacyPolicyDesc',
-//     image: images.privacyPolicyIcon,
-//     screen: 'PrivacyPolicy',
-//   },
-//   {
-//     title: 'profile.termsConditionsTitle',
-//     description: 'profile.termsConditionsDesc',
-//     image: images.termsCondIcon,
-//     screen: 'TermsCondition',
-//   },
-//   // {
-//   //   title: 'profile.rateAppTitle',
-//   //   description: 'profile.rateAppDesc',
-//   //   image: images.rateAppTabIcon,
-//   //   // screen: 'RateApp',
-//   // },
-//   // {
-//   //   title: 'profile.versionTitle',
-//   //   description: 'profile.versionDesc',
-//   //   image: images.versionTabIcon,
-//   //   // screen: 'Version',
-//   // },
-//   {
-//     title: 'profile.logout',
-//     description: 'profile.logoutDesc',
-//     image: images.logoutIcon,
-//   },
-// ];
 
-// const Profile: FC<Props> = props => {
-//   const appUrl =
-//     'https://play.google.com/store/search?q=Gandharva&c=apps&hl=en_IN';
 
-//   return (
-//     <>
-//       <Screen
-//         preset="fixed"
-//         safeAreaEdges={['top']}
-//         contentContainerStyle={styles.container}
-//       >
-//         <ScrollView
-//           bouncesZoom={false}
-//           bounces={false}
-//           alwaysBounceVertical={false}
-//           style={styles.scrollView}
-//           showsVerticalScrollIndicator={false}
-//         >
-//           <View style={styles.main}>
-//             <View style={styles.profileSection}>
-//               <FastImage
-//                 source={
-//                   props.profileData?.profile
-//                     ? {
-//                         uri: props.baseUrl + '/' + props.profileData?.profile,
-//                       }
-//                     : images.vector
-//                 }
-//                 style={styles.userImage}
-//               />
-//               <Text
-//                 style={styles.boldTextStyle}
-//                 weight="medium"
-//                 size="lg"
-//                 tx="profile.hiUser"
-//                 txOptions={{
-//                   name: props.profileData?.name,
-//                 }}
-//               />
-//               <TouchableOpacity
-//                 onPress={() => props.navigation.navigate('EditProfile')}
-//                 style={styles.wrapEditIcon}
-//               >
-//                 <Image source={images.editIcon} />
-//                 <Text weight="medium" size="xxs" tx="profile.editProfile" />
-//               </TouchableOpacity>
-//             </View>
-//             <View
-//               style={{
-//                 marginBottom: spacing.xxl,
-//               }}
-//             >
-//               {DrawerData?.map((item, index) => {
-//                 return (
-//                   <DrawerItemView
-//                     key={index + item.title}
-//                     screen={item.screen}
-//                     title={item.title}
-//                     type={item.type}
-//                     description={item.description}
-//                     image={item.image}
-//                     onPress={screen => {
-//                       if (item.title === 'profile.shareTitle') {
-//                         Share.share({
-//                           message: `${translate(
-//                             'profile.shareAppTitle',
-//                           )}\n${appUrl}`,
-//                         });
-//                       } else if (item.title === 'profile.logout') {
-//                         props.navigation.navigate('BottomModal', {
-//                           modalType: 'logout',
-//                           image: images.logoutIcon,
-//                           title: 'profile.logoutConfirmtion',
-//                           desc: 'profile.logoutConfirmtionDesc',
-//                           btnText: 'profile.yesLogout',
-//                         });
-//                       } else if (screen) {
-//                         props.navigation.navigate(screen as Screens);
-//                       }
+  
+  return (
+    <Screen preset="fixed" contentContainerStyle={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        
+        {/* HEADER */}
+        {/* <View style={styles.header}> */}
+          {/* <Text text="←" style={styles.back} /> */}
+          {/* <Text text={customerProfile?.name || "Loading..."} weight="semiBold" /> */}
+                  <BackButtom heading={customerProfile?.name} />
+          
+          {/* <Text text="⋮" style={styles.menu} /> */}
+        {/* </View> */}
 
-//                       // } else if (item.label === 'Delete Account') {
-//                       //   props.navigation.navigate('CenterModal', {
-//                       //     modalType: 'deleteAccount',
-//                       //     image: images.deleteGif,
-//                       //     title: 'profile.deleteaccount',
-//                       //     desc: 'profile.deleteAccountMessage',
-//                       //     btnText: 'profile.yesDeleteAccount',
-//                       //   });
-//                     }}
-//                   />
-//                 );
-//               })}
-//               <Text
-//                 tx="home.poweredBy"
-//                 style={styles.poweredBy}
-//                 size="md"
-//                 weight="semiBold"
-//               />
-//             </View>
-//           </View>
-//         </ScrollView>
-//       </Screen>
-//       <Loader loading={props.logoutLoading === 'loading'} />
-//     </>
-//   );
-// };
+        {/* PROFILE */}
+        <View style={styles.profileSection}>
+          <View style={styles.avatarWrapper}>
+            <Image 
+              source={customerProfile?.profile_image ? { uri: props?.setting?.base_url + "/" + customerProfile.profile_image } : images.profile1} 
+              style={styles.avatar} 
+            />
+            <View style={styles.tick}>
+              <Text text="✓" style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }} />
+            </View>
+          </View>
 
-// const mapStateToProps = (state: RootState) => ({
-//   profileData: state.auth.myProfile?.data,
-//   logoutLoading: state.auth.logoutLoading,
-//   baseUrl: state.home.baseURl
-// });
+          <Text text={customerProfile?.name || "Loading..."} weight="semiBold" style={styles.name} />
 
-// const connector = connect(mapStateToProps);
+          <Text
+            text={`📍 ${customerProfile?.street_address || "No address available"}`}
+            size="xs"
+            style={styles.gray}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          />
 
-// export const ProfileScreen = connector(Profile);
-// const styles = StyleSheet.create({
-//   container: {
-//     flexGrow: 1,
-//   },
-//   scrollView: { flex: 1, paddingBottom: 50 },
-//   profileSection: {
-//     gap: spacing.xxs,
-//     alignItems: 'center',
-//     marginBottom: spacing.lg,
-//     marginHorizontal: spacing.md,
-//   } as ViewStyle,
+          <View style={styles.verifiedBadge}>
+            <Text text="VERIFIED CLIENT" size="xxs" style={{ color: '#0BAF6E' }} />
+          </View>
+        </View>
 
-//   boldTextStyle: {
-//     flex: 1,
-//     color: colors.text,
-//     marginTop: spacing.xs,
-//   } as TextStyle,
+        {/* STATS */}
+        <View style={styles.stats}>
+          <View style={styles.statItem}>
+            <Text text={customerProfile?.total_jobs?.toString() || "0"} weight="semiBold" />
+            <Text text="Job Posted" size="xxs" style={styles.gray} />
+          </View>
 
-//   primaryTextStyle: {
-//     color: colors.primary,
-//   } as TextStyle,
+          <View style={styles.statItem}>
+            <Text text={`${customerProfile?.avg_rating || 0} ⭐`} weight="semiBold" />
+            <Text text="Avg. Rating" size="xxs" style={styles.gray} />
+          </View>
 
-//   userImage: {
-//     height: 100,
-//     width: 100,
-//     borderRadius: scale(50),
-//     backgroundColor: colors.palette.grayLight3,
-//   } as ImageStyle,
+          <View style={styles.statItem}>
+            <Text text={customerProfile?.refral_code || "N/A"} weight="semiBold" />
+            <Text text="Referral Code" size="xxs" style={styles.gray} />
+          </View>
+        </View>
 
-//   wrapEditIcon: {
-//     gap: spacing.xs,
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     borderRadius: spacing.xxs,
-//     paddingVertical: spacing.sm,
-//     paddingHorizontal: spacing.lg,
-//     backgroundColor: colors.primary,
-//     marginTop: spacing.xs - spacing.xxxs,
-//   } as ViewStyle,
+        {/* BUTTONS */}
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={styles.editBtn}
+            onPress={() => navigation.navigate('EditProfile')}
+          >
+            <Text tx="profile.editProfile" />
+          </TouchableOpacity>
 
-//   main: {
-//     flex: 1,
-//     marginTop: spacing.sm,
-//     justifyContent: 'center',
-//   } as ViewStyle,
-//   emptyView: { width: 35, height: 35 } as ViewStyle,
+          <TouchableOpacity style={styles.postBtn}>
+            <Text tx="profile.postAJob" style={{ color: '#fff' }} />
+          </TouchableOpacity>
+        </View>
 
-//   drawerItemContainer: {
-//     padding: spacing.md,
-//     minHeight: scale(45),
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginBottom: spacing.md,
-//     borderRadius: spacing.sm,
-//     marginHorizontal: spacing.md,
-//     backgroundColor: colors.palette.primaryDimmed,
-//   } as ViewStyle,
+        {/* JOB POSTING */}
+        <View style={styles.section}>
+          <View style={styles.rowBetween}>
+            <Text text="Job Posting Summary" weight="semiBold" />
+            <Text text="View All" style={styles.link} />
+          </View>
 
-//   drawerTitleContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     paddingHorizontal: 10,
-//   } as ViewStyle,
+          {customerProfile?.last3_jobs?.map((job: any) => (
+            <View key={job.id} style={styles.jobCard}>
+              <Image source={images.switchbox} style={styles.jobImage} />
 
-//   poweredBy: {
-//     textAlign: 'center',
-//     marginVertical: spacing.md,
-//   } as TextStyle,
+              <Text
+                text={job.title}
+                weight="medium"
+              />
 
-//   heading: {
-//     marginStart: spacing.md,
-//     marginBottom: spacing.sm,
-//   } as TextStyle,
-// });
+              <View style={styles.jobRow}>
+                <Text text={`Posted ${new Date(job.created_at).toLocaleDateString()}`} size="xs" style={styles.gray} />
+                <Text text={job.status.toUpperCase()} size="xxs" style={styles.active} />
+              </View>
 
-// const DrawerItemView = ({
-//   screen,
-//   title,
-//   image,
-//   type,
-//   onPress,
-//   description,
-// }: {
-//   screen?: Screens;
-//   title: TxKeyPath;
-//   type?: 'heading';
-//   description?: TxKeyPath;
-//   image?: ImageSourcePropType;
-//   onPress: (screen?: Screens) => void;
-// }) => {
-//   if (type === 'heading') {
-//     return <Text style={styles.heading} weight="medium" size="lg" tx={title} />;
-//   }
-//   return (
-//     <TouchableOpacity
-//       onPress={() => onPress(screen)}
-//       style={styles.drawerItemContainer}
-//     >
-//       <Image resizeMode='contain' source={image} />
-//       <View style={styles.drawerTitleContainer}>
-//         <Text weight="medium" size="md" tx={title} />
-//         <Text weight="medium" size="xxs" tx={description} />
-//       </View>
+              <View style={styles.jobRow}>
+                <Text text={`${job.bids_count} Applicants applied`} size="xs" style={styles.gray} />
+                <TouchableOpacity style={styles.viewBtn}>
+                  <Text text="View Details" size="xs" style={{ color: '#fff' }} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </View>
 
-//       <Image source={images.rightArrow} />
-//     </TouchableOpacity>
-//   );
-// };
+        {/* CURRENT HIRING */}
+        <View style={styles.section}>
+          <View style={styles.rowBetween}>
+            <Text text="Current Hiring" weight="semiBold" />
+            <Text text="View All" style={styles.link} />
+          </View>
+
+          {[1, 2].map((item) => (
+            <View key={item} style={styles.hireCard}>
+              <Image source={images.profile1} style={styles.hireImg} />
+
+              <View style={{ flex: 1 }}>
+                <Text text="Michael Rodriguez" weight="medium" />
+                <Text text="Master Electrician" size="xs" style={styles.gray} />
+
+                <View style={styles.chipsRow}>
+                  <View style={styles.chip}>
+                    <Text text="Wiring" size="xxs" />
+                  </View>
+                  <View style={styles.chip}>
+                    <Text text="Emergency Repair" size="xxs" />
+                  </View>
+                </View>
+
+                <Text text="Starting from $45/hr" size="xs" style={styles.gray} />
+              </View>
+
+              <View>
+                <Text text="⭐ 4.9" size="xs" />
+                <TouchableOpacity>
+                  <Text text="View Profile" style={styles.link} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* REVIEWS */}
+        <View style={styles.section}>
+          <View style={styles.rowBetween}>
+            <Text text="Reviews" weight="semiBold" />
+            <Text text="See All (4.8)" style={styles.link} />
+          </View>
+
+          <View style={styles.reviewCard}>
+            <Text text="Sarah Miller" weight="medium" />
+            <Text text="⭐⭐⭐⭐⭐" />
+            <Text
+              text="Passionate about home appliances and repair work"
+              size="xs"
+              style={styles.gray}
+            />
+          </View>
+        </View>
+      </ScrollView>
+    </Screen>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F5F6F8' },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+
+  back: { fontSize: 18 },
+  menu: { fontSize: 18 },
+
+  profileSection: {
+    alignItems: 'center',
+  },
+
+  avatarWrapper: { position: 'relative' },
+
+  avatar: { width: 90, height: 90, borderRadius: 45 },
+
+  tick: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#2F80ED',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  name: { marginTop: 8 },
+
+  gray: { color: '#777' },
+
+  verifiedBadge: {
+    marginTop: 6,
+    backgroundColor: '#E6F7EF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+
+  stats: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    margin: spacing.md,
+    borderRadius: 10,
+    padding: spacing.sm,
+  },
+
+  statItem: { flex: 1, alignItems: 'center' },
+
+  buttonRow: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.md,
+    gap: 10,
+  },
+
+  editBtn: {
+    flex: 1,
+    backgroundColor: '#E5E7EB',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+
+  postBtn: {
+    flex: 1,
+    backgroundColor: '#2F80ED',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+
+  section: {
+    backgroundColor: '#fff',
+    margin: spacing.md,
+    padding: spacing.md,
+    borderRadius: 10,
+  },
+
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  link: { color: '#2F80ED' },
+
+  jobCard: { marginTop: 10 },
+
+  jobImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+
+  jobRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    alignItems: 'center',
+  },
+
+  active: {
+    backgroundColor: '#D1FAE5',
+    color: '#10B981',
+    paddingHorizontal: 6,
+    borderRadius: 6,
+  },
+
+  viewBtn: {
+    backgroundColor: '#2F80ED',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+
+  hireCard: {
+    flexDirection: 'row',
+    marginTop: 10,
+    gap: 10,
+  },
+
+  hireImg: { width: 50, height: 50, borderRadius: 8 },
+
+  chipsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginVertical: 4,
+  },
+
+  chip: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+
+  reviewCard: {
+    marginTop: 10,
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 8,
+  },
+});
+
+const mapStateToProps = (state: RootState) => ({
+  customerProfile: state.profile.customerProfile,
+  customerProfileLoading: state.profile.customerProfileLoading,
+  setting: state.setting.basic,
+});
+
+const mapDispatch = {
+  getCustomerProfile,
+};
+
+const connector = connect(mapStateToProps, mapDispatch);
+
+export const ProfileScreen = connector(ClientProfileScreen);

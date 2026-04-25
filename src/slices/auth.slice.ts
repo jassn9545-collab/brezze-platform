@@ -9,6 +9,7 @@ import { FAQ } from '../screens';
 import { Linking } from 'react-native';
 import { handleInviteURL } from '../utils/util';
 import URLs from '../config/urls';
+import '../utils/toast';
 import {
   BasicUserDetailParams,
   ForgotPasswordParam,
@@ -276,43 +277,43 @@ export const verifyOTP = createAsyncThunk(
   },
 );
 
-// export const getProfile = createAsyncThunk(
-//   'auth/profile',
-//   async (_, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'GET',
-//         url: URLs.profile,
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//       });
-//       return response.data as UserDetailsResponse;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const getProfile = createAsyncThunk(
+  'auth/profile',
+  async (_, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'GET',
+        url: URLs.profile,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data as UserDetailsResponse;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
-// export const updateProfile = createAsyncThunk(
-//   'auth/update-profile',
-//   async (data: FormData, thunkAPI) => {
-//     try {
-//       const response = await api({
-//         method: 'POST',
-//         url: URLs.updateProfile,
-//         headers: {
-//           'Content-Type': 'multipart/form-data',
-//         },
-//         data,
-//       });
-//       toast.show(response.data.message, { type: 'success' });
-//       return response.data;
-//     } catch (error) {
-//       throw thunkAPI.rejectWithValue(error);
-//     }
-//   },
-// );
+export const updateCustomerProfile = createAsyncThunk(
+  'auth/update-customer-profile',
+  async (data: FormData, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.updateCustomerProfile,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        data,
+      });
+      toast.show(response.data.message, { type: 'success' });
+      return response.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
 export const resetPassword = createAsyncThunk(
   'auth/reset-password',
@@ -739,32 +740,32 @@ export const authSlice = createSlice({
         state.verifyOTPLoading = 'failed';
         state.error = action.payload;
       });
-    // // User Profile
-    // builder
-    //   .addCase(getProfile.pending, state => {
-    //     state.loading = 'loading';
-    //   })
-    //   .addCase(getProfile.fulfilled, (state, action) => {
-    //     state.loading = 'loaded';
-    //     state.myProfile = action.payload;
-    //   })
-    //   .addCase(getProfile.rejected, (state, action) => {
-    //     state.loading = 'failed';
-    //     state.error = action.payload;
-    //   });
-    // // Update Profile
-    // builder
-    //   .addCase(updateProfile.pending, state => {
-    //     state.updateLoading = 'loading';
-    //   })
-    //   .addCase(updateProfile.fulfilled, (state, action) => {
-    //     state.updateLoading = 'loaded';
-    //     state.myProfile = action.payload;
-    //   })
-    //   .addCase(updateProfile.rejected, (state, action) => {
-    //     state.updateLoading = 'failed';
-    //     state.error = action.error;
-    //   });
+    // User Profile
+    builder
+      .addCase(getProfile.pending, state => {
+        state.loading = 'loading';
+      })
+      .addCase(getProfile.fulfilled, (state, action) => {
+        state.loading = 'loaded';
+        state.myProfile = action.payload;
+      })
+      .addCase(getProfile.rejected, (state, action) => {
+        state.loading = 'failed';
+        state.error = action.payload;
+      });
+    // Update Customer Profile
+    builder
+      .addCase(updateCustomerProfile.pending, state => {
+        state.updateLoading = 'loading';
+      })
+      .addCase(updateCustomerProfile.fulfilled, (state, action) => {
+        state.updateLoading = 'loaded';
+        state.myProfile = action.payload;
+      })
+      .addCase(updateCustomerProfile.rejected, (state, action) => {
+        state.updateLoading = 'failed';
+        state.error = action.error;
+      });
     // reset Password
     builder
       .addCase(resetPassword.pending, state => {

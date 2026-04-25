@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   FlatList,
   ListRenderItemInfo,
+  
 } from 'react-native';
 import React, { FC, useEffect } from 'react';
 import { spacing, colors } from '../theme';
@@ -33,15 +34,17 @@ const JobPostDetails: FC<Props> = props => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.route.params?.id]);
 
-  const onPressProfile = (data: Bid) => {
-    // props.navigation.navigate('professionalProfile', { id: data.freelancer_id });
+  const onPressProfile = (_data: Bid) => {
+    // console.log(_data,"_data")
+    // Alert.alert("Profile", "Profile clicked");
+    props.navigation.navigate('ProfessionalProfile', {id: _data.user_id});
   };
 
   const onPressHire = (data: Bid) => {
     props.hireJob({ job_id: props.route.params?.id, bid_id: data.id });
   };
 
-  console.log('props.setting', props.data);
+
   return (
     <>
       <Screen
@@ -63,7 +66,7 @@ const JobPostDetails: FC<Props> = props => {
                 }}
               />
               <FlatList
-                data={props.data?.bids!}
+                data={props.data?.bids}
                 showsVerticalScrollIndicator={false}
                 keyExtractor={item => item.id.toString()}
                 renderItem={info => (
@@ -119,12 +122,15 @@ type BidCardProps = ListRenderItemInfo<Bid> & {
   onPressHire: (data: Bid) => void;
 };
 
+
+
 const BidCard = ({
   item,
   setting,
   onPressProfile,
   onPressHire,
 }: BidCardProps) => {
+
   return (
     <View key={item.id} style={styles.proposalCard}>
       <View style={styles.row}>
@@ -145,6 +151,14 @@ const BidCard = ({
               weight="bold"
               style={{ color: colors.primary }}
               text={Currency.sign + item.bid_amount}
+            />
+          </View>
+
+          <View style={styles.spaceBetween}>
+
+            <Text
+              size="xxs"
+              text={item.work_description}
             />
           </View>
           <View style={styles.btnRow}>

@@ -1,585 +1,369 @@
-// import {
-//   Image,
-//   TextStyle,
-//   TouchableOpacity,
-//   View,
-//   ViewStyle,
-// } from 'react-native';
-// import { colors, images, spacing } from '../theme';
-// import {
-//   BackButtom,
-//   Button,
-//   countries,
-//   CountryPickerModal,
-//   CustomImagePicker,
-//   DatePickerModal,
-//   Loader,
-//   Screen,
-//   Text,
-// } from '../components';
-// import React, {
-//   FC,
-//   useCallback,
-//   useEffect,
-//   useMemo,
-//   useRef,
-//   useState,
-// } from 'react';
-// import { TextField, TextFieldAccessoryProps } from '../components/TextField';
-// import { translate, TxKeyPath } from '../i18n';
-// import { buildError, userSchema } from '../apis/schema';
+import React, { FC, useCallback, useEffect, useState } from 'react';
+import { translate } from '../i18n';
+import {
+  Image,
+  TouchableOpacity,
+  View,
+  TextStyle,
+  ViewStyle,
+} from 'react-native';
+import FastImage, { ImageStyle } from '@d11/react-native-fast-image';
+import { useFocusEffect } from '@react-navigation/native';
+import { connect, ConnectedProps } from 'react-redux';
 
-// import { AppStackScreenProps } from '../navigators';
-// import { DefaultCountry } from '../config/defaults';
-// import { ImagePickerResponse } from 'react-native-image-picker';
-// import moment from 'moment';
-// import { RootState } from '../store';
-// import { connect, ConnectedProps } from 'react-redux';
-// import { authActions, getProfile, updateProfile } from '../slices/auth.slice';
-// import { useFocusEffect } from '@react-navigation/native';
-// import {
-//   DataType,
-//   DropDownList,
-//   DropDownRightAccessory,
-//   sizeForSheet,
-// } from '../components/DropDownList';
-// import { leftAccessory, nomineeList } from './SignupScreen';
-// import { TrueSheet } from '@lodev09/react-native-true-sheet';
-// import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// import FastImage, { ImageStyle } from '@d11/react-native-fast-image';
+import {  images,  } from '../theme';
+import {
+  BackButtom,
+  Button,
+  Loader,
+  Screen,
+  Text,
+  TextField,
+} from '../components';
+import { AppStackScreenProps } from '../navigators/AppStack';
+import { RootState } from '../store';
+import {
+  getCustomerProfile,
+  updateCustomerProfile,
+  resetUpdateCustomerProfileLoading,
+} from '../slices/profile.slice';
 
-// type NavigationProps = AppStackScreenProps<'EditProfile'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+type NavigationProps = AppStackScreenProps<'EditProfile'>;
+type Props = NavigationProps & ConnectedProps<typeof connector>;
 
-// type FieldError = {
-//   name?: TxKeyPath | undefined;
-//   phone?: TxKeyPath | undefined;
-//   alternate_phone?: TxKeyPath | undefined;
-//   email?: TxKeyPath | undefined;
-//   dob?: TxKeyPath | undefined;
-//   nominee_name?: TxKeyPath | undefined;
-//   nominee_dob?: TxKeyPath | undefined;
-//   nominee_phone?: TxKeyPath | undefined;
-//   relation_with_nominee?: TxKeyPath | undefined;
-// };
+const LocationIcon = () => (
+  <Image source={images.locationPin} style={$locationIcon as any} />
+);
 
-// const EditProfile: FC<Props> = props => {
-//   const insets = useSafeAreaInsets();
-//   const {
-//     oldName = props.profile?.name,
-//     oldEmail = props.profile?.email,
-//     oldCountryCode = `+${props.profile?.country_code ?? '91'}`,
-//     oldMobileNumber = props.profile?.phone,
-//     oldAlterNativeMobile = props.profile?.alternate_phone,
-//     oldDOB = props.profile?.dob
-//       ? moment(props.profile?.dob, 'YYYY-MM-DD').toDate()
-//       : undefined,
-//     oldNomineeName = props.profile?.nominee_name,
-//     oldNomineeDOB = props.profile?.nominee_dob
-//       ? moment(props.profile?.nominee_dob, 'YYYY-MM-DD').toDate()
-//       : undefined,
-//     oldNomineePhone = props.profile?.nominee_phone ?? '',
-//     // profile
-//   } = {};
+const EditProfile: FC<Props> = props => {
+  const {
+    customerProfile,
+    baseUrl,
+    updateCustomerProfileLoading,
+    navigation,
+    getCustomerProfile,
+    updateCustomerProfile,
+    resetUpdateCustomerProfileLoading,
+  } = props;
 
-//   const [imagePickerVisible, setImagePickerVisible] = useState(false);
-//   const [imageURI, setImageURI] = useState(
-//     props.profile?.profile
-//       ? props.baseUrl + '/' + props.profile.profile
-//       : ''
-//   );
+  // 🔹 Initial Values
+  const [imageURI] = useState(
+    customerProfile?.profile_image
+      ? baseUrl + '/' + customerProfile.profile_image
+      : '',
+  );
+
+  const [name, setName] = useState(customerProfile?.name ?? '');
+  const [email, setEmail] = useState(customerProfile?.email ?? '');
+  const [countryCode] = useState(`+${customerProfile?.country_code ?? '91'}`);
+  const [mobileNumber, setMobileNumber] = useState(customerProfile?.phone ?? '');
+  const [location, setLocation] = useState(customerProfile?.location ?? '');
+  const [address, setAddress] = useState(customerProfile?.street_address ?? '');
+  const [state, setState] = useState(customerProfile?.state ?? '');
+  const [pincode, setPincode] = useState(customerProfile?.pincode ?? '');
+  const [dob, setDOB] = useState(customerProfile?.dob ?? '');
+
+  // 🔹 Fetch Profile
+  useFocusEffect(
+    useCallback(() => {
+      getCustomerProfile();
+    }, [getCustomerProfile]),
+  );
+
+  // 🔹 Update Profile
+  const updateProfileAction = () => {
+    const params = {
+      name,
+      email,
+      phone: mobileNumber,
+      address,
+      state,
+      pincode,
+      dob,
+    };
+    updateCustomerProfile(params);
+  };
+
+  // 🔹 Success Navigation
+  useEffect(() => {
+    if (updateCustomerProfileLoading === 'loaded') {
+      navigation.goBack();
+      resetUpdateCustomerProfileLoading();
+    }
+  }, [updateCustomerProfileLoading, resetUpdateCustomerProfileLoading, navigation]);
+
+  console.log('Customer Profile Data:', customerProfile);
+  console.log('Loading State:', updateCustomerProfileLoading);
   
-//   const [imageFormData, setImageFormData] = useState<{
-//     uri: string;
-//     name: string;
-//     type: string;
-//   } | null>(null);
-//   const [name, setName] = useState(oldName ?? '');
-//   const [email, setEmail] = useState(oldEmail ?? '');
-//   const [showCountries, setShowCountries] = useState<boolean>(false);
-//   const [countryCode, setCountryCode] = useState(
-//     oldCountryCode ?? DefaultCountry.dial_code,
-//   );
-//   const [number, setNumber] = useState(oldMobileNumber ?? '');
-//   const [alternativeMobile, setAlternativeMobile] = useState(
-//     oldAlterNativeMobile ?? '',
-//   );
-//   const [dob, setDOB] = useState<Date | undefined>(oldDOB ?? undefined);
-//   const [showDatePicker, setShowDatePicker] = useState(false);
-//   const [nomineeName, setNomineeName] = useState(oldNomineeName ?? '');
-//   const [nomineeDOB, setNomineeDOB] = useState<Date | undefined>(
-//     oldNomineeDOB ?? undefined,
-//   );
-//   const [showNomineeDOBPicker, setNomineeDOBPicker] = useState(false);
+  
+  return (
+    <>
+      <Screen
+        preset="scroll"
+        safeAreaEdges={['top', 'bottom']}
+        contentContainerStyle={$container}
+      >
+        {/* HEADER */}
+        <BackButtom heading={translate('editProfile.heading')} />
 
-//   const [nomineeMobile, setNomineeMobile] = useState(oldNomineePhone ?? '');
-//   const [relashipNominee, setRelashipNominee] = useState<DataType | undefined>(
-//     nomineeList.find(item => item.id === props.profile?.relation_with_nominee),
-//   );
-//   const [error, setError] = useState<FieldError>({});
+        {/* PROFILE */}
+        <View style={$profileSection}>
+          <View style={$profileImageContainer}>
+            <FastImage
+              source={imageURI ? { uri: imageURI } : images.user}
+              style={$profileImage}
+            />
+            <TouchableOpacity style={$changePhotoButton}>
+              <Image source={images.camera} style={$changePhotoIcon as any} />
+            </TouchableOpacity>
+          </View>
 
-//   const nomineeSheet = useRef<TrueSheet>(null);
+          <Text style={$profileName}>{name || translate('editProfile.defaultName')}</Text>
+        </View>
 
-//   const uploadImage = (image: ImagePickerResponse) => {
-//     if ((image.assets?.length ?? 0) > 0) {
-//       setImageURI(image.assets?.[0].uri!);
-//       setImageFormData({
-//         uri: image.assets?.[0].uri!,
-//         name: image.assets?.[0].fileName!,
-//         type: image.assets?.[0].type!,
-//       });
-//     }
-//   };
+        {/* PERSONAL DETAILS */}
+        <View style={$personalDetailsSection}>
+          <Text tx="editProfile.personalDetails" weight="semiBold" style={$sectionTitle} />
 
-//   useFocusEffect(
-//     useCallback(() => {
-//       props.getProfile();
-//       // eslint-disable-next-line react-hooks/exhaustive-deps
-//     }, []),
-//   );
+          <TextField
+            label={translate('editProfile.fullName')}
+            placeholder={translate('editProfile.enterFullName')}
+            value={name}
+            onChangeText={setName}
+            containerStyle={$fieldContainer}
+            inputWrapperStyle={$inputWrapper}
+            style={$inputStyle}
+          />
 
-//   const PhoneIcon = useMemo(
-//     () =>
-//       // eslint-disable-next-line react/no-unstable-nested-components
-//       function (accessoryProps: TextFieldAccessoryProps) {
-//         const currentCountry = countries.find(
-//           item => item.dial_code === countryCode,
-//         );
-//         return (
-//           <TouchableOpacity
-//             disabled={!!oldMobileNumber}
-//             style={[accessoryProps.style, $countryCodeStyle]}
-//             // onPress={() => setShowCountries(true)}
-//           >
-//             <Text>{currentCountry?.dial_code}</Text>
-//           </TouchableOpacity>
-//         );
-//       },
-//     [countryCode, oldMobileNumber],
-//   );
+          {/* PHONE */}
+          <View style={$phoneFieldContainer}>
+            <View style={$countryCodeContainer}>
+              <Text style={$countryCodeText}>{countryCode}</Text>
+            </View>
 
-//   const updateProfileAction = () => {
-//     const params = {
-//       name,
-//       email,
-//       phone: number,
-//       country_code: countryCode,
-//       alternate_phone: alternativeMobile,
-//       dob: dob ? moment(dob).format('YYYY-MM-DD') : undefined,
-//       nominee_name: nomineeName,
-//       nominee_dob: nomineeDOB
-//         ? moment(nomineeDOB).format('YYYY-MM-DD')
-//         : undefined,
-//       nominee_phone: nomineeMobile,
-//       relation_with_nominee: relashipNominee?.id,
-//     };
+            <TextField
+              label={translate('editProfile.mobileNumber')}
+              placeholder={translate('editProfile.enterMobileNumber')}
+              value={mobileNumber}
+              onChangeText={setMobileNumber}
+              keyboardType="phone-pad"
+              containerStyle={$phoneInputContainer}
+              inputWrapperStyle={$inputWrapper}
+              style={$inputStyle}
+            />
+          </View>
 
-//     userSchema
-//       .validate(params, { abortEarly: false, context: { isSignup: false } })
-//       .then(() => {
-//         const formData = new FormData();
-//         formData.append('name', name);
-//         formData.append('phone', number);
-//         formData.append('country_code', countryCode);
-//         formData.append('email', email);
-//         formData.append('alternate_phone', alternativeMobile);
-//         formData.append('dob', dob ? moment(dob).format('YYYY-MM-DD') : '');
-//         formData.append('nominee_name', nomineeName);
-//         formData.append(
-//           'nominee_dob',
-//           nomineeDOB ? moment(nomineeDOB).format('YYYY-MM-DD') : '',
-//         );
-//         formData.append('nominee_phone', nomineeMobile);
-//         formData.append('relation_with_nominee', relashipNominee?.id ?? '');
-//         if (imageFormData) {
-//           formData.append('profile', {
-//             uri: imageFormData.uri,
-//             name: imageFormData.name,
-//             type: imageFormData.type,
-//           });
-//         }
-//         props.update(formData);
-//         setError({});
-//       })
-//       .catch(errors => {
-//         const err = buildError<FieldError>(errors);
-//         setError(err);
-//       });
-//   };
+          <TextField
+            label={translate('editProfile.email')}
+            placeholder={translate('editProfile.enterEmail')}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            containerStyle={$fieldContainer}
+            inputWrapperStyle={$inputWrapper}
+            style={$inputStyle}
+          />
 
-//   useEffect(() => {
-//     if (props.loading === 'loaded') {
-//       props.navigation.goBack();
-//       props.reset();
-//     }
-//   }, [props]);
+          <TextField
+            label={translate('editProfile.location')}
+            placeholder={translate('editProfile.enterLocation')}
+            value={location}
+            onChangeText={setLocation}
+            containerStyle={$fieldContainer}
+            inputWrapperStyle={$inputWrapper}
+            style={$inputStyle}
+            RightAccessory={LocationIcon}
+          />
 
-//   return (
-//     <>
-//       <Screen
-//         preset="scroll"
-//         safeAreaEdges={['top', 'bottom']}
-//         contentContainerStyle={$container}
-//       >
-//         <BackButtom headingTx="editProfile.heading" />
-//         <View style={$header}>
-//           <View style={$mainImageView}>
-//             <FastImage
-//               source={imageURI ? { uri: imageURI } : images.vector}
-//               style={$mainImage}
-//             />
-//             <TouchableOpacity
-//               style={$editImage}
-//               onPress={() => setImagePickerVisible(true)}
-//             >
-//               <Image source={images.upload} />
-//             </TouchableOpacity>
-//           </View>
-//           <View style={$wrapUserDetail}>
-//             <Text text={oldName} size="xl" weight="semiBold" />
-//             <Text
-//               text={oldCountryCode + oldMobileNumber}
-//               size="xs"
-//               weight="medium"
-//             />
-//             <Text text={oldEmail} size="xs" weight="medium" />
-//           </View>
-//         </View>
-//         <View style={$inputContainer}>
-//           <TextField
-//             LabelTextProps={{
-//               style: $inputLabel,
-//             }}
-//             HelperTextProps={{
-//               style: $helperInputText,
-//             }}
-//             containerStyle={$fields}
-//             placeholderTextColor={colors.palette.grayLight}
-//             inputWrapperStyle={$inputWrapper}
-//             style={$inputStyle}
-//             value={name}
-//             onChangeText={setName}
-//             labelTx="editProfile.fullName"
-//             placeholderTx="editProfile.namePlaceholder"
-//             helperTx={error?.name}
-//             status={error?.name ? 'error' : undefined}
-//           />
-//           <TextField
-//             LabelTextProps={{
-//               style: $inputLabel,
-//             }}
-//             HelperTextProps={{
-//               style: $helperInputText,
-//             }}
-//             containerStyle={$fields}
-//             placeholderTextColor={colors.palette.grayLight}
-//             inputWrapperStyle={$inputWrapper}
-//             style={$inputStyle}
-//             keyboardType="email-address"
-//             value={email}
-//             editable={!oldEmail}
-//             onChangeText={setEmail}
-//             labelTx="editProfile.emailAddress"
-//             placeholderTx="editProfile.emailPlaceholder"
-//             helperTx={error?.email}
-//             status={error?.email ? 'error' : undefined}
-//           />
-//           <TextField
-//             LabelTextProps={{
-//               style: $inputLabel,
-//             }}
-//             HelperTextProps={{
-//               style: $helperInputText,
-//             }}
-//             containerStyle={$fields}
-//             placeholderTextColor={colors.palette.grayLight}
-//             inputWrapperStyle={$inputWrapper}
-//             style={$inputStyle}
-//             keyboardType="phone-pad"
-//             value={number}
-//             editable={!oldMobileNumber}
-//             onChangeText={setNumber}
-//             labelTx="editProfile.phoneNumber"
-//             placeholderTx="editProfile.phonePlaceholder"
-//             LeftAccessory={PhoneIcon}
-//             helperTx={error?.phone}
-//             status={error?.phone ? 'error' : undefined}
-//           />
-//           <TextField
-//             LabelTextProps={{
-//               style: $inputLabel,
-//             }}
-//             HelperTextProps={{
-//               style: $helperInputText,
-//             }}
-//             containerStyle={$fields}
-//             placeholderTextColor={colors.palette.grayLight}
-//             inputWrapperStyle={$inputWrapper}
-//             style={$inputStyle}
-//             keyboardType="phone-pad"
-//             value={alternativeMobile}
-//             onChangeText={setAlternativeMobile}
-//             labelTx="editProfile.mobileNumberAlernative"
-//             placeholderTx="editProfile.mobilePlaceholderAlernative"
-//             LeftAccessory={PhoneIcon}
-//             helperTx={error?.alternate_phone}
-//             status={error?.alternate_phone ? 'error' : undefined}
-//           />
-//           <TouchableOpacity
-//             onPress={() => setShowDatePicker(true)}
-//             activeOpacity={0.8}
-//           >
-//             <TextField
-//               editable={false}
-//               pointerEvents="none"
-//               LabelTextProps={{
-//                 style: $inputLabel,
-//               }}
-//               containerStyle={$fields}
-//               placeholderTextColor={colors.palette.grayLight}
-//               inputWrapperStyle={$inputWrapper}
-//               style={$inputStyle}
-//               value={dob ? moment(dob).format('DD/MM/YYYY') : ''}
-//               labelTx="editProfile.dobBirth"
-//               placeholderTx="editProfile.dobPlaceholder"
-//               helperTx={error?.dob}
-//               status={error?.dob ? 'error' : undefined}
-//             />
-//           </TouchableOpacity>
-//           <TextField
-//             LabelTextProps={{
-//               style: $inputLabel,
-//             }}
-//             HelperTextProps={{
-//               style: $helperInputText,
-//             }}
-//             containerStyle={$fields}
-//             placeholderTextColor={colors.palette.grayLight}
-//             inputWrapperStyle={$inputWrapper}
-//             style={$inputStyle}
-//             value={nomineeName}
-//             onChangeText={setNomineeName}
-//             labelTx="editProfile.nomineeName"
-//             placeholderTx="editProfile.nomineeNamePlaceholder"
-//             helperTx={error?.nominee_name}
-//             status={error?.nominee_name ? 'error' : undefined}
-//           />
-//           <TouchableOpacity
-//             onPress={() => setNomineeDOBPicker(true)}
-//             activeOpacity={0.8}
-//           >
-//             <TextField
-//               editable={false}
-//               pointerEvents="none"
-//               LabelTextProps={{
-//                 style: $inputLabel,
-//               }}
-//               containerStyle={$fields}
-//               placeholderTextColor={colors.palette.grayLight}
-//               inputWrapperStyle={$inputWrapper}
-//               style={$inputStyle}
-//               value={nomineeDOB ? moment(nomineeDOB).format('DD/MM/YYYY') : ''}
-//               labelTx="editProfile.nomineeDOB"
-//               placeholderTx="editProfile.nomineeDOBPlaceholder"
-//               helperTx={error?.nominee_dob}
-//               status={error?.nominee_dob ? 'error' : undefined}
-//             />
-//           </TouchableOpacity>
-//           <TextField
-//             LabelTextProps={{
-//               style: $inputLabel,
-//             }}
-//             HelperTextProps={{
-//               style: $helperInputText,
-//             }}
-//             containerStyle={$fields}
-//             placeholderTextColor={colors.palette.grayLight}
-//             inputWrapperStyle={$inputWrapper}
-//             style={$inputStyle}
-//             value={nomineeMobile}
-//             onChangeText={setNomineeMobile}
-//             labelTx="editProfile.nomineePhone"
-//             placeholderTx="editProfile.nomineePhonePlaceholder"
-//             helperTx={error?.nominee_phone}
-//             status={error?.nominee_phone ? 'error' : undefined}
-//           />
+          <TextField
+            label={translate('editProfile.address')}
+            placeholder={translate('editProfile.enterAddress')}
+            value={address}
+            onChangeText={setAddress}
+            containerStyle={$fieldContainer}
+            inputWrapperStyle={$inputWrapper}
+            style={$inputStyle}
+          />
 
-//           <TouchableOpacity onPress={() => nomineeSheet.current?.present()}>
-//             <TextField
-//               editable={false}
-//               pointerEvents="none"
-//               value={
-//                 relashipNominee?.name ? translate(relashipNominee.name) : ''
-//               }
-//               labelTx="editProfile.relationshipNominee"
-//               placeholderTx="editProfile.relationshipNomineePlaceholder"
-//               LabelTextProps={{
-//                 style: $inputLabel,
-//               }}
-//               HelperTextProps={{
-//                 style: $helperInputText,
-//               }}
-//               containerStyle={$fields}
-//               placeholderTextColor={colors.palette.grayLight}
-//               inputWrapperStyle={$inputWrapper}
-//               style={$inputStyle}
-//               LeftAccessory={leftAccessory(images.relationshipIcon)}
-//               RightAccessory={DropDownRightAccessory}
-//               helperTx={error?.relation_with_nominee}
-//               status={error?.relation_with_nominee ? 'error' : undefined}
-//             />
-//           </TouchableOpacity>
+          <TextField
+            label={translate('editProfile.state')}
+            placeholder={translate('editProfile.enterState')}
+            value={state}
+            onChangeText={setState}
+            containerStyle={$fieldContainer}
+            inputWrapperStyle={$inputWrapper}
+            style={$inputStyle}
+          />
 
-//           <Button
-//             tx="editProfile.updateProfile"
-//             style={$buttonStyle}
-//             onPress={updateProfileAction}
-//           />
-//         </View>
-//       </Screen>
-//       <CountryPickerModal
-//         onSelect={data => {
-//           setCountryCode(data.dial_code);
-//           setShowCountries(false);
-//         }}
-//         modalVisible={showCountries}
-//         onClose={() => {
-//           setShowCountries(false);
-//         }}
-//       />
-//       <CustomImagePicker
-//         imagePickerModal={imagePickerVisible}
-//         onDismiss={() => setImagePickerVisible(false)}
-//         callback={uploadImage}
-//       />
-//       <DatePickerModal
-//         mode="date"
-//         display="auto"
-//         visible={showDatePicker}
-//         onChangeDate={setDOB}
-//         maximumDate={
-//           new Date(new Date().setFullYear(new Date().getFullYear() - 18))
-//         }
-//         value={dob ?? new Date()}
-//         onDismiss={() => setShowDatePicker(false)}
-//       />
-//       <DatePickerModal
-//         mode="date"
-//         display="auto"
-//         visible={showNomineeDOBPicker}
-//         onChangeDate={setNomineeDOB}
-//         maximumDate={
-//           new Date(new Date().setFullYear(new Date().getFullYear() - 18))
-//         }
-//         value={nomineeDOB ?? new Date()}
-//         onDismiss={() => setNomineeDOBPicker(false)}
-//       />
-//       <DropDownList
-//         title="editProfile.relationshipNominee"
-//         ref={nomineeSheet}
-//         data={nomineeList}
-//         selectedId={relashipNominee?.id}
-//         onSelect={data => setRelashipNominee(data)}
-//         sizes={sizeForSheet(nomineeList.length, insets)}
-//       />
-//       <Loader loading={props.loading === 'loading'} />
-//     </>
-//   );
-// };
+          <TextField
+            label={translate('editProfile.pincode')}
+            placeholder={translate('editProfile.enterPincode')}
+            value={pincode}
+            onChangeText={setPincode}
+            keyboardType="numeric"
+            containerStyle={$fieldContainer}
+            inputWrapperStyle={$inputWrapper}
+            style={$inputStyle}
+          />
 
-// const $container: ViewStyle = {
-//   flexGrow: 1,
-// };
+          <TextField
+            label={translate('editProfile.dateOfBirth')}
+            placeholder={translate('editProfile.enterDateOfBirth')}
+            value={dob}
+            onChangeText={setDOB}
+            containerStyle={$fieldContainer}
+            inputWrapperStyle={$inputWrapper}
+            style={$inputStyle}
+          />
+        </View>
 
-// const $header: ViewStyle = {
-//   alignItems: 'center',
-//   flexDirection: 'row',
-//   marginTop: spacing.sm,
-//   borderRadius: spacing.xs,
-//   marginHorizontal: spacing.md,
-//   backgroundColor: colors.palette.white,
-// };
+        {/* BUTTON */}
+        <Button
+          text={translate('editProfile.updateProfile')}
+          style={$updateButton}
+          onPress={updateProfileAction}
+        />
+      </Screen>
 
-// const $mainImageView: ViewStyle = {
-//   width: 115,
-//   height: 115,
-//   margin: spacing.md,
-// };
+      <Loader loading={updateCustomerProfileLoading === 'loading' as any} />
+    </>
+  );
+};
 
-// const $mainImage: ImageStyle = {
-//   width: '100%',
-//   height: '100%',
-//   borderWidth: 1,
-//   borderRadius: spacing.xs,
-// };
+/* ================== STYLES ================== */
 
-// const $wrapUserDetail: ViewStyle = {
-//   flex: 1,
-//   gap: spacing.xs,
-// };
+const $container: ViewStyle = {
+  flexGrow: 1,
+  backgroundColor: '#F3F4F6',
+};
 
-// const $inputContainer: ViewStyle = {
-//   marginTop: spacing.sm,
-//   borderRadius: spacing.xs,
-//   marginHorizontal: spacing.md,
-//   backgroundColor: colors.palette.white,
-// };
+const $profileSection: ViewStyle = {
+  alignItems: 'center',
+  paddingVertical: 24,
+  backgroundColor: '#F8F9FB',
+};
 
-// const $fields: ViewStyle = {
-//   marginHorizontal: spacing.md,
-//   marginTop: spacing.sm,
-// };
+const $profileImageContainer: ViewStyle = {
+  position: 'relative',
+};
 
-// const $inputWrapper: ViewStyle = {
-//   borderWidth: 1,
-//   borderRadius: spacing.xs,
-//   backgroundColor: colors.palette.white,
-// };
+const $profileImage: ImageStyle = {
+  width: 110,
+  height: 110,
+  borderRadius: 55,
+};
 
-// const $inputStyle: TextStyle = {
-//   color: colors.palette.black,
-// };
+const $changePhotoButton: ViewStyle = {
+  position: 'absolute',
+  bottom: 5,
+  right: 5,
+  backgroundColor: '#fff',
+  borderRadius: 20,
+  width: 32,
+  height: 32,
+  justifyContent: 'center',
+  alignItems: 'center',
+  elevation: 3,
+};
 
-// const $buttonStyle: ViewStyle = {
-//   margin: spacing.md,
-//   marginTop: spacing.lg,
-//   borderRadius: spacing.xs,
-// };
+const $changePhotoIcon: ImageStyle = {
+  width: 18,
+  height: 18,
+};
 
-// const $editImage: ViewStyle = {
-//   top: -10,
-//   right: -10,
-//   position: 'absolute',
-// };
+const $profileName: TextStyle = {
+  fontSize: 20,
+  fontWeight: '600',
+  marginTop: 10,
+};
 
-// const $countryCodeStyle: ViewStyle = {
-//   flexDirection: 'row',
-//   height: spacing.lg,
-//   marginVertical: spacing.sm,
-// };
+const $personalDetailsSection: ViewStyle = {
+  backgroundColor: '#fff',
+  marginTop: 10,
+  padding: 16,
+  borderTopLeftRadius: 20,
+  borderTopRightRadius: 20,
+};
 
-// const $inputLabel: TextStyle = {
-//   marginStart: 0,
-//   marginBottom: spacing.xs,
-// };
+const $sectionTitle: TextStyle = {
+  fontSize: 18,
+  fontWeight: '600',
+  marginBottom: 20,
+};
 
-// const $helperInputText: TextStyle = {
-//   marginStart: 0,
-// };
+const $fieldContainer: ViewStyle = {
+  marginBottom: 16,
+};
 
-// const mapStateToProps = (state: RootState) => ({
-//   profile: state.auth.myProfile?.data,
-//   loading: state.auth.updateLoading,
-//   baseUrl: state.home.baseURl,
-// });
+const $inputWrapper: ViewStyle = {
+  borderWidth: 1,
+  borderColor: '#E5E7EB',
+  borderRadius: 10,
+  backgroundColor: '#F9FAFB',
+  paddingHorizontal: 12,
+  height: 50,
+  justifyContent: 'center',
+};
 
-// const mapDispatch = {
-//   getProfile,
-//   update: (params: FormData) => updateProfile(params),
-//   reset: () => authActions.resetUpdateLoading(),
-// };
+const $inputStyle: TextStyle = {
+  fontSize: 15,
+  color: '#111',
+};
 
-// const connector = connect(mapStateToProps, mapDispatch);
+const $phoneFieldContainer: ViewStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 16,
+};
 
-// export const EditProfileScreen = connector(EditProfile);
+const $countryCodeContainer: ViewStyle = {
+  height: 50,
+  borderWidth: 1,
+  borderColor: '#E5E7EB',
+  borderRadius: 10,
+  justifyContent: 'center',
+  paddingHorizontal: 12,
+  marginRight: 8,
+  backgroundColor: '#F3F4F6',
+};
+
+const $countryCodeText: TextStyle = {
+  fontSize: 16,
+  fontWeight: '500',
+};
+
+const $phoneInputContainer: ViewStyle = {
+  flex: 1,
+};
+
+const $locationIcon: ImageStyle = {
+  width: 18,
+  height: 18,
+};
+
+const $updateButton: ViewStyle = {
+  marginHorizontal: 16,
+  marginVertical: 20,
+  backgroundColor: '#0B5ED7',
+  borderRadius: 10,
+  height: 55,
+  justifyContent: 'center',
+};
+
+/* ================== REDUX ================== */
+
+const mapStateToProps = (state: RootState) => ({
+  customerProfile: state.profile.customerProfile,
+  updateCustomerProfileLoading: state.profile.updateCustomerProfileLoading,
+  baseUrl: state.setting.basic?.base_url,
+});
+
+const mapDispatch = {
+  getCustomerProfile,
+  updateCustomerProfile,
+  resetUpdateCustomerProfileLoading,
+};
+
+const connector = connect(mapStateToProps, mapDispatch);
+
+export const EditProfileScreen = connector(EditProfile);

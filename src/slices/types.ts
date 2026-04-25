@@ -57,6 +57,68 @@ export interface Job {
   job_applied: boolean
   bids: Bid[]
 }
+
+
+export interface UserProof {
+  id: number;
+  user_id: string;
+  proof_type: string;
+  id_number: string;
+  expiry_date: string;
+  front_image: string;
+  back_image: string;
+  created_at: string;
+  updated_at: string;
+  is_verified: number;
+}
+
+export interface ClientProfile {
+  id: number;
+  name: string;
+  email: string;
+  email_verified_at: string | null;
+  dob: string | null;
+  phone: string;
+  photo: string | null;
+  gender: string | null;
+  created_at: string;
+  updated_at: string;
+  user_type: string;
+
+  alternate_phone: string | null;
+  relation_with_nominee: string | null;
+
+  is_verified: string;
+  refrence: string | null;
+  refral_code: string | null;
+
+  latitude: string | null;
+  longitude: string | null;
+
+  skills: string;
+  experience: string | null;
+
+  street_address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  pincode: string | null;
+
+  profile_image: string | null;
+  profile_title: string | null;
+  profile_description: string | null;
+
+  user_proof: UserProof | null;
+
+  job_success_score: number;
+  total_jobs: number;
+  total_earnings: number;
+
+  is_top_rated: boolean;
+  categories: string[];
+}
+
+
 export interface Bid {
   id: number
   project_id: string
@@ -66,5 +128,5 @@ export interface Bid {
   freelancer_image: string
   date_time: string
   is_hired: boolean
-  description: string
+  work_description: string
 }

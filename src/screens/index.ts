@@ -30,9 +30,9 @@ export * from './ChatScreen';
 
 
 // export * from './NotificationScreen';
-// export * from './ProfileScreen';
+export * from './ProfileScreen';
 // export * from './FAQScreen';
-// export * from './EditProfileScreen';
+export * from './EditProfileScreen';
 // export * from './SavedAddressScreen';
 // export * from './AddAddress';
 // export * from './ReferEarnScreen';

@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
-import { Job, LoadStatus } from './types';
+import { ClientProfile, Job, LoadStatus } from './types';
 import URLs from '../config/urls';
 import api from '../apis/api';
 import { navigationRef } from '../navigators';
@@ -98,15 +98,40 @@ export const hireJob = createAsyncThunk(
   },
 );
 
+
+export type profileParams = {
+  id: number;
+};
+export const getFreelancerProfile = createAsyncThunk(
+  'job/freelancer-profile',
+  async (params: profileParams, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.clientProfile,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data.profile;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
 export type JobState = {
   createloading: LoadStatus;
   jobListLoading: LoadStatus;
   jobDetailLoading: LoadStatus;
   hireJobLoading: LoadStatus;
+  clientProfileLoading: LoadStatus;
 
   jobList: Job[];
   totalCountJobs: number;
   jobDetail: Job | undefined;
+  clientProfile: ClientProfile | undefined;
 
   error: any;
 };
@@ -116,10 +141,12 @@ const jobState: JobState = {
   jobListLoading: 'idle',
   jobDetailLoading: 'idle',
   hireJobLoading: 'idle',
+  clientProfileLoading: 'idle',
 
   jobList: [],
   totalCountJobs: 10,
   jobDetail: undefined,
+  clientProfile: undefined,
 
   error: null,
 };
@@ -188,6 +215,21 @@ export const jobSlice = createSlice({
       })
       .addCase(hireJob.rejected, (state, action) => {
         state.hireJobLoading = 'failed';
+        state.error = action.payload;
+      });
+
+    // Freelancer Profile
+    builder
+      .addCase(getFreelancerProfile.pending, state => {
+        state.clientProfileLoading = 'loading';
+      })
+      .addCase(getFreelancerProfile.fulfilled, (state, action) => {
+        state.clientProfileLoading = 'loaded';
+        console.log('Freelancer Profile API Response:', action.payload);
+        state.clientProfile = action.payload;
+      })
+      .addCase(getFreelancerProfile.rejected, (state, action) => {
+        state.clientProfileLoading = 'failed';
         state.error = action.payload;
       });
   },

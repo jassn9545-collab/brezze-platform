@@ -16,6 +16,7 @@ export const images = {
   service: require('../assets/images/serviceIcon.png'),
   chat: require('../assets/images/chat.png'),
   professionalProfile: require('../assets/images/profileIcon.png'),
+  profile: require('../assets/images/profileIcon.png'),
   //
 
   categories: require('../assets/images/electrician.png'),
