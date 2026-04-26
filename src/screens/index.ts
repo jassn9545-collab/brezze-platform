@@ -33,6 +33,8 @@ export * from './ChatScreen';
 export * from './ProfileScreen';
 // export * from './FAQScreen';
 export * from './EditProfileScreen';
+export * from './CompleteJob';
+export * from './ReviewScreen';
 // export * from './SavedAddressScreen';
 // export * from './AddAddress';
 // export * from './ReferEarnScreen';

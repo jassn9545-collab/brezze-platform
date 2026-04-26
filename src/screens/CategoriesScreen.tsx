@@ -8,9 +8,9 @@ import {
 } from 'react-native';
 import React, { FC } from 'react';
 import { images } from '../theme';
-import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
+import { AppStackScreenProps } from '../navigators/AppStack';
 
-type NavigationProps = AppBottomTabScreenProps<'Categories'>;
+type NavigationProps = AppStackScreenProps<'Categories'>;
 // type StoreProps = ConnectedProps<typeof connector>;
 type Props = NavigationProps;
 

@@ -98,6 +98,51 @@ export const hireJob = createAsyncThunk(
   },
 );
 
+export type CompleteJobParams = {
+  job_id: number;
+};
+export const completeJob = createAsyncThunk(
+  'job/complete-job',
+  async (params: CompleteJobParams, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.completeJob,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export type SubmitReviewParams = {
+  project_id: string;
+  star: string;
+  review: string;
+};
+export const submitReview = createAsyncThunk(
+  'job/submit-review',
+  async (params: SubmitReviewParams, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.submitReview,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: JSON.stringify(params),
+      });
+      return response.data.data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 
 export type profileParams = {
   id: number;
@@ -126,6 +171,8 @@ export type JobState = {
   jobListLoading: LoadStatus;
   jobDetailLoading: LoadStatus;
   hireJobLoading: LoadStatus;
+  completeJobLoading: LoadStatus;
+  submitReviewLoading: LoadStatus;
   clientProfileLoading: LoadStatus;
 
   jobList: Job[];
@@ -141,6 +188,8 @@ const jobState: JobState = {
   jobListLoading: 'idle',
   jobDetailLoading: 'idle',
   hireJobLoading: 'idle',
+  completeJobLoading: 'idle',
+  submitReviewLoading: 'idle',
   clientProfileLoading: 'idle',
 
   jobList: [],
@@ -215,6 +264,32 @@ export const jobSlice = createSlice({
       })
       .addCase(hireJob.rejected, (state, action) => {
         state.hireJobLoading = 'failed';
+        state.error = action.payload;
+      });
+
+    // Complete Job
+    builder
+      .addCase(completeJob.pending, state => {
+        state.completeJobLoading = 'loading';
+      })
+      .addCase(completeJob.fulfilled, state => {
+        state.completeJobLoading = 'loaded';
+      })
+      .addCase(completeJob.rejected, (state, action) => {
+        state.completeJobLoading = 'failed';
+        state.error = action.payload;
+      });
+
+    // Submit Review
+    builder
+      .addCase(submitReview.pending, state => {
+        state.submitReviewLoading = 'loading';
+      })
+      .addCase(submitReview.fulfilled, state => {
+        state.submitReviewLoading = 'loaded';
+      })
+      .addCase(submitReview.rejected, (state, action) => {
+        state.submitReviewLoading = 'failed';
         state.error = action.payload;
       });
 

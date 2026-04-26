@@ -36,11 +36,14 @@ const URLs = {
   jobList: '/client/my-jobs',
   jobDetail: '/client/job-details',
   hireJob: '/client/hire-now',
+  completeJob: '/client/job-mark-completed',
   // clent profile
   clientProfile: '/client/freelancer-profile',
   // prfile
   customerProfile: '/client/my-profile',
-  updateCustomerProfile: 'client/update-profile',
+  updateCustomerProfile: '/client/update-profile',
+  // Review Api 
+  submitReview: '/submit-review',
 };
 
 export default URLs;

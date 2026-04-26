@@ -3,18 +3,20 @@ import { translate } from '../i18n';
 import {
   Image,
   TouchableOpacity,
-  View,
+  TextInput,
   TextStyle,
+  View,
   ViewStyle,
 } from 'react-native';
 import FastImage, { ImageStyle } from '@d11/react-native-fast-image';
 import { useFocusEffect } from '@react-navigation/native';
 import { connect, ConnectedProps } from 'react-redux';
-
-import {  images,  } from '../theme';
+import { images } from '../theme';
 import {
   BackButtom,
   Button,
+  Country,
+  CountryPickerModal,
   Loader,
   Screen,
   Text,
@@ -27,6 +29,7 @@ import {
   updateCustomerProfile,
   resetUpdateCustomerProfileLoading,
 } from '../slices/profile.slice';
+import { DefaultCountry } from '../config/defaults';
 
 type NavigationProps = AppStackScreenProps<'EditProfile'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
@@ -46,7 +49,6 @@ const EditProfile: FC<Props> = props => {
     resetUpdateCustomerProfileLoading,
   } = props;
 
-  // 🔹 Initial Values
   const [imageURI] = useState(
     customerProfile?.profile_image
       ? baseUrl + '/' + customerProfile.profile_image
@@ -55,22 +57,21 @@ const EditProfile: FC<Props> = props => {
 
   const [name, setName] = useState(customerProfile?.name ?? '');
   const [email, setEmail] = useState(customerProfile?.email ?? '');
-  const [countryCode] = useState(`+${customerProfile?.country_code ?? '91'}`);
   const [mobileNumber, setMobileNumber] = useState(customerProfile?.phone ?? '');
   const [location, setLocation] = useState(customerProfile?.location ?? '');
   const [address, setAddress] = useState(customerProfile?.street_address ?? '');
   const [state, setState] = useState(customerProfile?.state ?? '');
   const [pincode, setPincode] = useState(customerProfile?.pincode ?? '');
   const [dob, setDOB] = useState(customerProfile?.dob ?? '');
+  const [country, setCountry] = useState<Country>(DefaultCountry);
+  const [showCountries, setShowCountries] = useState(false);
 
-  // 🔹 Fetch Profile
   useFocusEffect(
     useCallback(() => {
       getCustomerProfile();
     }, [getCustomerProfile]),
   );
 
-  // 🔹 Update Profile
   const updateProfileAction = () => {
     const params = {
       name,
@@ -84,26 +85,16 @@ const EditProfile: FC<Props> = props => {
     updateCustomerProfile(params);
   };
 
-  // 🔹 Success Navigation
   useEffect(() => {
     if (updateCustomerProfileLoading === 'loaded') {
       navigation.goBack();
       resetUpdateCustomerProfileLoading();
     }
-  }, [updateCustomerProfileLoading, resetUpdateCustomerProfileLoading, navigation]);
+  }, [updateCustomerProfileLoading, navigation, resetUpdateCustomerProfileLoading]);
 
-  console.log('Customer Profile Data:', customerProfile);
-  console.log('Loading State:', updateCustomerProfileLoading);
-  
-  
   return (
     <>
-      <Screen
-        preset="scroll"
-        safeAreaEdges={['top', 'bottom']}
-        contentContainerStyle={$container}
-      >
-        {/* HEADER */}
+      <Screen preset="scroll" contentContainerStyle={$container}>
         <BackButtom heading={translate('editProfile.heading')} />
 
         {/* PROFILE */}
@@ -118,12 +109,16 @@ const EditProfile: FC<Props> = props => {
             </TouchableOpacity>
           </View>
 
-          <Text style={$profileName}>{name || translate('editProfile.defaultName')}</Text>
+          <Text style={$profileName}>
+            {name || translate('editProfile.defaultName')}
+          </Text>
         </View>
 
-        {/* PERSONAL DETAILS */}
+        {/* DETAILS */}
         <View style={$personalDetailsSection}>
-          <Text tx="editProfile.personalDetails" weight="semiBold" style={$sectionTitle} />
+          <Text style={$sectionTitle}>
+            {translate('editProfile.personalDetails')}
+          </Text>
 
           <TextField
             label={translate('editProfile.fullName')}
@@ -135,21 +130,25 @@ const EditProfile: FC<Props> = props => {
             style={$inputStyle}
           />
 
-          {/* PHONE */}
+          {/* ✅ FIXED PHONE FIELD */}
+          <Text style={$label}>Mobile Number</Text>
           <View style={$phoneFieldContainer}>
-            <View style={$countryCodeContainer}>
-              <Text style={$countryCodeText}>{countryCode}</Text>
-            </View>
+            <TouchableOpacity
+              style={$countryBox}
+              onPress={() => setShowCountries(true)}
+            >
+              <Text style={$countryText}>{country.dial_code}</Text>
+            </TouchableOpacity>
 
-            <TextField
-              label={translate('editProfile.mobileNumber')}
-              placeholder={translate('editProfile.enterMobileNumber')}
+            <TextInput
+              placeholder="Enter mobile number"
               value={mobileNumber}
-              onChangeText={setMobileNumber}
+              onChangeText={text =>
+                setMobileNumber(text.replace(/[^0-9]/g, ''))
+              }
               keyboardType="phone-pad"
-              containerStyle={$phoneInputContainer}
-              inputWrapperStyle={$inputWrapper}
-              style={$inputStyle}
+              maxLength={10}
+              style={$phoneInput}
             />
           </View>
 
@@ -166,12 +165,10 @@ const EditProfile: FC<Props> = props => {
 
           <TextField
             label={translate('editProfile.location')}
-            placeholder={translate('editProfile.enterLocation')}
             value={location}
             onChangeText={setLocation}
             containerStyle={$fieldContainer}
             inputWrapperStyle={$inputWrapper}
-            style={$inputStyle}
             RightAccessory={LocationIcon}
           />
 
@@ -217,20 +214,28 @@ const EditProfile: FC<Props> = props => {
           />
         </View>
 
-        {/* BUTTON */}
         <Button
-          text={translate('editProfile.updateProfile')}
+          text="Update Profile"
           style={$updateButton}
           onPress={updateProfileAction}
         />
       </Screen>
 
-      <Loader loading={updateCustomerProfileLoading === 'loading' as any} />
+      <CountryPickerModal
+        modalVisible={showCountries}
+        onClose={() => setShowCountries(false)}
+        onSelect={data => {
+          setCountry(data);
+          setShowCountries(false);
+        }}
+      />
+
+      <Loader loading={updateCustomerProfileLoading === 'loading'} />
     </>
   );
 };
 
-/* ================== STYLES ================== */
+/* ================= STYLES ================= */
 
 const $container: ViewStyle = {
   flexGrow: 1,
@@ -240,7 +245,6 @@ const $container: ViewStyle = {
 const $profileSection: ViewStyle = {
   alignItems: 'center',
   paddingVertical: 24,
-  backgroundColor: '#F8F9FB',
 };
 
 const $profileImageContainer: ViewStyle = {
@@ -263,7 +267,6 @@ const $changePhotoButton: ViewStyle = {
   height: 32,
   justifyContent: 'center',
   alignItems: 'center',
-  elevation: 3,
 };
 
 const $changePhotoIcon: ImageStyle = {
@@ -291,6 +294,11 @@ const $sectionTitle: TextStyle = {
   marginBottom: 20,
 };
 
+const $label: TextStyle = {
+  fontSize: 14,
+  marginBottom: 6,
+};
+
 const $fieldContainer: ViewStyle = {
   marginBottom: 16,
 };
@@ -310,30 +318,36 @@ const $inputStyle: TextStyle = {
   color: '#111',
 };
 
+/* 🔥 PHONE FIX */
 const $phoneFieldContainer: ViewStyle = {
   flexDirection: 'row',
   alignItems: 'center',
   marginBottom: 16,
 };
 
-const $countryCodeContainer: ViewStyle = {
+const $countryBox: ViewStyle = {
+  width: 70,
   height: 50,
   borderWidth: 1,
   borderColor: '#E5E7EB',
   borderRadius: 10,
   justifyContent: 'center',
-  paddingHorizontal: 12,
+  alignItems: 'center',
   marginRight: 8,
-  backgroundColor: '#F3F4F6',
 };
 
-const $countryCodeText: TextStyle = {
-  fontSize: 16,
+const $countryText: TextStyle = {
+  fontSize: 14,
   fontWeight: '500',
 };
 
-const $phoneInputContainer: ViewStyle = {
+const $phoneInput: TextStyle = {
   flex: 1,
+  height: 50,
+  borderWidth: 1,
+  borderColor: '#E5E7EB',
+  borderRadius: 10,
+  paddingHorizontal: 12,
 };
 
 const $locationIcon: ImageStyle = {
@@ -342,15 +356,12 @@ const $locationIcon: ImageStyle = {
 };
 
 const $updateButton: ViewStyle = {
-  marginHorizontal: 16,
-  marginVertical: 20,
-  backgroundColor: '#0B5ED7',
-  borderRadius: 10,
+  margin: 16,
   height: 55,
-  justifyContent: 'center',
+  borderRadius: 10,
 };
 
-/* ================== REDUX ================== */
+/* ================= REDUX ================= */
 
 const mapStateToProps = (state: RootState) => ({
   customerProfile: state.profile.customerProfile,

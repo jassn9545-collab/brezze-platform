@@ -50,6 +50,8 @@ export type AppStackParamList = {
   HelpSupport: undefined;
   ChatDetail: undefined;
   EditProfile: undefined;
+  JobCompleted: undefined;
+  ReviewScreen: undefined;
 
   //modal
   CenterModal: Screens.CenterModalParams
@@ -117,6 +119,8 @@ export const AppStack: FC = () => {
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
       <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
+      <Stack.Screen name="JobCompleted" component={Screens.JobCompletedScreen} />
+      <Stack.Screen name="ReviewScreen" component={Screens.ReviewScreen} />
       <Stack.Group
         screenOptions={{
           presentation: 'transparentModal',

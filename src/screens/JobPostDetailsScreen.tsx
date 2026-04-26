@@ -14,7 +14,7 @@ import { Currency } from '../config/defaults';
 import { Bid, Job } from '../slices/types';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
-import { getJobDetail, hireJob, HireJobParams } from '../slices/job.slice';
+import { getJobDetail, hireJob, completeJob, HireJobParams, CompleteJobParams } from '../slices/job.slice';
 import FastImage from '@d11/react-native-fast-image';
 import ListEmptyComponent from '../components/ListEmptyComponent';
 import { BasicData } from '../slices/setting.slice';
@@ -27,23 +27,45 @@ export type JobPostDetailParams = {
 };
 
 const JobPostDetails: FC<Props> = props => {
+  const [currentJobId, setCurrentJobId] = React.useState<number | null>(null);
+  const { route, hireJobLoading, completeJobLoading, get } = props;
+
   useEffect(() => {
-    if (props.route.params?.id) {
-      props.get({ job_id: props.route.params?.id });
+    if (route.params?.id && route.params?.id !== currentJobId) {
+      setCurrentJobId(route.params?.id);
+      get({ job_id: route.params?.id });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.route.params?.id]);
+  }, [route.params?.id, currentJobId, get]);
+
+  // Refresh job details after hire
+  useEffect(() => {
+    if (hireJobLoading === 'loaded' && currentJobId) {
+      get({ job_id: currentJobId });
+    }
+  }, [hireJobLoading, currentJobId, get]);
+
+  // Navigate to JobCompletedScreen after successful job completion
+  useEffect(() => {
+    if (completeJobLoading === 'loaded') {
+      props.navigation.navigate('JobCompleted');
+    }
+  }, [completeJobLoading, props.navigation]);
 
   const onPressProfile = (_data: Bid) => {
-    // console.log(_data,"_data")
-    // Alert.alert("Profile", "Profile clicked");
     props.navigation.navigate('ProfessionalProfile', {id: _data.user_id});
   };
 
   const onPressHire = (data: Bid) => {
-    props.hireJob({ job_id: props.route.params?.id, bid_id: data.id });
+    if (route.params?.id) {
+      props.hireJob({ job_id: route.params?.id, bid_id: data.id });
+    }
   };
 
+  const onPressCompleteJob = () => {
+    if (props.data?.id) {
+      props.completeJob({ job_id: props.data.id });
+    }
+  };
 
   return (
     <>
@@ -54,9 +76,9 @@ const JobPostDetails: FC<Props> = props => {
       >
         <BackButtom headingTx="jobPostDetails.heading" />
         <View style={styles.main}>
-          {props.data && <JobCard item={props.data!} />}
+          {props.data && <JobCard item={props.data} />}
 
-          {props.data?.status === 'active' && (
+          {/* {props.data?.status === 'active' && ( */}
             <>
               <Text
                 weight="semiBold"
@@ -75,6 +97,9 @@ const JobPostDetails: FC<Props> = props => {
                     setting={props.setting!}
                     onPressProfile={onPressProfile}
                     onPressHire={onPressHire}
+                    isHired={info.item.is_hired || false}
+                    hireJobLoading={props.hireJobLoading === 'loading'}
+                    hiredFreelancerName={info.item.is_hired ? info.item.freelancer_name : ''}
                   />
                 )}
                 ListEmptyComponent={
@@ -84,12 +109,28 @@ const JobPostDetails: FC<Props> = props => {
                 }
               />
             </>
-          )}
+          {/* )} */}
         </View>
+        
+        {/* Complete Job Button */}
+        {props.data?.status === "in progress" && (
+          <TouchableOpacity 
+            style={styles.completeJobButton}
+            onPress={onPressCompleteJob}
+          >
+            <Text 
+              weight="semiBold" 
+              text="Complete Job" 
+              style={{ color: colors.palette.white }} 
+            />
+          </TouchableOpacity>
+        )}
       </Screen>
       <Loader
         loading={
-          props.hireJobLoading === 'loading' || props.loading === 'loading'
+          props.hireJobLoading === 'loading' || 
+          props.loading === 'loading' || 
+          props.completeJobLoading === 'loading'
         }
       />
     </>
@@ -97,8 +138,24 @@ const JobPostDetails: FC<Props> = props => {
 };
 
 const JobCard = ({ item }: { item: Job }) => {
+    const statusStyle = getStatusStyle(item.status);
+
   return (
     <View key={item.id} style={styles.card}>
+  <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: statusStyle.backgroundColor },
+          ]}
+        >
+          <Text
+            size="xxs"
+            weight="bold"
+            text={item.status.toUpperCase()}
+            style={{ color: statusStyle.color }}
+          />
+        </View>
+
       <Text size="sm" weight="medium" text={item.title} />
       <ReadMore text={item.description} style={styles.extraSmallText} />
 
@@ -120,6 +177,9 @@ type BidCardProps = ListRenderItemInfo<Bid> & {
   setting: BasicData;
   onPressProfile: (data: Bid) => void;
   onPressHire: (data: Bid) => void;
+  isHired: boolean;
+  hireJobLoading: boolean;
+  hiredFreelancerName: string;
 };
 
 
@@ -129,6 +189,9 @@ const BidCard = ({
   setting,
   onPressProfile,
   onPressHire,
+  isHired,
+  hireJobLoading,
+  hiredFreelancerName,
 }: BidCardProps) => {
 
   return (
@@ -174,16 +237,17 @@ const BidCard = ({
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.primaryBtn}
+              style={[
+                styles.hireBtn,
+                (isHired || hireJobLoading) && styles.hireBtnDisabled
+              ]}
               onPress={() => onPressHire(item)}
+              disabled={isHired || hireJobLoading}
             >
               <Text
                 size="xxs"
                 weight="semiBold"
-                tx="jobPostDetails.hire"
-                txOptions={{
-                  value: item.freelancer_name.split(' ')[0],
-                }}
+                text={isHired ? `Hired ${hiredFreelancerName}` : "Hire"}
                 numberOfLines={1}
                 style={{ color: colors.palette.white }}
               />
@@ -193,6 +257,37 @@ const BidCard = ({
       </View>
     </View>
   );
+};
+
+
+const getStatusStyle = (type: string) => {
+  switch (type) {
+    case 'active':
+      return {
+        backgroundColor: colors.palette.primarylight,
+        color: colors.primary,
+      };
+    case 'inactive':
+      return {
+        backgroundColor: colors.palette.centerColor,
+        color: colors.error,
+      };
+    case 'completed':
+      return {
+        backgroundColor: colors.palette.offGreen,
+        color: colors.palette.green,
+      };
+      case 'in progress':
+        return {
+          backgroundColor: colors.palette.yellowLight,
+          color: colors.palette.yellow,
+        };
+    default:
+      return {
+        backgroundColor: colors.palette.lightGray,
+        color: colors.palette.black,
+      };
+  }
 };
 
 const styles = StyleSheet.create({
@@ -284,6 +379,35 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     backgroundColor: colors.primary,
   },
+  hireBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: spacing.xs,
+    padding: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 36,
+    minWidth: 80,
+  },
+  hireBtnDisabled: {
+    backgroundColor: colors.palette.gray,
+    opacity: 0.6,
+  },
+   statusBadge: {
+      paddingVertical: spacing.xxs,
+      borderRadius: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      alignSelf: 'flex-start',
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    completeJobButton: {
+      backgroundColor: colors.primary,
+      margin: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: spacing.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 });
 
 const mapStateToProps = (state: RootState) => ({
@@ -291,11 +415,13 @@ const mapStateToProps = (state: RootState) => ({
   setting: state.setting.basic,
   loading: state.job.jobDetailLoading,
   hireJobLoading: state.job.hireJobLoading,
+  completeJobLoading: state.job.completeJobLoading,
 });
 
 const mapDispatch = {
   get: getJobDetail,
   hireJob: (params: HireJobParams) => hireJob(params),
+  completeJob: (params: CompleteJobParams) => completeJob(params),
 };
 
 const connector = connect(mapStateToProps, mapDispatch);
