@@ -114,7 +114,6 @@ const EditProfile: FC<Props> = props => {
           </Text>
         </View>
 
-        {/* DETAILS */}
         <View style={$personalDetailsSection}>
           <Text style={$sectionTitle}>
             {translate('editProfile.personalDetails')}
