@@ -280,6 +280,7 @@ const en = {
     logoutConfirmationDesc: 'Are You Sure want to log out?',
     yesLogout: 'Yes, Log Out',
     cancel: 'Cancel',
+    topRated: 'TOP RATED',
   },
   editProfile: {
     personalDetails: 'Personal Details',

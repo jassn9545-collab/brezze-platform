@@ -35,7 +35,7 @@ const CustomDrawer: FC<DrawerContentComponentProps> = props => {
           )}
           {profile?.is_top_rated && (
             <View style={styles.userBadge}>
-              <Text size="xxs" weight="semiBold" text="TOP RATED" />
+              <Text size="xxs" weight="semiBold" tx='profile.topRated' />
             </View>
           )}
         </View>

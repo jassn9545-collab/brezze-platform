@@ -84,7 +84,7 @@ const Profile: FC<Props> = props => {
                 <Text
                   size="xxs"
                   weight="semiBold"
-                  text="TOP RATED"
+                  tx='profile.topRated'
                   style={styles.greenText}
                 />
               </View>

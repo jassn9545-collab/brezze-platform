@@ -109,6 +109,9 @@ export const userVerification = createAsyncThunk(
         data: JSON.stringify(params),
       });
       const data = response.data.data;
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('user_id', data?.user?.id?.toString());
+
       navigationRef.resetRoot({
         index: 1,
         routes: [{ name: 'Signup' }, { name: 'MyDocuments' }],
@@ -602,6 +605,7 @@ export const authSlice = createSlice({
         state.userVerificationLoading = 'loading';
       })
       .addCase(userVerification.fulfilled, (state, action) => {
+        api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
         state.myProfile = action.payload;
         state.userVerificationLoading = 'loaded';
       })
