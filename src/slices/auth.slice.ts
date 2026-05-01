@@ -282,33 +282,33 @@ export const getProfile = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const response = await api({
-        method: 'GET',
+        method: 'POST',
         url: URLs.profile,
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      return response.data as UserDetailsResponse;
+      return response.data.data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }
   },
 );
 
-export const updateCustomerProfile = createAsyncThunk(
-  'auth/update-customer-profile',
+export const updateProfile = createAsyncThunk(
+  'auth/update-profile',
   async (data: FormData, thunkAPI) => {
     try {
       const response = await api({
         method: 'POST',
-        url: URLs.updateCustomerProfile,
+        url: URLs.updateProfile,
         headers: {
           'Content-Type': 'multipart/form-data',
         },
         data,
       });
       toast.show(response.data.message, { type: 'success' });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }
@@ -747,22 +747,22 @@ export const authSlice = createSlice({
       })
       .addCase(getProfile.fulfilled, (state, action) => {
         state.loading = 'loaded';
-        state.myProfile = action.payload;
+        state.myProfile = { user: action.payload.profile };
       })
       .addCase(getProfile.rejected, (state, action) => {
         state.loading = 'failed';
         state.error = action.payload;
       });
-    // Update Customer Profile
+    // Update Profile
     builder
-      .addCase(updateCustomerProfile.pending, state => {
+      .addCase(updateProfile.pending, state => {
         state.updateLoading = 'loading';
       })
-      .addCase(updateCustomerProfile.fulfilled, (state, action) => {
+      .addCase(updateProfile.fulfilled, (state, action) => {
         state.updateLoading = 'loaded';
-        state.myProfile = action.payload;
+        state.myProfile = { user: action.payload };
       })
-      .addCase(updateCustomerProfile.rejected, (state, action) => {
+      .addCase(updateProfile.rejected, (state, action) => {
         state.updateLoading = 'failed';
         state.error = action.error;
       });
@@ -790,20 +790,6 @@ export const authSlice = createSlice({
     //   })
     //   .addCase(getFaqs.rejected, (state, action) => {
     //     state.faqLoading = 'failed';
-    //     state.error = action.payload;
-    //   });
-
-    // // GET REFER EARN DETAIL
-    // builder
-    //   .addCase(getReferEarnDetail.pending, state => {
-    //     state.referEarnLoading = 'loading';
-    //   })
-    //   .addCase(getReferEarnDetail.fulfilled, (state, action) => {
-    //     state.referEarnLoading = 'loaded';
-    //     state.referEarnDetail = action.payload;
-    //   })
-    //   .addCase(getReferEarnDetail.rejected, (state, action) => {
-    //     state.referEarnLoading = 'failed';
     //     state.error = action.payload;
     //   });
 

@@ -1,369 +1,517 @@
-
 import {
+  FlatList,
   StyleSheet,
   View,
-  Image,
   TouchableOpacity,
-  ScrollView,
+  ViewToken,
+  Dimensions,
+  Image,
 } from 'react-native';
-import React, { FC, useEffect } from 'react';
-import { Screen, Text, Loader, BackButtom } from '../components';
-import { spacing,  images } from '../theme';
+import React, { FC, useRef, useState } from 'react';
+import { Screen, Text, BackButtom, Button } from '../components';
+import { colors, spacing, images, typography } from '../theme';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
-import { getCustomerProfile } from '../slices/profile.slice';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../navigators/AppStack';
+import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
+import FastImage from '@d11/react-native-fast-image';
+import { getStatusStyle } from './JobPostListScreen';
+import { Job } from '../slices/types';
+import moment from 'moment';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = ConnectedProps<typeof connector>;
+type NavigationProps = AppBottomTabScreenProps<'Profile'>;
+type StoreProps = ConnectedProps<typeof connector>;
+type Props = NavigationProps & StoreProps;
 
 const ClientProfileScreen: FC<Props> = props => {
-  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
-  const { getCustomerProfile, customerProfile, customerProfileLoading,  } = props;
-  useEffect(() => {
-    getCustomerProfile();
-  }, [getCustomerProfile]);
+  const insets = useSafeAreaInsets();
+  const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 80 });
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const onViewableItemsChanged = React.useMemo(
+    () =>
+      ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+        if (viewableItems.length > 0) {
+          let item = viewableItems[0].index;
+          setSelectedIndex(item ?? 0);
+        }
+      },
+    [],
+  );
 
-  console.log('Customer Profile Data:', customerProfile);
-  console.log('Loading State:', customerProfileLoading);
-  
-  if (customerProfileLoading === 'loading') {
-    return (
-      <Screen preset="fixed" contentContainerStyle={styles.container}>
-        <Loader loading={true} />
-      </Screen>
-    );
-  }
-  
-  console.log(props.setting,"asa")
+  const onPressJob = (data: Job) => {
+    props.navigation.navigate('jobPostDetails', {
+      id: data.id,
+    });
+  };
 
-
-
-
-  
   return (
-    <Screen preset="fixed" contentContainerStyle={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        
-        {/* HEADER */}
-        {/* <View style={styles.header}> */}
-          {/* <Text text="←" style={styles.back} /> */}
-          {/* <Text text={customerProfile?.name || "Loading..."} weight="semiBold" /> */}
-                  <BackButtom heading={customerProfile?.name} />
-          
-          {/* <Text text="⋮" style={styles.menu} /> */}
-        {/* </View> */}
+    <>
+      <BackButtom
+        heading={props.profileData?.name}
+        style={{
+          paddingHorizontal: spacing.md,
+          paddingTop: insets.top + spacing.sm,
+        }}
+      />
 
-        {/* PROFILE */}
+      <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.profileSection}>
           <View style={styles.avatarWrapper}>
-            <Image 
-              source={customerProfile?.profile_image ? { uri: props?.setting?.base_url + "/" + customerProfile.profile_image } : images.profile1} 
-              style={styles.avatar} 
+            <FastImage
+              source={{
+                uri: props.baseURl + '/' + props.profileData?.profile_image,
+              }}
+              style={styles.avatar}
             />
             <View style={styles.tick}>
-              <Text text="✓" style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }} />
+              <Text text="✓" style={{ color: colors.palette.white,}} />
             </View>
           </View>
 
-          <Text text={customerProfile?.name || "Loading..."} weight="semiBold" style={styles.name} />
+          <Text
+            size="md"
+            weight="semiBold"
+            text={props.profileData?.name}
+            style={styles.nameText}
+          />
 
           <Text
-            text={`📍 ${customerProfile?.street_address || "No address available"}`}
-            size="xs"
-            style={styles.gray}
+            size="sm"
+            style={styles.addressText}
             numberOfLines={2}
             ellipsizeMode="tail"
+            text={props.profileData?.street_address}
           />
 
           <View style={styles.verifiedBadge}>
-            <Text text="VERIFIED CLIENT" size="xxs" style={{ color: '#0BAF6E' }} />
-          </View>
-        </View>
-
-        {/* STATS */}
-        <View style={styles.stats}>
-          <View style={styles.statItem}>
-            <Text text={customerProfile?.total_jobs?.toString() || "0"} weight="semiBold" />
-            <Text text="Job Posted" size="xxs" style={styles.gray} />
-          </View>
-
-          <View style={styles.statItem}>
-            <Text text={`${customerProfile?.avg_rating || 0} ⭐`} weight="semiBold" />
-            <Text text="Avg. Rating" size="xxs" style={styles.gray} />
-          </View>
-
-          <View style={styles.statItem}>
-            <Text text={customerProfile?.refral_code || "N/A"} weight="semiBold" />
-            <Text text="Referral Code" size="xxs" style={styles.gray} />
-          </View>
-        </View>
-
-        {/* BUTTONS */}
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            style={styles.editBtn}
-            onPress={() => navigation.navigate('EditProfile')}
-          >
-            <Text tx="profile.editProfile" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.postBtn}>
-            <Text tx="profile.postAJob" style={{ color: '#fff' }} />
-          </TouchableOpacity>
-        </View>
-
-        {/* JOB POSTING */}
-        <View style={styles.section}>
-          <View style={styles.rowBetween}>
-            <Text text="Job Posting Summary" weight="semiBold" />
-            <Text text="View All" style={styles.link} />
-          </View>
-
-          {customerProfile?.last3_jobs?.map((job: any) => (
-            <View key={job.id} style={styles.jobCard}>
-              <Image source={images.switchbox} style={styles.jobImage} />
-
-              <Text
-                text={job.title}
-                weight="medium"
-              />
-
-              <View style={styles.jobRow}>
-                <Text text={`Posted ${new Date(job.created_at).toLocaleDateString()}`} size="xs" style={styles.gray} />
-                <Text text={job.status.toUpperCase()} size="xxs" style={styles.active} />
-              </View>
-
-              <View style={styles.jobRow}>
-                <Text text={`${job.bids_count} Applicants applied`} size="xs" style={styles.gray} />
-                <TouchableOpacity style={styles.viewBtn}>
-                  <Text text="View Details" size="xs" style={{ color: '#fff' }} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* CURRENT HIRING */}
-        <View style={styles.section}>
-          <View style={styles.rowBetween}>
-            <Text text="Current Hiring" weight="semiBold" />
-            <Text text="View All" style={styles.link} />
-          </View>
-
-          {[1, 2].map((item) => (
-            <View key={item} style={styles.hireCard}>
-              <Image source={images.profile1} style={styles.hireImg} />
-
-              <View style={{ flex: 1 }}>
-                <Text text="Michael Rodriguez" weight="medium" />
-                <Text text="Master Electrician" size="xs" style={styles.gray} />
-
-                <View style={styles.chipsRow}>
-                  <View style={styles.chip}>
-                    <Text text="Wiring" size="xxs" />
-                  </View>
-                  <View style={styles.chip}>
-                    <Text text="Emergency Repair" size="xxs" />
-                  </View>
-                </View>
-
-                <Text text="Starting from $45/hr" size="xs" style={styles.gray} />
-              </View>
-
-              <View>
-                <Text text="⭐ 4.9" size="xs" />
-                <TouchableOpacity>
-                  <Text text="View Profile" style={styles.link} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* REVIEWS */}
-        <View style={styles.section}>
-          <View style={styles.rowBetween}>
-            <Text text="Reviews" weight="semiBold" />
-            <Text text="See All (4.8)" style={styles.link} />
-          </View>
-
-          <View style={styles.reviewCard}>
-            <Text text="Sarah Miller" weight="medium" />
-            <Text text="⭐⭐⭐⭐⭐" />
             <Text
-              text="Passionate about home appliances and repair work"
-              size="xs"
-              style={styles.gray}
+              size="xxs"
+              weight="semiBold"
+              tx="profile.verifiedClient"
+              style={styles.verifiedText}
             />
           </View>
         </View>
-      </ScrollView>
-    </Screen>
+
+        <View style={styles.stats}>
+          <View style={styles.statItem}>
+            <Text
+              size="sm"
+              weight="semiBold"
+              numberOfLines={1}
+              text={(props.profileData?.total_jobs ?? 0).toString()}
+            />
+            <Text tx="profile.jobPosted" size="xxs" weight="medium" />
+          </View>
+          <View style={styles.statItem}>
+            <Text
+              text={`${props.profileData?.avg_rating ?? 0} ⭐`}
+              size="sm"
+              weight="semiBold"
+              style={styles.primaryText}
+              numberOfLines={1}
+            />
+            <Text tx="profile.avgRating" size="xxs" weight="medium" />
+          </View>
+          <View style={styles.statItem}>
+            <Text
+              text={props.profileData?.refral_code ?? 'N/A'}
+              size="sm"
+              weight="semiBold"
+              numberOfLines={1}
+            />
+            <Text tx="profile.referralCode" size="xxs" weight="medium" />
+          </View>
+        </View>
+
+        <View style={styles.buttonRow}>
+          <Button
+            textStyle={styles.textStyleBtn}
+            style={styles.editProfileBtn}
+            preset="plus"
+            tx="profile.editProfile"
+            onPress={() => props.navigation.navigate('EditProfile')}
+          />
+          <Button
+            textStyle={styles.textStyleBtn}
+            style={styles.postJobBtn}
+            tx="profile.postAJob"
+          />
+        </View>
+        {(props.profileData?.last3_jobs?.length ?? 0) > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text size="md" weight="semiBold" tx="profile.jobPostSummary" />
+              <TouchableOpacity
+                onPress={() => props.navigation.navigate('JobPostList')}
+              >
+                <Text
+                  size="xxs"
+                  weight="semiBold"
+                  tx="profile.viewAll"
+                  style={{ color: colors.primary }}
+                />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              horizontal
+              pagingEnabled
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={viewConfigRef.current}
+              showsHorizontalScrollIndicator={false}
+              data={props.profileData?.last3_jobs}
+              keyExtractor={item => item?.id?.toString()}
+              renderItem={({ item, index }) => (
+                <SingleJob
+                  item={item}
+                  baseURl={props.baseURl!}
+                  index={index}
+                  onPress={onPressJob}
+                />
+              )}
+            />
+            <View style={styles.dotContainer}>
+              {props.profileData?.last3_jobs.map((data, index) => (
+                <View
+                  key={data.id}
+                  style={[
+                    styles.dotStyle,
+                    index === selectedIndex && {
+                      backgroundColor: colors.primary,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text tx="profile.currentHiring" size="md" weight="semiBold" />
+            <TouchableOpacity
+              onPress={() => props.navigation.navigate('HireHistory')}
+            >
+              <Text
+                size="xxs"
+                weight="semiBold"
+                tx="profile.viewAll"
+                style={{ color: colors.primary }}
+              />
+            </TouchableOpacity>
+          </View>
+        </View> */}
+
+        {/* <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text text="Reviews" size="md" weight="semiBold" />
+            <TouchableOpacity>
+              <Text
+                text={`See All (${props.profileData?.avg_rating ?? 0})`}
+                size="xxs"
+                weight="semiBold"
+                style={{ color: colors.primary }}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.reviewCard}>
+            <View style={styles.reviewHeader}>
+              <FastImage source={images.profile1} style={styles.reviewImage} />
+              <View style={styles.flexOne}>
+                <Text text="Sarah Miller" size="xs" weight="medium" />
+                <Text
+                  text="2 DAYS AGO"
+                  size="xxs"
+                  style={{
+                    color: colors.textDim,
+                  }}
+                />
+              </View>
+              <Text text="⭐⭐⭐⭐⭐" size="xs" />
+            </View>
+            <Text
+              text="Passionate about home appliances and repair work"
+              size="xxs"
+              style={{
+                color: colors.textDim,
+              }}
+            />
+          </View>
+        </View> */}
+      </Screen>
+    </>
+  );
+};
+
+const SingleJob = ({
+  item,
+  index,
+  onPress,
+}: {
+  item: Job;
+  index: number;
+  baseURl: string;
+  onPress: (data: Job) => void;
+}) => {
+  const statusStyle = getStatusStyle(item.status);
+
+  return (
+    <View key={index} style={styles.jobCard}>
+      <View style={styles.jobCardInner}>
+        {/* <FastImage source={{}} style={styles.jobImage} /> */}
+        <View style={styles.jobContent}>
+          <View style={styles.jobRow}>
+            <Text
+              size="sm"
+              weight="medium"
+              text={item?.title}
+              style={styles.flexOne}
+            />
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: statusStyle.backgroundColor },
+              ]}
+            >
+              <Text
+                size="xxs"
+                weight="bold"
+                text={item.status.toUpperCase()}
+                style={{ color: statusStyle.color }}
+              />
+            </View>
+          </View>
+          <View style={styles.jobRow}>
+            <View>
+              <View style={styles.row}>
+                <Image source={images.timeIcon} />
+                <Text
+                  size="xxs"
+                  style={{
+                    color: colors.textDim,
+                  }}
+                  tx="profile.posted"
+                  txOptions={{
+                    value: moment(item.created_at).fromNow(),
+                  }}
+                />
+              </View>
+
+              {(item?.bids_count ?? 0) > 0 && (
+                <View style={styles.row}>
+                  <Image source={images.smallVector} />
+                  <Text
+                    size="xxs"
+                    style={{
+                      color: colors.textDim,
+                    }}
+                    tx="profile.applicantsApplied"
+                    txOptions={{
+                      value: (item?.bids_count ?? 0)?.toString(),
+                    }}
+                  />
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={styles.viewBtn}
+              onPress={() => onPress(item)}
+            >
+              <Text
+                size="xxs"
+                weight="medium"
+                tx="profile.viewDetails"
+                style={styles.whiteText}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F6F8' },
-
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    alignItems: 'center',
+  container: {
+    flexGrow: 1,
+    paddingBottom: spacing.xl,
   },
-
-  back: { fontSize: 18 },
-  menu: { fontSize: 18 },
-
   profileSection: {
     alignItems: 'center',
+    gap: spacing.xxs + 1,
+    marginVertical: spacing.md,
+    marginHorizontal: spacing.md,
   },
-
-  avatarWrapper: { position: 'relative' },
-
-  avatar: { width: 90, height: 90, borderRadius: 45 },
-
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: spacing.xxs,
+    borderColor: colors.palette.offWhite2,
+  },
   tick: {
+    width: spacing.lg,
+    right: spacing.xs,
+    height: spacing.lg,
+    bottom: spacing.xs,
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#2F80ED',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: spacing.sm,
+    backgroundColor: colors.primary,
   },
-
-  name: { marginTop: 8 },
-
-  gray: { color: '#777' },
-
+  nameText: {
+    marginTop: spacing.xs,
+  },
+  addressText: {
+    textAlign: 'center',
+    color: colors.textDim,
+  },
+  primaryText: {
+    color: colors.primary,
+  },
+  whiteText: {
+    color: colors.palette.white,
+  },
   verifiedBadge: {
-    marginTop: 6,
-    backgroundColor: '#E6F7EF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
+    alignSelf: 'center',
+    marginTop: spacing.xxs,
+    borderRadius: spacing.sm,
+    paddingVertical: spacing.xxs,
+    backgroundColor: colors.palette.dimGreen,
   },
-
+  verifiedText: {
+      textAlign: 'center',
+      color: colors.palette.green,
+  },
   stats: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    margin: spacing.md,
-    borderRadius: 10,
+    alignItems: 'center',
+  },
+  statItem: {
+    flex: 1,
+    borderWidth: 1,
     padding: spacing.sm,
+    alignItems: 'center',
+    paddingHorizontal: spacing.xs,
+    borderColor: colors.palette.borderColor,
   },
-
-  statItem: { flex: 1, alignItems: 'center' },
-
   buttonRow: {
+    gap: spacing.sm,
+    alignItems: 'center',
     flexDirection: 'row',
+    marginVertical: spacing.md,
     marginHorizontal: spacing.md,
-    gap: 10,
   },
-
-  editBtn: {
+  editProfileBtn: {
     flex: 1,
-    backgroundColor: '#E5E7EB',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+    borderRadius: spacing.sm,
+    backgroundColor: colors.palette.offWhite2,
   },
-
-  postBtn: {
-    flex: 1,
-    backgroundColor: '#2F80ED',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+  postJobBtn: { flex: 1, borderRadius: spacing.sm },
+  textStyleBtn: {
+    fontSize: spacing.md - spacing.xxxs,
+    fontFamily: typography.primary.semiBold,
   },
-
   section: {
-    backgroundColor: '#fff',
-    margin: spacing.md,
-    padding: spacing.md,
-    borderRadius: 10,
+    paddingTop: spacing.md,
+    marginBottom: spacing.md,
   },
-
-  rowBetween: {
+  sectionHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
     justifyContent: 'space-between',
   },
-
-  link: { color: '#2F80ED' },
-
-  jobCard: { marginTop: 10 },
-
+  dotContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dotStyle: {
+    width: spacing.xs,
+    height: spacing.xs,
+    borderRadius: spacing.xs / 2,
+    marginHorizontal: spacing.xxxs,
+    backgroundColor: colors.palette.darkGray1,
+  },
+  jobCard: {
+    flex: 1,
+    marginBottom: spacing.sm,
+    width: Dimensions.get('window').width,
+  },
+  jobCardInner: {
+    width: '95%',
+    overflow: 'hidden',
+    alignSelf: 'center',
+    borderRadius: spacing.sm,
+    backgroundColor: colors.palette.offWhite2,
+  },
   jobImage: {
     width: '100%',
     height: 150,
-    borderRadius: 10,
-    marginBottom: 8,
   },
-
+  jobContent: {
+    gap: spacing.xxs,
+    padding: spacing.sm,
+  },
   jobRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 4,
+    gap: spacing.sm,
     alignItems: 'center',
+    flexDirection: 'row',
+    marginVertical: spacing.xs,
+    justifyContent: 'space-between',
   },
-
-  active: {
-    backgroundColor: '#D1FAE5',
-    color: '#10B981',
-    paddingHorizontal: 6,
-    borderRadius: 6,
+  statusBadge: {
+    paddingVertical: spacing.xxs,
+    borderRadius: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
-
+  row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xxs + 1,
+    marginTop: spacing.xxs,
+  },
   viewBtn: {
-    backgroundColor: '#2F80ED',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: spacing.xxs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.primary,
   },
-
-  hireCard: {
-    flexDirection: 'row',
-    marginTop: 10,
-    gap: 10,
-  },
-
-  hireImg: { width: 50, height: 50, borderRadius: 8 },
-
-  chipsRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginVertical: 4,
-  },
-
-  chip: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-
   reviewCard: {
-    marginTop: 10,
-    backgroundColor: '#F9FAFB',
-    padding: 10,
-    borderRadius: 8,
+    gap: spacing.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.palette.offWhite2,
+  },
+  reviewHeader: {
+    gap: spacing.sm,
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  reviewImage: {
+    width: spacing.xl,
+    height: spacing.xl,
+    borderRadius: spacing.xl / 2,
+  },
+  flexOne: {
+    flex: 1,
   },
 });
 
 const mapStateToProps = (state: RootState) => ({
-  customerProfile: state.profile.customerProfile,
-  customerProfileLoading: state.profile.customerProfileLoading,
-  setting: state.setting.basic,
+  profileData: state.auth.myProfile?.user,
+  baseURl: state.setting.basic?.base_url,
 });
 
-const mapDispatch = {
-  getCustomerProfile,
-};
-
-const connector = connect(mapStateToProps, mapDispatch);
+const connector = connect(mapStateToProps);
 
 export const ProfileScreen = connector(ClientProfileScreen);

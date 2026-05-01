@@ -256,7 +256,10 @@ const en = {
     viewAll: 'View All',
     viewProfile: 'View Profile',
     hire: 'Hire {{value}}',
-    fixedPrice: 'Fixed Price - Est Budget {{value}}'
+    fixedPrice: 'Fixed Price - Est Budget {{value}}',
+    completeJob: 'Complete Job',
+    hired: 'Hired ',
+    hireText: 'Hire',
   },
   hireHistory: {
     heading: 'Hire History',
@@ -298,7 +301,17 @@ const en = {
     yesLogout: 'Yes, Log Out',
     cancel: 'Cancel',
     editProfile: 'Edit Profile',
-    postAJob: 'Post a Job'
+    postAJob: 'Post a New Job',
+    verifiedClient: 'VERIFIED CLIENT',
+    jobPosted: 'Job Posted',
+    avgRating: 'Avg. Rating',
+    referralCode: 'Referral Code',
+    jobPostSummary: 'Job Posting Summary',
+    posted: 'Posted {{value}}',
+    viewAll: 'View All',
+    applicantsApplied: '{{value}} Applicants applied',
+    viewDetails: 'View Details',
+    currentHiring: 'Current Hiring'
   },
   editProfile: {
     heading: 'Edit Profile',
@@ -320,7 +333,7 @@ const en = {
     enterAddress: 'Enter your address',
     enterState: 'Enter your state',
     enterPincode: 'Enter your pincode',
-    enterDateOfBirth: 'Enter your date of birth'
+    enterDateOfBirth: 'Enter your date of birth',
   },
 
   helpSupport: {

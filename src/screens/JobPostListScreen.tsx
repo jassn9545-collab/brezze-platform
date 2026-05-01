@@ -208,7 +208,7 @@ export const SingleJob = ({
   );
 };
 
-const getStatusStyle = (type: string) => {
+export const getStatusStyle = (type: string) => {
   switch (type) {
     case 'active':
       return {

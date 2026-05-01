@@ -24,28 +24,38 @@ export const getCurrentLoaction = (
   success: (position: GeolocationResponse) => void,
   failed?: (message: string) => void,
 ) => {
-  Geolocation.getCurrentPosition(
-    position => {
-      currentPosition = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      };
-      success(position);
-    },
-    error => {
-      failed?.(error.message);
-      toast.show(error.message, { type: 'danger' });
-      if (Platform.OS === 'android') {
-        _enableGPS();
-      }
-    },
-    {
-      timeout: 20000,
-      enableHighAccuracy: false,
-    },
-  );
-};
+  const fetchLocation = (shouldAskEnableGPS = true) => {
+    Geolocation.getCurrentPosition(
+      position => {
+        currentPosition = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        success(position);
+      },
+      async error => {
+        if (Platform.OS === 'android' && shouldAskEnableGPS) {
+          const enabled = await _enableGPS();
 
+          if (enabled) {
+            setTimeout(() => {
+              fetchLocation(false);
+            }, 1000);
+            return;
+          }
+        }
+
+        failed?.(error.message);
+        toast.show(error.message, { type: 'danger' });
+      },
+      {
+        enableHighAccuracy: false,
+      },
+    );
+  };
+
+  fetchLocation();
+};
 
 const _enableGPS = async () => {
   try {

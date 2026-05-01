@@ -1,357 +1,343 @@
-import React, { FC, useCallback, useEffect, useState } from 'react';
-import { translate } from '../i18n';
+import React, { FC, useEffect, useMemo, useState } from 'react';
+import { TxKeyPath } from '../i18n';
 import {
   Image,
   TouchableOpacity,
-  TextInput,
   TextStyle,
   View,
   ViewStyle,
+  ImageStyle as ImageStyleRN,
+  Keyboard,
 } from 'react-native';
 import FastImage, { ImageStyle } from '@d11/react-native-fast-image';
-import { useFocusEffect } from '@react-navigation/native';
 import { connect, ConnectedProps } from 'react-redux';
-import { images } from '../theme';
+import { colors, images, spacing } from '../theme';
 import {
+  AddressParam,
+  AddressSearchModal,
   BackButtom,
   Button,
-  Country,
   CountryPickerModal,
+  CustomImagePicker,
   Loader,
   Screen,
   Text,
   TextField,
+  TextFieldAccessoryProps,
 } from '../components';
 import { AppStackScreenProps } from '../navigators/AppStack';
 import { RootState } from '../store';
-import {
-  getCustomerProfile,
-  updateCustomerProfile,
-  resetUpdateCustomerProfileLoading,
-} from '../slices/profile.slice';
 import { DefaultCountry } from '../config/defaults';
+import { authActions, updateProfile } from '../slices/auth.slice';
+import { ImagePickerResponse } from 'react-native-image-picker';
+import { AddressType } from '../slices/address.types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { buildError, editProfile, EditProfileParams } from '../apis/schema';
 
 type NavigationProps = AppStackScreenProps<'EditProfile'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
 
-const LocationIcon = () => (
-  <Image source={images.locationPin} style={$locationIcon as any} />
-);
+type FieldError = {
+  name?: TxKeyPath | undefined;
+  email?: TxKeyPath | undefined;
+  phone?: TxKeyPath | undefined;
+  address?: TxKeyPath | undefined;
+};
 
 const EditProfile: FC<Props> = props => {
-  const {
-    customerProfile,
-    baseUrl,
-    updateCustomerProfileLoading,
-    navigation,
-    getCustomerProfile,
-    updateCustomerProfile,
-    resetUpdateCustomerProfileLoading,
-  } = props;
+  const insets = useSafeAreaInsets();
 
-  const [imageURI] = useState(
-    customerProfile?.profile_image
-      ? baseUrl + '/' + customerProfile.profile_image
+  const {
+    oldName = props.profile?.name,
+    oldEmail = props.profile?.email,
+    oldPhone = props.profile?.phone,
+    oldCountryCode = `+${props.profile?.country ?? '91'}`,
+    oldAddress = {
+      address: props.profile?.street_address!,
+      location: {
+        lat: props.profile?.latitude!,
+        lng: props.profile?.longitude!,
+      },
+    },
+  } = {};
+  const [imagePickerVisible, setImagePickerVisible] = useState(false);
+  const [imageURI, setImageURI] = useState(
+    props.profile?.profile_image
+      ? props.baseURl + '/' + props.profile.profile_image
       : '',
   );
+  const [imageFormData, setImageFormData] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
 
-  const [name, setName] = useState(customerProfile?.name ?? '');
-  const [email, setEmail] = useState(customerProfile?.email ?? '');
-  const [mobileNumber, setMobileNumber] = useState(customerProfile?.phone ?? '');
-  const [location, setLocation] = useState(customerProfile?.location ?? '');
-  const [address, setAddress] = useState(customerProfile?.street_address ?? '');
-  const [state, setState] = useState(customerProfile?.state ?? '');
-  const [pincode, setPincode] = useState(customerProfile?.pincode ?? '');
-  const [dob, setDOB] = useState(customerProfile?.dob ?? '');
-  const [country, setCountry] = useState<Country>(DefaultCountry);
+  const [name, setName] = useState(oldName ?? '');
+  const [email, setEmail] = useState(oldEmail ?? '');
+  const [phone, setPhone] = useState(oldPhone ?? '');
+  const [countryCode, setCountryCode] = useState(
+    oldCountryCode ?? DefaultCountry.dial_code,
+  );
   const [showCountries, setShowCountries] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      getCustomerProfile();
-    }, [getCustomerProfile]),
-  );
+  const [address, setAddress] = useState<AddressParam>(oldAddress);
+  const [addressModal, setAddressModal] = useState<AddressType>('none');
 
-  const updateProfileAction = () => {
-    const params = {
-      name,
-      email,
-      phone: mobileNumber,
-      address,
-      state,
-      pincode,
-      dob,
-    };
-    updateCustomerProfile(params);
-  };
+  const [error, setError] = useState<FieldError>({});
 
   useEffect(() => {
-    if (updateCustomerProfileLoading === 'loaded') {
-      navigation.goBack();
-      resetUpdateCustomerProfileLoading();
+    if (props.loading === 'loaded') {
+      if (props.navigation.canGoBack()) {
+        props.navigation.goBack();
+      } else {
+        props.navigation.reset({
+          index: 0,
+          routes: [{ name: 'Drawer' }],
+        });
+      }
+      props.reset();
     }
-  }, [updateCustomerProfileLoading, navigation, resetUpdateCustomerProfileLoading]);
+  }, [props]);
+
+  const uploadImage = (image: ImagePickerResponse) => {
+    if ((image.assets?.length ?? 0) > 0) {
+      setImageURI(image.assets?.[0].uri!);
+      setImageFormData({
+        uri: image.assets?.[0].uri!,
+        name: image.assets?.[0].fileName!,
+        type: image.assets?.[0].type!,
+      });
+    }
+  };
+
+  const CountryCodeAccessory = useMemo(
+    () =>
+      // eslint-disable-next-line react/no-unstable-nested-components
+      function ({ style }: TextFieldAccessoryProps) {
+        return (
+          <TouchableOpacity
+            style={[style, $countryCodeStyle]}
+            onPress={() => setShowCountries(true)}
+          >
+            <Text>{countryCode}</Text>
+          </TouchableOpacity>
+        );
+      },
+    [countryCode],
+  );
+  
+  const validate = () => {
+    let loginParams: EditProfileParams = {
+      name,
+      email,
+      phone,
+      location: address?.address!,
+      profile_image: imageURI,
+    };
+    editProfile
+      .validate(loginParams, { abortEarly: false })
+      .then(params => {
+        const formData = new FormData();
+        formData.append('name', params.name);
+        formData.append('email', params.email);
+        formData.append('phone', params.phone);
+        formData.append('location', params.location);
+        formData.append('latitude', address.location.lat);
+        formData.append('longitude', address.location.lng);
+        if (imageFormData) {
+          formData.append('profile_image', {
+            uri: imageFormData.uri,
+            name: imageFormData.name,
+            type: imageFormData.type,
+          });
+        }
+
+        Keyboard.dismiss();
+        props.update(formData);
+        setError({});
+      })
+      .catch(errors => {
+        const err = buildError<FieldError>(errors);
+        setError(err);
+      });
+  };
 
   return (
     <>
-      <Screen preset="scroll" contentContainerStyle={$container}>
-        <BackButtom heading={translate('editProfile.heading')} />
-
-        {/* PROFILE */}
-        <View style={$profileSection}>
-          <View style={$profileImageContainer}>
+    <BackButtom
+      heading={props.profile?.name}
+      style={{
+        paddingHorizontal: spacing.md,
+        paddingTop: insets.top + spacing.sm,
+      }}
+    />
+      <Screen preset="auto" contentContainerStyle={$container}>
+        <View style={$header}>
+          <View>
             <FastImage
-              source={imageURI ? { uri: imageURI } : images.user}
-              style={$profileImage}
+              resizeMode="cover"
+              style={$userImage}
+              source={{ uri: imageURI }}
             />
-            <TouchableOpacity style={$changePhotoButton}>
-              <Image source={images.camera} style={$changePhotoIcon as any} />
+            <TouchableOpacity
+              style={$editImageIcon}
+              onPress={() => setImagePickerVisible(true)}
+            >
+              <Image
+                resizeMode="contain"
+                source={images.camera}
+                style={$cameraIcon}
+                tintColor={colors.palette.white}
+              />
             </TouchableOpacity>
           </View>
 
-          <Text style={$profileName}>
-            {name || translate('editProfile.defaultName')}
-          </Text>
+          <Text size="md" weight="semiBold" text={props.profile?.name} />
         </View>
 
         <View style={$personalDetailsSection}>
-          <Text style={$sectionTitle}>
-            {translate('editProfile.personalDetails')}
-          </Text>
+          <Text
+            size="md"
+            weight="medium"
+            style={$sectionTitle}
+            tx="editProfile.personalDetails"
+          />
 
           <TextField
-            label={translate('editProfile.fullName')}
-            placeholder={translate('editProfile.enterFullName')}
             value={name}
             onChangeText={setName}
             containerStyle={$fieldContainer}
-            inputWrapperStyle={$inputWrapper}
-            style={$inputStyle}
+            labelTx="editProfile.fullName"
+            placeholderTx="editProfile.enterFullName"
+            helperTx={error?.name}
+            status={error?.name ? 'error' : undefined}
           />
 
-          {/* ✅ FIXED PHONE FIELD */}
-          <Text style={$label}>Mobile Number</Text>
-          <View style={$phoneFieldContainer}>
-            <TouchableOpacity
-              style={$countryBox}
-              onPress={() => setShowCountries(true)}
-            >
-              <Text style={$countryText}>{country.dial_code}</Text>
-            </TouchableOpacity>
-
-            <TextInput
-              placeholder="Enter mobile number"
-              value={mobileNumber}
-              onChangeText={text =>
-                setMobileNumber(text.replace(/[^0-9]/g, ''))
-              }
-              keyboardType="phone-pad"
-              maxLength={10}
-              style={$phoneInput}
-            />
-          </View>
+          <TextField
+            value={phone}
+            onChangeText={setPhone}
+            labelTx='editProfile.mobileNumber'
+            placeholderTx="editProfile.enterMobileNumber"
+            keyboardType="phone-pad"
+           containerStyle={$fieldContainer}
+            LeftAccessory={CountryCodeAccessory}
+            helperTx={error?.phone}
+            status={error?.phone ? 'error' : undefined}
+          />
 
           <TextField
-            label={translate('editProfile.email')}
-            placeholder={translate('editProfile.enterEmail')}
             value={email}
             onChangeText={setEmail}
+           containerStyle={$fieldContainer}
+            labelTx="editProfile.email"
+            placeholderTx="editProfile.enterEmail"
             keyboardType="email-address"
-            containerStyle={$fieldContainer}
-            inputWrapperStyle={$inputWrapper}
-            style={$inputStyle}
+            helperTx={error?.email}
+            status={error?.email ? 'error' : undefined}
           />
 
-          <TextField
-            label={translate('editProfile.location')}
-            value={location}
-            onChangeText={setLocation}
-            containerStyle={$fieldContainer}
-            inputWrapperStyle={$inputWrapper}
-            RightAccessory={LocationIcon}
-          />
-
-          <TextField
-            label={translate('editProfile.address')}
-            placeholder={translate('editProfile.enterAddress')}
-            value={address}
-            onChangeText={setAddress}
-            containerStyle={$fieldContainer}
-            inputWrapperStyle={$inputWrapper}
-            style={$inputStyle}
-          />
-
-          <TextField
-            label={translate('editProfile.state')}
-            placeholder={translate('editProfile.enterState')}
-            value={state}
-            onChangeText={setState}
-            containerStyle={$fieldContainer}
-            inputWrapperStyle={$inputWrapper}
-            style={$inputStyle}
-          />
-
-          <TextField
-            label={translate('editProfile.pincode')}
-            placeholder={translate('editProfile.enterPincode')}
-            value={pincode}
-            onChangeText={setPincode}
-            keyboardType="numeric"
-            containerStyle={$fieldContainer}
-            inputWrapperStyle={$inputWrapper}
-            style={$inputStyle}
-          />
-
-          <TextField
-            label={translate('editProfile.dateOfBirth')}
-            placeholder={translate('editProfile.enterDateOfBirth')}
-            value={dob}
-            onChangeText={setDOB}
-            containerStyle={$fieldContainer}
-            inputWrapperStyle={$inputWrapper}
-            style={$inputStyle}
-          />
+          <TouchableOpacity onPress={() => setAddressModal('pick')}>
+            <TextField
+              editable={false}
+              pointerEvents="none"
+              onPress={() => setAddressModal('pick')}
+              value={address?.address}
+              labelTx="editProfile.location"
+              placeholderTx="editProfile.enterAddress"
+              helperTx={error?.address}
+              status={error?.address ? 'error' : undefined}
+            />
+          </TouchableOpacity>
         </View>
 
         <Button
-          text="Update Profile"
           style={$updateButton}
-          onPress={updateProfileAction}
+          tx="editProfile.updateProfile"
+          onPress={validate}
         />
       </Screen>
 
       <CountryPickerModal
-        modalVisible={showCountries}
-        onClose={() => setShowCountries(false)}
         onSelect={data => {
-          setCountry(data);
+          setCountryCode(data.dial_code);
+          setShowCountries(false);
+        }}
+        modalVisible={showCountries}
+        onClose={() => {
           setShowCountries(false);
         }}
       />
 
-      <Loader loading={updateCustomerProfileLoading === 'loading'} />
+      <CustomImagePicker
+        imagePickerModal={imagePickerVisible}
+        onDismiss={() => setImagePickerVisible(false)}
+        callback={uploadImage}
+      />
+      <AddressSearchModal
+        showCurrent
+        onSelect={(newAddress: AddressParam) => setAddress(newAddress)}
+        isVisible={addressModal !== 'none'}
+        onClose={() => setAddressModal('none')}
+        title="ride.enterAddress"
+      />
+      <Loader loading={props.loading === 'loading'} />
     </>
   );
 };
 
-/* ================= STYLES ================= */
-
 const $container: ViewStyle = {
   flexGrow: 1,
-  backgroundColor: '#F3F4F6',
 };
 
-const $profileSection: ViewStyle = {
+const $header: ViewStyle = {
+  gap: spacing.sm,
   alignItems: 'center',
-  paddingVertical: 24,
+  marginVertical: spacing.sm,
+  marginHorizontal: spacing.md,
 };
 
-const $profileImageContainer: ViewStyle = {
-  position: 'relative',
-};
-
-const $profileImage: ImageStyle = {
+const $userImage: ImageStyle = {
   width: 110,
   height: 110,
+  borderWidth: 5,
   borderRadius: 55,
+  borderColor: colors.palette.offWhite2,
 };
 
-const $changePhotoButton: ViewStyle = {
+const $editImageIcon: ViewStyle = {
+  right: spacing.xs,
+  bottom: spacing.xxs,
+  padding: spacing.xs,
   position: 'absolute',
-  bottom: 5,
-  right: 5,
-  backgroundColor: '#fff',
-  borderRadius: 20,
-  width: 32,
-  height: 32,
-  justifyContent: 'center',
-  alignItems: 'center',
+  borderRadius: spacing.md,
+  backgroundColor: colors.primary,
 };
 
-const $changePhotoIcon: ImageStyle = {
-  width: 18,
-  height: 18,
-};
-
-const $profileName: TextStyle = {
-  fontSize: 20,
-  fontWeight: '600',
-  marginTop: 10,
+const $cameraIcon: ImageStyleRN = {
+  width: spacing.md,
+  height: spacing.md,
 };
 
 const $personalDetailsSection: ViewStyle = {
-  backgroundColor: '#fff',
-  marginTop: 10,
-  padding: 16,
-  borderTopLeftRadius: 20,
-  borderTopRightRadius: 20,
+  borderTopWidth: 1,
+  paddingTop: spacing.sm,
+  marginHorizontal: spacing.md,
+  borderTopColor: colors.palette.borderColor,
 };
 
 const $sectionTitle: TextStyle = {
-  fontSize: 18,
-  fontWeight: '600',
-  marginBottom: 20,
-};
-
-const $label: TextStyle = {
-  fontSize: 14,
-  marginBottom: 6,
+  marginBottom: spacing.lg,
 };
 
 const $fieldContainer: ViewStyle = {
-  marginBottom: 16,
+  marginBottom: spacing.sm,
 };
 
-const $inputWrapper: ViewStyle = {
-  borderWidth: 1,
-  borderColor: '#E5E7EB',
-  borderRadius: 10,
-  backgroundColor: '#F9FAFB',
-  paddingHorizontal: 12,
-  height: 50,
-  justifyContent: 'center',
-};
-
-const $inputStyle: TextStyle = {
-  fontSize: 15,
-  color: '#111',
-};
-
-/* 🔥 PHONE FIX */
-const $phoneFieldContainer: ViewStyle = {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: 16,
-};
-
-const $countryBox: ViewStyle = {
-  width: 70,
-  height: 50,
-  borderWidth: 1,
-  borderColor: '#E5E7EB',
-  borderRadius: 10,
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginRight: 8,
-};
-
-const $countryText: TextStyle = {
-  fontSize: 14,
-  fontWeight: '500',
-};
-
-const $phoneInput: TextStyle = {
-  flex: 1,
-  height: 50,
-  borderWidth: 1,
-  borderColor: '#E5E7EB',
-  borderRadius: 10,
-  paddingHorizontal: 12,
-};
-
-const $locationIcon: ImageStyle = {
-  width: 18,
-  height: 18,
+const $countryCodeStyle: ViewStyle = {
+  height: 24,
+  borderRightWidth: 1,
+  borderColor: colors.separator,
+  marginVertical: spacing.sm + 2,
 };
 
 const $updateButton: ViewStyle = {
@@ -360,20 +346,17 @@ const $updateButton: ViewStyle = {
   borderRadius: 10,
 };
 
-/* ================= REDUX ================= */
 
 const mapStateToProps = (state: RootState) => ({
-  customerProfile: state.profile.customerProfile,
-  updateCustomerProfileLoading: state.profile.updateCustomerProfileLoading,
-  baseUrl: state.setting.basic?.base_url,
+  profile: state.auth.myProfile?.user,
+  baseURl: state.setting.basic?.base_url,
+  loading: state.auth.updateLoading,
 });
 
 const mapDispatch = {
-  getCustomerProfile,
-  updateCustomerProfile,
-  resetUpdateCustomerProfileLoading,
+  update: (params: FormData) => updateProfile(params),
+  reset: () => authActions.resetUpdateLoading(),
 };
-
 const connector = connect(mapStateToProps, mapDispatch);
 
 export const EditProfileScreen = connector(EditProfile);

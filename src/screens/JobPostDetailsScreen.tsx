@@ -1,11 +1,17 @@
-import { BackButtom, Loader, ReadMore, Screen, Text } from '../components';
+import {
+  BackButtom,
+  Button,
+  Loader,
+  ReadMore,
+  Screen,
+  Text,
+} from '../components';
 import {
   StyleSheet,
   View,
   TouchableOpacity,
   FlatList,
   ListRenderItemInfo,
-  
 } from 'react-native';
 import React, { FC, useEffect } from 'react';
 import { spacing, colors } from '../theme';
@@ -14,10 +20,18 @@ import { Currency } from '../config/defaults';
 import { Bid, Job } from '../slices/types';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
-import { getJobDetail, hireJob, completeJob, HireJobParams, CompleteJobParams } from '../slices/job.slice';
+import {
+  getJobDetail,
+  hireJob,
+  completeJob,
+  HireJobParams,
+  CompleteJobParams,
+} from '../slices/job.slice';
 import FastImage from '@d11/react-native-fast-image';
 import ListEmptyComponent from '../components/ListEmptyComponent';
 import { BasicData } from '../slices/setting.slice';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { translate } from '../i18n';
 
 type NavigationProps = AppStackScreenProps<'jobPostDetails'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
@@ -27,8 +41,9 @@ export type JobPostDetailParams = {
 };
 
 const JobPostDetails: FC<Props> = props => {
+  const insets = useSafeAreaInsets();
   const [currentJobId, setCurrentJobId] = React.useState<number | null>(null);
-  const { route, hireJobLoading, completeJobLoading, get } = props;
+  const { route, hireJobLoading, get } = props;
 
   useEffect(() => {
     if (route.params?.id && route.params?.id !== currentJobId) {
@@ -37,22 +52,14 @@ const JobPostDetails: FC<Props> = props => {
     }
   }, [route.params?.id, currentJobId, get]);
 
-  // Refresh job details after hire
   useEffect(() => {
     if (hireJobLoading === 'loaded' && currentJobId) {
       get({ job_id: currentJobId });
     }
   }, [hireJobLoading, currentJobId, get]);
 
-  // Navigate to JobCompletedScreen after successful job completion
-  useEffect(() => {
-    if (completeJobLoading === 'loaded') {
-      props.navigation.navigate('JobCompleted');
-    }
-  }, [completeJobLoading, props.navigation]);
-
   const onPressProfile = (_data: Bid) => {
-    props.navigation.navigate('ProfessionalProfile', {id: _data.user_id});
+    props.navigation.navigate('ProfessionalProfile', { id: _data.user_id });
   };
 
   const onPressHire = (data: Bid) => {
@@ -78,58 +85,56 @@ const JobPostDetails: FC<Props> = props => {
         <View style={styles.main}>
           {props.data && <JobCard item={props.data} />}
 
-          {/* {props.data?.status === 'active' && ( */}
-            <>
-              <Text
-                weight="semiBold"
-                tx="jobPostDetails.proposalsHeader"
-                txOptions={{
-                  value: '(' + (props?.data?.bids?.length ?? 0) + ')',
-                }}
-              />
-              <FlatList
-                data={props.data?.bids}
-                showsVerticalScrollIndicator={false}
-                keyExtractor={item => item.id.toString()}
-                renderItem={info => (
-                  <BidCard
-                    {...info}
-                    setting={props.setting!}
-                    onPressProfile={onPressProfile}
-                    onPressHire={onPressHire}
-                    isHired={info.item.is_hired || false}
-                    hireJobLoading={props.hireJobLoading === 'loading'}
-                    hiredFreelancerName={info.item.is_hired ? info.item.freelancer_name : ''}
-                  />
-                )}
-                ListEmptyComponent={
-                  <View style={styles.empty}>
-                    <ListEmptyComponent tx="common.noDataFound" />
-                  </View>
+          <Text
+            weight="semiBold"
+            tx="jobPostDetails.proposalsHeader"
+            txOptions={{
+              value: '(' + (props?.data?.bids?.length ?? 0) + ')',
+            }}
+          />
+          <FlatList
+            data={props.data?.bids}
+            showsVerticalScrollIndicator={false}
+            keyExtractor={item => item.id.toString()}
+            renderItem={info => (
+              <BidCard
+                {...info}
+                setting={props.setting!}
+                onPressProfile={onPressProfile}
+                onPressHire={onPressHire}
+                isHired={info.item.is_hired || false}
+                hireJobLoading={props.hireJobLoading === 'loading'}
+                hiredFreelancerName={
+                  info.item.is_hired ? info.item.freelancer_name : ''
                 }
               />
-            </>
-          {/* )} */}
+            )}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <ListEmptyComponent tx="common.noDataFound" />
+              </View>
+            }
+          />
         </View>
-        
-        {/* Complete Job Button */}
-        {props.data?.status === "in progress" && (
-          <TouchableOpacity 
-            style={styles.completeJobButton}
-            onPress={onPressCompleteJob}
-          >
-            <Text 
-              weight="semiBold" 
-              text="Complete Job" 
-              style={{ color: colors.palette.white }} 
+
+        {props.data?.status === 'in progress' && (
+          <>
+            <View style={styles.flexOne} />
+            <Button
+              style={[
+                styles.button,
+                { marginBottom: insets.bottom + spacing.md },
+              ]}
+              tx="jobPostDetails.completeJob"
+              onPress={onPressCompleteJob}
             />
-          </TouchableOpacity>
+          </>
         )}
       </Screen>
       <Loader
         loading={
-          props.hireJobLoading === 'loading' || 
-          props.loading === 'loading' || 
+          props.hireJobLoading === 'loading' ||
+          props.loading === 'loading' ||
           props.completeJobLoading === 'loading'
         }
       />
@@ -138,23 +143,23 @@ const JobPostDetails: FC<Props> = props => {
 };
 
 const JobCard = ({ item }: { item: Job }) => {
-    const statusStyle = getStatusStyle(item.status);
+  const statusStyle = getStatusStyle(item.status);
 
   return (
     <View key={item.id} style={styles.card}>
-  <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: statusStyle.backgroundColor },
-          ]}
-        >
-          <Text
-            size="xxs"
-            weight="bold"
-            text={item.status.toUpperCase()}
-            style={{ color: statusStyle.color }}
-          />
-        </View>
+      <View
+        style={[
+          styles.statusBadge,
+          { backgroundColor: statusStyle.backgroundColor },
+        ]}
+      >
+        <Text
+          size="xxs"
+          weight="bold"
+          text={item.status.toUpperCase()}
+          style={{ color: statusStyle.color }}
+        />
+      </View>
 
       <Text size="sm" weight="medium" text={item.title} />
       <ReadMore text={item.description} style={styles.extraSmallText} />
@@ -182,8 +187,6 @@ type BidCardProps = ListRenderItemInfo<Bid> & {
   hiredFreelancerName: string;
 };
 
-
-
 const BidCard = ({
   item,
   setting,
@@ -193,7 +196,6 @@ const BidCard = ({
   hireJobLoading,
   hiredFreelancerName,
 }: BidCardProps) => {
-
   return (
     <View key={item.id} style={styles.proposalCard}>
       <View style={styles.row}>
@@ -217,13 +219,11 @@ const BidCard = ({
             />
           </View>
 
-          <View style={styles.spaceBetween}>
-
-            <Text
-              size="xxs"
-              text={item.work_description}
-            />
-          </View>
+          {item.work_description && (
+            <View style={styles.spaceBetween}>
+              <Text size="xxs" text={item.work_description} />
+            </View>
+          )}
           <View style={styles.btnRow}>
             <TouchableOpacity
               style={styles.outlineBtn}
@@ -239,7 +239,7 @@ const BidCard = ({
             <TouchableOpacity
               style={[
                 styles.hireBtn,
-                (isHired || hireJobLoading) && styles.hireBtnDisabled
+                (isHired || hireJobLoading) && styles.hireBtnDisabled,
               ]}
               onPress={() => onPressHire(item)}
               disabled={isHired || hireJobLoading}
@@ -247,9 +247,17 @@ const BidCard = ({
               <Text
                 size="xxs"
                 weight="semiBold"
-                text={isHired ? `Hired ${hiredFreelancerName}` : "Hire"}
+                text={
+                  isHired
+                    ? `${translate(
+                        'jobPostDetails.hired',
+                      )}${hiredFreelancerName}`
+                    : translate('jobPostDetails.hireText')
+                }
                 numberOfLines={1}
-                style={{ color: colors.palette.white }}
+                style={{
+                  color: !isHired ? colors.palette.white : colors.palette.black,
+                }}
               />
             </TouchableOpacity>
           </View>
@@ -258,7 +266,6 @@ const BidCard = ({
     </View>
   );
 };
-
 
 const getStatusStyle = (type: string) => {
   switch (type) {
@@ -277,11 +284,11 @@ const getStatusStyle = (type: string) => {
         backgroundColor: colors.palette.offGreen,
         color: colors.palette.green,
       };
-      case 'in progress':
-        return {
-          backgroundColor: colors.palette.yellowLight,
-          color: colors.palette.yellow,
-        };
+    case 'in progress':
+      return {
+        backgroundColor: colors.palette.yellowLight,
+        color: colors.palette.yellow,
+      };
     default:
       return {
         backgroundColor: colors.palette.lightGray,
@@ -392,22 +399,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.palette.gray,
     opacity: 0.6,
   },
-   statusBadge: {
-      paddingVertical: spacing.xxs,
-      borderRadius: spacing.xs,
-      paddingHorizontal: spacing.sm,
-      alignSelf: 'flex-start',
-      minWidth: 80,
-      alignItems: 'center',
-    },
-    completeJobButton: {
-      backgroundColor: colors.primary,
-      margin: spacing.md,
-      paddingVertical: spacing.md,
-      borderRadius: spacing.sm,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+  statusBadge: {
+    paddingVertical: spacing.xxs,
+    borderRadius: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    alignSelf: 'flex-start',
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  completeJobButton: {
+    backgroundColor: colors.primary,
+    margin: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  button: {
+    borderRadius: spacing.md,
+    marginHorizontal: spacing.md,
+  },
 });
 
 const mapStateToProps = (state: RootState) => ({

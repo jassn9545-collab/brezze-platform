@@ -2,11 +2,11 @@ export type LoadStatus = 'idle' | 'loading' | 'loaded' | 'failed';
 
 export interface UserDetailsResponse {
   user: User
-  token: string
-  basic_info: boolean
-  profile_pic: boolean
-  proof: boolean
-  is_verification_completed: boolean
+  token?: string
+  basic_info?: boolean
+  profile_pic?: boolean
+  proof?: boolean
+  is_verification_completed?: boolean
 }
 export interface User {
   id: number
@@ -21,22 +21,30 @@ export interface User {
   created_at: string
   updated_at: string
   user_type: string
+  alternate_phone: any
+  relation_with_nominee: any
   profile: any
-  is_verified: string
+  is_verified: number
   refrence: any
   refral_code: string
-  latitude: any
-  longitude: any
+  latitude: number
+  longitude: number
   skills: any
   experience: any
-  street_address: any
+  street_address: string
   city: any
-  state: any
+  state: string
   country: any
-  pincode: any
-  profile_image: any
-  proof: any
+  pincode: string
+  profile_image: string
+  profile_title: any
+  profile_description: any
+  avg_rating: number
+  total_jobs: number
+  last3_jobs: Job[]
+  reviews: any[]
 }
+
 export interface Job {
   id: number
   title: string
@@ -56,6 +64,7 @@ export interface Job {
   user_id: string
   job_applied: boolean
   bids: Bid[]
+  bids_count: number
 }
 
 

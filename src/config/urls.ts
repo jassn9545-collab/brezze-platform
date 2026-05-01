@@ -19,8 +19,8 @@ const URLs = {
   uploadProfile: '/profile-photo-upload',
   userVerificationID: '/id-verification',
   login: '/login',
-  profile: '/profile',
-  updateProfile: '/update-profile',
+  profile: '/client/my-profile',
+  updateProfile: '/client/update-profile',
   logout: '/logout',
   forgotPassword: '/forget-password',
   verifyOtp: '/forget-password-otp-verification',
@@ -30,6 +30,7 @@ const URLs = {
   referEarn: '/refer-and-earn',
   withdrawReferEarn: '/withdraw-earning',
   getUserNotifications: '/notifications',
+  clientProfile: '/client/freelancer-profile',
 
   // job
   createJob: '/client/new-job',
@@ -37,11 +38,7 @@ const URLs = {
   jobDetail: '/client/job-details',
   hireJob: '/client/hire-now',
   completeJob: '/client/job-mark-completed',
-  // clent profile
-  clientProfile: '/client/freelancer-profile',
-  // prfile
-  customerProfile: '/client/my-profile',
-  updateCustomerProfile: '/client/update-profile',
+
   // Review Api 
   submitReview: '/submit-review',
 };

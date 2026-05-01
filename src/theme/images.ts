@@ -67,6 +67,8 @@ export const images = {
   checkIcon: require('../assets/images/checkIcon.png'),
   switchbox: require('../assets/images/switchbox.png'),
   searchService: require('../assets/images/SearchServiceIcon1.png'),
+  timeIcon: require('../assets/images/timeIcon.png'),
+  smallVector: require('../assets/images/smallVector.png'),
 
   // side menu icons
 

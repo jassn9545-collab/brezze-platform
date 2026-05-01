@@ -15,12 +15,21 @@ import {
   BottomTabNavigator,
   BottomTabNavigatorParamList,
 } from './BottomTabNavigator';
-import { HireHistoryScreen, JobPostConfirmScreen, jobPostDetailsScreen, jobPostListScreen, JobPostScreen, ProfessionalProfileScreen, HelpSupportScreen, HireHistoryDetailsScreen } from '../screens';
+import {
+  HireHistoryScreen,
+  JobPostConfirmScreen,
+  jobPostDetailsScreen,
+  jobPostListScreen,
+  JobPostScreen,
+  ProfessionalProfileScreen,
+  HelpSupportScreen,
+  HireHistoryDetailsScreen,
+} from '../screens';
 import { CategoriesScreen } from '../screens';
 import { JobPostFirstParams } from '../apis/schema';
 
-// import { useAppDispatch } from '../store/hooks';
-// import { getProfile } from '../slices/auth.slice';
+import { useAppDispatch } from '../store/hooks';
+import { getProfile } from '../slices/auth.slice';
 
 /**
  * This type allows TypeScript to know what routes are defined in this navigator
@@ -54,7 +63,7 @@ export type AppStackParamList = {
   ReviewScreen: undefined;
 
   //modal
-  CenterModal: Screens.CenterModalParams
+  CenterModal: Screens.CenterModalParams;
 };
 
 export type AppStackScreenProps<T extends keyof AppStackParamList> =
@@ -64,7 +73,7 @@ export type AppStackScreenProps<T extends keyof AppStackParamList> =
 const Stack = createNativeStackNavigator<AppStackParamList, 'App'>();
 
 export const AppStack: FC = () => {
-  //   const dispatch = useAppDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     // bootstrap();
@@ -77,9 +86,9 @@ export const AppStack: FC = () => {
     // notifeeSubscribe();
   }, []);
 
-  //   useEffect(() => {
-  //     dispatch(getProfile());
-  //   }, [dispatch]);
+  useEffect(() => {
+    dispatch(getProfile());
+  }, [dispatch]);
 
   // const bootstrap = async () => {
   //   let messaging = getMessaging();
@@ -104,7 +113,7 @@ export const AppStack: FC = () => {
         navigationBarColor: colors.background,
       })}
       initialRouteName="Drawer"
-      >
+    >
       <Stack.Screen name="Drawer" component={DrawerNavigator} />
       <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
 
@@ -114,12 +123,21 @@ export const AppStack: FC = () => {
       <Stack.Screen name="JobPostList" component={jobPostListScreen} />
       <Stack.Screen name="jobPostDetails" component={jobPostDetailsScreen} />
       <Stack.Screen name="HireHistory" component={HireHistoryScreen} />
-      <Stack.Screen name="HireHistoryDetails" component={HireHistoryDetailsScreen} />
-      <Stack.Screen name="ProfessionalProfile" component={ProfessionalProfileScreen} />
+      <Stack.Screen
+        name="HireHistoryDetails"
+        component={HireHistoryDetailsScreen}
+      />
+      <Stack.Screen
+        name="ProfessionalProfile"
+        component={ProfessionalProfileScreen}
+      />
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
       <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
-      <Stack.Screen name="JobCompleted" component={Screens.JobCompletedScreen} />
+      <Stack.Screen
+        name="JobCompleted"
+        component={Screens.JobCompletedScreen}
+      />
       <Stack.Screen name="ReviewScreen" component={Screens.ReviewScreen} />
       <Stack.Group
         screenOptions={{
@@ -128,12 +146,9 @@ export const AppStack: FC = () => {
           animation: 'fade_from_bottom',
         }}
       >
-        <Stack.Screen
-          name="CenterModal"
-          component={Screens.CenterModal}
-        />
+        <Stack.Screen name="CenterModal" component={Screens.CenterModal} />
       </Stack.Group>
-      {/* <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
+      {/* 
       <Stack.Screen
         name="SavedAddress"
         component={Screens.SavedAddressScreen}
@@ -167,8 +182,6 @@ export const AppStack: FC = () => {
         initialParams={{ type: 'about', title: 'profile.aboutUsTitle' }}
       />
  */}
-
-
     </Stack.Navigator>
   );
 };
