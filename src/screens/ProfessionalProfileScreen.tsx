@@ -1,10 +1,11 @@
-import { BackButtom, Screen, Text, Loader } from '../components';
+import { BackButtom, ReadMore, Screen, TapRating, Text } from '../components';
 import {
   StyleSheet,
   View,
   Image,
   TouchableOpacity,
-  ScrollView,
+  FlatList,
+  ListRenderItemInfo,
 } from 'react-native';
 import React, { FC } from 'react';
 import { spacing, images, colors } from '../theme';
@@ -12,405 +13,474 @@ import { AppStackScreenProps } from '../navigators/AppStack';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
 import { getFreelancerProfile } from '../slices/job.slice';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import FastImage from '@d11/react-native-fast-image';
+import { Currency } from '../config/defaults';
+import { parseSource } from '../utils/util';
 
 type NavigationProps = AppStackScreenProps<'ProfessionalProfile'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
 
-const ProfessionalProfile: FC<Props> = (props) => {
-  const { route, getFreelancerProfile, clientProfile, clientProfileLoading } = props;
-  
+const ProfessionalProfile: FC<Props> = props => {
+  const insets = useSafeAreaInsets();
   React.useEffect(() => {
-    if (route.params?.id) {
-      getFreelancerProfile({ id: route.params.id });
+    if (props.route.params?.id) {
+      props.getFreelancerProfile({ id: props.route.params.id });
     }
-  }, [route.params?.id, getFreelancerProfile]);
-
-  console.log('Loading State:', clientProfileLoading);
-  
-  if (clientProfileLoading === 'loading') {
-    return (
-      <Screen preset="fixed" contentContainerStyle={styles.container}>
-        <Loader loading={true} />
-      </Screen>
-    );
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.route.params?.id]);
 
   return (
-    <Screen preset="fixed" contentContainerStyle={styles.container}>
-      
-      <ScrollView showsVerticalScrollIndicator={false}>
-        
-        {/* HEADER */}
-        <View style={styles.headerRow}>
-          <BackButtom heading="Austin Butler" />
-          <TouchableOpacity style={styles.menuBtn}>
-            <Text text="⋮" style={styles.menuIcon} />
-          </TouchableOpacity>
-        </View>
-
-        {/* PROFILE */}
-        <View style={styles.profileContainer}>
-          <View style={styles.avatarContainer}>
-            <Image 
-              source={clientProfile?.profile_image ? { uri: props.setting?.base_url + "/" + clientProfile.profile_image } : images.profile1} 
-              style={styles.avatar} 
+    <>
+      <BackButtom
+        heading={props.profileData?.name}
+        style={{
+          paddingHorizontal: spacing.md,
+          paddingTop: insets.top + spacing.sm,
+        }}
+      />
+      <Screen preset="auto" contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <View>
+            <FastImage
+              resizeMode="cover"
+              style={styles.userImage}
+              source={{
+                uri: props.baseURl + '/' + props.profileData?.profile_image,
+              }}
             />
             <View style={styles.verifiedBadge}>
-              <Text text="✓" style={styles.verifiedIcon} />
+              <Text
+                text="✓"
+                size="xxs"
+                weight="semiBold"
+                style={styles.verifiedIcon}
+              />
             </View>
           </View>
-          <Text text={clientProfile?.name} weight="semiBold" style={styles.name} />
-          <View style={styles.addressContainer}>
-            <Text 
-              text={clientProfile?.street_address || "No address available"} 
-              size="xs" 
-              style={styles.gray}
-              numberOfLines={2}
-              ellipsizeMode="tail"
+          <View style={styles.userDetail}>
+            <Text size="md" weight="semiBold" text={props.profileData?.name} />
+            <Text
+              size="sm"
+              style={styles.textDim}
+              text={props.profileData?.street_address!}
+            />
+            {props.profileData?.is_top_rated && (
+              <View style={styles.userBadge}>
+                <Text
+                  size="xxs"
+                  weight="semiBold"
+                  style={styles.greenText}
+                  tx="professionalProfile.topRated"
+                />
+              </View>
+            )}
+          </View>
+        </View>
+        <View style={styles.userProfile}>
+          <View style={styles.singleProfileContent}>
+            <Text
+              size="sm"
+              weight="semiBold"
+              text={Currency.sign + (props.profileData?.total_earnings ?? 0)}
+            />
+            <Text
+              size="xxs"
+              weight="medium"
+              tx="professionalProfile.totalEarnings"
             />
           </View>
-
-          <View style={styles.badge}>
-            <Text tx="professionalProfile.topRated" size="xxs" style={styles.topRatedText} />
+          <View style={styles.singleProfileContent}>
+            <Text
+              size="sm"
+              weight="semiBold"
+              text={(props.profileData?.total_jobs ?? 0)?.toString()}
+            />
+            <Text
+              size="xxs"
+              weight="medium"
+              tx="professionalProfile.totalJobs"
+            />
+          </View>
+          <View style={styles.singleProfileContent}>
+            <Text
+              size="sm"
+              weight="semiBold"
+              style={{ color: colors.primary }}
+              text={
+                (props.profileData?.job_success_score ?? 0)?.toString() + '%'
+              }
+            />
+            <Text
+              size="xxs"
+              weight="medium"
+              tx="professionalProfile.jobSuccess"
+            />
           </View>
         </View>
-
-        {/* STATS */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text text={`$${clientProfile?.total_earnings || 0}`} weight="semiBold" />
-            <Text tx="professionalProfile.totalEarnings" size="xxs" style={styles.gray} />
-          </View>
-
-          <View style={styles.statBox}>
-            <Text text={clientProfile?.total_jobs?.toString() || "0"} weight="semiBold" />
-            <Text tx="professionalProfile.totalJobs" size="xxs" style={styles.gray} />
-          </View>
-
-          <View style={styles.statBox}>
-            <Text text={`${clientProfile?.job_success_score || 0}%`} weight="semiBold" />
-            <Text tx="professionalProfile.jobSuccess" size="xxs" style={styles.gray} />
-          </View>
-        </View>
-        {/* TITLE */}
-        <View style={styles.section}>
+        <View style={styles.professionalBrief}>
           <View style={styles.rowBetween}>
-            <Text text={clientProfile?.profile_title || "Professional"} weight="semiBold" style={styles.specialistText} />
-            <Text text={`${clientProfile?.experience || '0'} years experience`} style={styles.rateText} />
+            <Text
+              size="md"
+              weight="semiBold"
+              style={styles.specialistText}
+              text={props.profileData?.profile_title!}
+            />
           </View>
-
-          <Text
-            text={clientProfile?.profile_description || "No description available"}
-            size="xs"
-            style={styles.gray}
+          <ReadMore
+            text={props.profileData?.profile_description ?? ''}
+            style={{ color: colors.palette.grayLight2 }}
           />
-          <TouchableOpacity>
-            <Text tx="professionalProfile.more" size="xs" style={styles.moreLink} />
-          </TouchableOpacity>
-        </View>
-
-        {/* SERVICES */}
-        <View style={styles.section}>
-          <Text tx="professionalProfile.services" weight="semiBold" />
-
-          <View style={styles.chipsRow}>
-            {clientProfile?.categories?.map((category, index) => (
-              <View key={index} style={styles.chip}>
-                <Text text={category} size="xxs" />
-                <Image source={images.greenCheckIcon} style={styles.checkIcon} />
+        </View> 
+        <View style={styles.servicesContainer}>
+          <Text size="md" weight="semiBold" tx="professionalProfile.services" />
+          <View style={styles.servicesWrapper}>
+            {props.profileData?.categories?.map((data, index) => (
+              <View key={index} style={styles.service}>
+                <Text size="xs" text={data} />
+                <Image source={images.greenCheckIcon} />
               </View>
             ))}
           </View>
         </View>
-
-        {/* SERVICE CATALOG */}
-        <View style={styles.section}>
-          <View style={styles.rowBetween}>
-            <Text tx="professionalProfile.serviceCatalog" weight="semiBold" />
-            <Text tx="professionalProfile.viewAll" style={styles.seeAllLink} />
+        <View style={styles.servicesCatalogContainer}>
+          <View style={styles.catalogHeading}>
+            <Text
+              size="md"
+              weight="semiBold"
+              tx="professionalProfile.serviceCatalog"
+            />
+            <Text
+              size="xxs"
+              weight="semiBold"
+              tx="profile.viewAll"
+              style={styles.primaryText}
+            />
           </View>
+          <FlatList
+            data={[1, 1, 1]}
+            scrollEnabled={false}
+            renderItem={info => <Service {...info} />}
+          />
+        </View>
+        <View style={styles.reviewContainer}>
+          <View style={styles.reviewHeading}>
+            <Text
+              size="md"
+              weight="semiBold"
+              tx="professionalProfile.reviews"
+            />
+            <Text
+              size="xxs"
+              weight="semiBold"
+              tx="professionalProfile.seeAll"
+              txOptions={{
+                value: '4.9',
+              }}
+              style={styles.primaryText}
+            />
+          </View>
+          <FlatList
+            data={[1, 1, 1]}
+            scrollEnabled={false}
+            renderItem={info => <Review {...info} />}
+          />
+        </View>
+      </Screen>
+    </>
+  );
+};
 
-          {[1,2].map((item) => (
-            <View key={item} style={styles.catalogCard}>
-
-              <View style={styles.catalogContent}>
-                <Text tx={item === 1 ? "professionalProfile.switchboxInstallation" : "professionalProfile.acSwitchboxInstallation"} weight="medium" />
-                <Text text={item === 1 ? "AUD $49.00 | 30 mins" : "AUD $59.00 | 45 mins"} size="xs" style={styles.gray} />
-
-                <View style={styles.serviceBtnContainer}>
-                  <TouchableOpacity style={item === 1 ? styles.selectedServiceBtn : styles.addServiceBtn}>
-                    <Text tx={item === 1 ? "professionalProfile.selected" : "professionalProfile.addService"} size="xs" style={item === 1 ? styles.selectedBtnText : styles.addBtnText} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-             
-
-              <Image source={item === 1 ? images.switchbox : images.switchbox} style={styles.catalogImage} />
-            </View>
-          ))}
+type ServiceCardProps = ListRenderItemInfo<any>;
+export const Service = ({ item }: ServiceCardProps) => {
+  return (
+    <View key={item.id} style={styles.card}>
+      <View style={styles.serviceDetail}>
+        <View style={styles.rating}>
+          <Image
+            source={images.star}
+            tintColor={colors.palette.black}
+            resizeMode="contain"
+            style={styles.star}
+          />
+          <Text style={styles.extraSmallText} text="4.84 ( 20K Reviews )" />
+        </View>
+        <Text size="sm" weight="medium" text="Switchbox Installation" />
+        <Text
+          style={styles.extraSmallText}
+          text="Installed in specified area for new power outlet"
+        />
+        <View style={styles.priceWrapper}>
+          <Text
+            size="xs"
+            weight="semiBold"
+            style={styles.priceText}
+            text={Currency.code + Currency.sign + '49.00'}
+          />
+          <View style={styles.verticalLine} />
+          <Text
+            size="xs"
+            weight="semiBold"
+            style={styles.timeText}
+            text="30 mins"
+          />
         </View>
 
-        {/* REVIEWS */}
-        <View style={styles.section}>
-          <View style={styles.rowBetween}>
-            <Text tx="professionalProfile.reviews" weight="semiBold" />
-            <Text tx="professionalProfile.seeAll" style={styles.seeAllLink} />
-          </View>
+        <TouchableOpacity style={styles.viewServiceDetail}>
+          <Text
+            size="xxs"
+            weight="medium"
+            style={styles.primaryText}
+            tx="professionalProfile.viewDetails"
+          />
+        </TouchableOpacity>
+      </View>
 
-          {[1,2].map((item) => (
-            <View key={item} style={styles.reviewCard}>
-              <Text tx="professionalProfile.sarahMiller" weight="medium" />
-              <Text text="⭐⭐⭐⭐⭐" />
-              <Text
-                tx="professionalProfile.reviewText"
-                size="xs"
-                style={styles.gray}
-              />
-            </View>
-          ))}
+      <Image source={require('../assets/images/switchbox.png')} />
+    </View>
+  );
+};
+
+type ReviewCardProps = ListRenderItemInfo<any>;
+const Review = ({ item }: ReviewCardProps) => {
+  return (
+    <View key={item.id} style={styles.reviewCard}>
+      <View style={styles.reviewHeader}>
+        <Image
+          resizeMode="cover"
+          style={styles.reviewedImage}
+          {...parseSource('https://i.pravatar.cc/300', images.user)}
+        />
+        <View style={styles.flexOne}>
+          <Text size="xs" weight="medium" text="Sarah Miller" />
+          <Text text="2 DAYS AGO" style={styles.extraSmallText} />
         </View>
-
-      </ScrollView>
-
-      {/* FOOTER BUTTON */}
-      <TouchableOpacity style={styles.hireBtn}>
-        <Text tx="professionalProfile.hireNow" weight="semiBold" style={{ color: '#fff' }} />
-      </TouchableOpacity>
-
-    </Screen>
+        <TapRating
+          count={5}
+          isDisabled
+          size={spacing.sm}
+          defaultRating={5}
+          selectedColor="orange"
+        />
+      </View>
+      <Text
+        size="xxs"
+        weight="light"
+        text="“Passionate about Home Appliances and house fitting issues with 10+ year Experince in residential repairs. I Specialize  installations. “"
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  container: {
+    flexGrow: 1,
+    paddingBottom: spacing.xl,
+  },
+  header: {
+    gap: spacing.sm,
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
+    marginVertical: spacing.sm,
+    marginHorizontal: spacing.md,
   },
-
-  menuBtn: {
-    padding: spacing.sm,
+  userImage: {
+    width: 110,
+    height: 110,
+    borderWidth: 5,
+    borderRadius: 55,
+    borderColor: colors.palette.offWhite2,
   },
-
-  menuIcon: {
-    fontSize: 20,
-    color: '#333',
+  userDetail: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xxs + 1,
   },
-
-  avatarContainer: {
-    position: 'relative',
+  textDim: {
+    textAlign: 'center',
+    color: colors.textDim,
   },
-
+  userBadge: {
+    marginTop: spacing.xxs,
+    borderRadius: spacing.sm,
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.palette.dimGreen,
+  },
+  greenText: {
+    color: colors.palette.green,
+  },
   verifiedBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: colors.palette.green,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 2,
+    width: spacing.lg,
+    right: spacing.xs,
+    bottom: spacing.xs,
+    height: spacing.lg,
+    alignItems: 'center',
+    position: 'absolute',
+    justifyContent: 'center',
+    borderRadius: spacing.sm,
     borderColor: colors.palette.white,
+    backgroundColor: colors.palette.green,
   },
-
   verifiedIcon: {
     color: colors.palette.white,
-    fontSize: 10,
-    fontWeight: 'bold',
   },
-
-  checkIcon: {
-    color: colors.palette.green,
-    fontSize: 12,
-    marginRight: 4,
-  },
-
-  moreLink: {
-    color: colors.palette.primaryBlue,
-    marginTop: 4,
-  },
-
-  specialistText: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-
-  rateText: {
-    color: colors.palette.primaryBlue,
-    flexShrink: 0,
-  },
-
-  catalogBtnText: {
-    color: colors.palette.primaryBlue,
-  },
-
-  seeAllLink: {
-    color: colors.palette.primaryBlue,
-  },
-
-  topRatedText: {
-    color: colors.palette.green,
-  },
-
-  container: {
-    flex: 1,
-    backgroundColor: colors.palette.jobPostBackground,
-  },
-
-  profileContainer: {
+  userProfile: {
     alignItems: 'center',
-    marginTop: spacing.md,
-  },
-
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-  },
-
-  name: {
-    marginTop: spacing.sm,
-  },
-
-  addressContainer: {
-    width: '100%',
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.xs,
-    alignItems: 'center',
-  },
-
-  gray: {
-    color: colors.palette.grayText,
-  },
-
-  badge: {
-    backgroundColor: colors.palette.transparentGreen,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginTop: spacing.xs,
-  },
-
-  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    margin: spacing.md,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: spacing.sm,
   },
-
-  statBox: {
-    alignItems: 'center',
+  singleProfileContent: {
     flex: 1,
+    borderWidth: 1,
+    padding: spacing.sm,
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    borderColor: colors.palette.borderColor,
   },
-
-  section: {
-    backgroundColor: colors.palette.white,
-    marginHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    padding: spacing.md,
-    borderRadius: 12,
+  professionalBrief: {
+    borderBottomWidth: 1,
+    borderRadius: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderColor: colors.palette.borderColor,
   },
-
   rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-
-  chipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-
-  chip: {
-    backgroundColor: colors.palette.offWhite2,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  catalogCard: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-    backgroundColor: colors.palette.offWhite,
-    padding: spacing.sm,
-    borderRadius: 10,
-  },
-
-  catalogContent: {
+  specialistText: {
     flex: 1,
+    marginRight: spacing.sm,
   },
-
-  catalogImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
+  servicesContainer: {
+    borderBottomWidth: 1,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderColor: colors.palette.borderColor,
   },
-
-  serviceBtnContainer: {
-    alignItems: 'flex-start',
-  },
-
-  selectedServiceBtn: {
-    marginTop: spacing.xs,
-    backgroundColor: '#09B285',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-
-  addServiceBtn: {
-    marginTop: spacing.xs,
-    backgroundColor: colors.palette.primarylight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-
-  selectedBtnText: {
-    color: colors.palette.white,
-    fontWeight: '500',
-    fontSize: 10,
-  },
-
-  addBtnText: {
-    color: colors.palette.primaryColor,
-    fontWeight: '500',
-    fontSize: 10,
-  },
-
-  reviewCard: {
+  servicesWrapper: {
+    flex: 1,
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+    flexDirection: 'row',
     marginTop: spacing.sm,
-    backgroundColor: colors.palette.offWhite,
-    padding: spacing.sm,
-    borderRadius: 10,
   },
-
-  hireBtn: {
-    margin: spacing.md,
-    backgroundColor: colors.palette.primaryBlue,
-    padding: 16,
-    borderRadius: 12,
+  service: {
+    borderWidth: 1,
+    gap: spacing.xxs,
+    alignItems: 'center',
+    flexDirection: 'row',
+    borderRadius: spacing.md,
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.md,
+    borderColor: colors.palette.borderColor,
+    backgroundColor: colors.palette.offWhite2,
+  },
+  servicesCatalogContainer: {
+    borderBottomWidth: 1,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderColor: colors.palette.borderColor,
+  },
+  catalogHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+    justifyContent: 'space-between',
+  },
+  primaryText: {
+    color: colors.primary,
+  },
+  card: {
+    gap: spacing.md,
+    padding: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    borderRadius: spacing.sm,
+    justifyContent: 'space-between',
+    backgroundColor: colors.palette.offWhite2,
+  },
+  serviceDetail: {
+    flex: 1,
+    gap: spacing.xxs,
+  },
+  rating: {
+    gap: spacing.xxs,
+    flexDirection: 'row',
     alignItems: 'center',
   },
-
+  star: {
+    width: spacing.sm,
+    height: spacing.sm,
+  },
+  extraSmallText: {
+    fontSize: spacing.xs + 2,
+    lineHeight: spacing.sm + 2,
+  },
+  verticalLine: {
+    width: 2,
+    height: spacing.lg,
+    backgroundColor: colors.palette.borderColor,
+  },
+  priceWrapper: {
+    gap: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  priceText: {
+    flexShrink: 1,
+    color: colors.primary,
+  },
+  timeText: {
+    flexShrink: 1,
+    color: colors.textDim,
+  },
+  viewServiceDetail: {
+    marginTop: spacing.xxs,
+    alignSelf: 'flex-start',
+    borderRadius: spacing.xxs,
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+    backgroundColor: colors.primaryDimmed,
+  },
+  reviewContainer: {
+    borderBottomWidth: 1,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderColor: colors.palette.borderColor,
+  },
+  reviewHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+    justifyContent: 'space-between',
+  },
+  reviewCard: {
+    gap: spacing.md,
+    padding: spacing.sm,
+    borderBottomWidth: 1,
+    backgroundColor: colors.palette.offWhite2,
+  },
+  reviewHeader: {
+    gap: spacing.sm,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  reviewedImage: {
+    width: spacing.xl,
+    height: spacing.xl,
+    borderRadius: spacing.xl / 2,
+  },
+  flexOne: { flex: 1 },
 });
 
 const mapStateToProps = (state: RootState) => ({
-  clientProfile: state.job.clientProfile,
-  setting: state.setting.basic,
-  clientProfileLoading: state.job.clientProfileLoading,
+  profileData: state.job.clientProfile,
+  baseURl: state.setting.basic?.base_url,
+  loading: state.job.clientProfileLoading,
 });
 
 const mapDispatch = {

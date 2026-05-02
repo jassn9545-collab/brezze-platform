@@ -69,6 +69,7 @@ export const images = {
   searchService: require('../assets/images/SearchServiceIcon1.png'),
   timeIcon: require('../assets/images/timeIcon.png'),
   smallVector: require('../assets/images/smallVector.png'),
+  star: require('../assets/images/star.png'),
 
   // side menu icons
 

@@ -301,7 +301,6 @@ export const jobSlice = createSlice({
       })
       .addCase(getFreelancerProfile.fulfilled, (state, action) => {
         state.clientProfileLoading = 'loaded';
-        console.log('Freelancer Profile API Response:', action.payload);
         state.clientProfile = action.payload;
       })
       .addCase(getFreelancerProfile.rejected, (state, action) => {

@@ -16,4 +16,6 @@ export * from './DatePicker/DatePickerModal';
 export * from './BackButtom';
 export * from './ReadMore';
 export * from './ListEmptyComponent';
+export * from './TapRating';
+export * from './Star';
 

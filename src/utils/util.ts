@@ -33,10 +33,10 @@ type AsyncImageProps = {
 
 export function parseSource(
   uri?: string | String,
-  defaultSource: ImageURISource | number = images.danger, // add here vector icon
+  defaultSource: ImageURISource | number = images.user,
 ): AsyncImageProps {
   return {
-    source: !(uri && uri !== '') ? defaultSource : {uri: uri.toString()},
+    source: !(uri && uri !== '') ? defaultSource : { uri: uri.toString() },
     defaultSource: defaultSource,
   };
 }

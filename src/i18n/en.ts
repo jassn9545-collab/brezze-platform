@@ -271,6 +271,7 @@ const en = {
     ratingStars: '⭐⭐⭐⭐⭐'
   },
   professionalProfile: {
+    viewDetails: 'View Details',
     topRated: 'TOP RATED',
     totalEarnings: 'Total Earnings',
     totalJobs: 'Total Jobs',
@@ -290,7 +291,7 @@ const en = {
     selected: 'Selected',
     addService: 'Add Service',
     reviews: 'Reviews',
-    seeAll: 'See All (4.8)',
+    seeAll: 'See All {{value}}',
     hireNow: 'Hire Now',
     sarahMiller: 'Sarah Miller',
     reviewText: 'Passionate about Home Appliances and house fitting issues...'
