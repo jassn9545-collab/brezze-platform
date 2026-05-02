@@ -65,29 +65,35 @@ const BottomTabs = (props: BottomTabBarProps) => {
               key={route.key}
               style={$tab}
             >
-              {isFocused ? (
+              {key === 'job' ? (
                 <View style={$wrapActiveTab}>
+                  <View style={$activeTabCurve} />
                   <View style={$activeTab}>
                     <Image
-                      source={images[`${key}` as ImageKeys]}
-                      tintColor={colors.palette.white}
                       style={$activeTabBarIcon}
+                      resizeMode="contain"
+                      tintColor={colors.palette.white}
+                      source={images[`${key}` as ImageKeys]}
                     />
                   </View>
                 </View>
               ) : (
                 <Image
-                  source={images[`${key}` as ImageKeys]}
-                  tintColor={colors.palette.white}
                   style={$tabBarIcon}
+                  resizeMode="contain"
+                  tintColor={colors.palette.white}
+                  source={images[`${key}` as ImageKeys]}
                 />
               )}
-              <Text
-                size="xs"
-                weight="regular"
-                style={[$tabBarLabel, isFocused && { marginTop: scale(18) }]}
-                tx={`bottomTab.${label}` as TxKeyPath}
-              />
+
+              {key !== 'job' && (
+                <Text
+                  size="xs"
+                  weight="regular"
+                  style={$tabBarLabel}
+                  tx={`bottomTab.${label}` as TxKeyPath}
+                />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -106,32 +112,43 @@ const $tabBarContainer: ViewStyle = {
 };
 
 const $wrapActiveTab: ViewStyle = {
-  top: -scale(35),
+  top: -scale(43),
+  width: scale(76),
+  height: scale(76),
   position: 'absolute',
   alignItems: 'center',
   justifyContent: 'center',
   backgroundColor: colors.transparent,
 };
 
+const $activeTabCurve: ViewStyle = {
+  bottom: 0,
+  width: scale(76),
+  height: scale(43),
+  position: 'absolute',
+  borderBottomLeftRadius: scale(38),
+  borderBottomRightRadius: scale(38),
+  backgroundColor: colors.background,
+};
+
 const $activeTab: ViewStyle = {
-  borderWidth: 5,
+  borderWidth: 0,
+  width: scale(56),
+  height: scale(56),
   alignItems: 'center',
+  justifyContent: 'center',
   paddingVertical: spacing.sm,
   paddingHorizontal: spacing.md,
   backgroundColor: colors.primary,
-  borderColor: colors.palette.white,
   borderRadius: spacing.xxxl + spacing.xl,
 };
 
 const $activeTabBarIcon: ImageStyle = {
-  resizeMode: 'contain',
   width: scale(20),
   height: scale(20),
-  marginTop: scale(4),
 };
 
 const $tabBarIcon: ImageStyle = {
-  resizeMode: 'contain',
   width: scale(15),
   height: scale(15),
   marginTop: scale(4),
@@ -143,8 +160,8 @@ const $tabBarLabel: TextStyle = {
 };
 
 const $tab: ViewStyle = {
-  alignItems: 'center',
   flex: 1,
+  alignItems: 'center',
 };
 
 const TabBar = (props: BottomTabBarProps) => <BottomTabs {...props} />;

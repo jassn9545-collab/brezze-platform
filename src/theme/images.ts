@@ -14,11 +14,12 @@ export const images = {
   //bottom tab icons
   home: require('../assets/images/home.png'),
   service: require('../assets/images/serviceIcon.png'),
+  job: require('../assets/images/job.png'),
   chat: require('../assets/images/chat.png'),
-  professionalProfile: require('../assets/images/profileIcon.png'),
   profile: require('../assets/images/profileIcon.png'),
   //
-
+  
+  professionalProfile: require('../assets/images/profileIcon.png'),
   categories: require('../assets/images/electrician.png'),
   user: require('../assets/images/user.png'),
   tickIcon: require('../assets/images/tickIcon.png'),

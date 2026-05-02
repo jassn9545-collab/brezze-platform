@@ -21,6 +21,7 @@ import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
 export type BottomTabNavigatorParamList = {
   Home: undefined;
   Service: undefined;
+  Job: undefined
   Chat: undefined;
   Profile: undefined;
 };
@@ -49,9 +50,18 @@ export const BottomTabNavigator: FC<NavigationProps> = () => {
         headerShown: false,
         sceneStyle: { backgroundColor: colors.background },
       })}
+      screenListeners={({ route, navigation }) => ({
+        tabPress: (e) => {
+          if (route.name === "Job") {
+            e.preventDefault();
+            navigation.getParent()?.navigate("JobPost");
+          }
+        },
+      })}
     >
       <Tab.Screen name="Home" component={Screens.HomeScreen} /> 
       <Tab.Screen name="Service" component={Screens.ServiceListScreen} />
+      <Tab.Screen name="Job" component={Screens.DummyScreen} />
       <Tab.Screen name="Chat" component={Screens.ChatScreen} />
       <Tab.Screen name="Profile" component={Screens.ProfileScreen} />
     </Tab.Navigator>

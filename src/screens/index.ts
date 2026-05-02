@@ -27,6 +27,7 @@ export * from './CenterModal';
 export * from './HelpSupportScreen';
 export * from './ChatDetailScreen';
 export * from './ChatScreen';
+export * from './DummyScreen';
 
 
 // export * from './NotificationScreen';
