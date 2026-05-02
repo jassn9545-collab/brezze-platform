@@ -104,6 +104,12 @@ const $tabBarContainer: ViewStyle = {
   flexDirection: 'row',
   paddingVertical: spacing.sm,
   paddingHorizontal: spacing.md,
+  backgroundColor: colors.transparent,
+};
+
+const $tab: ViewStyle = {
+  flex: 1,
+  alignItems: 'center',
 };
 
 const $activeTab: ViewStyle = {
@@ -121,11 +127,6 @@ const $tabBarLabel: TextStyle = {
   textAlign: 'center',
   marginTop: scale(4),
   color: colors.palette.white,
-};
-
-const $tab: ViewStyle = {
-  flex: 1,
-  alignItems: 'center',
 };
 
 const TabBar = (props: BottomTabBarProps) => <BottomTabs {...props} />;
