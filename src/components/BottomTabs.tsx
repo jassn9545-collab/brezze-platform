@@ -1,6 +1,7 @@
 import { AppImage, colors, images, spacing } from '../theme';
 import {
   Image,
+  ImageBackground,
   ImageStyle,
   LayoutAnimation,
   TextStyle,
@@ -25,7 +26,10 @@ const BottomTabs = (props: BottomTabBarProps) => {
 
   return (
     <View style={{ backgroundColor: colors.background }}>
-      <View style={[$tabBarContainer, { marginBottom: insets.bottom }]}>
+      <ImageBackground
+        source={require('../assets/images/bottomTab.png')}
+        style={[$tabBarContainer, { marginBottom: insets.bottom }]}
+      >
         {state?.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const label = route.name;
@@ -66,16 +70,8 @@ const BottomTabs = (props: BottomTabBarProps) => {
               style={$tab}
             >
               {key === 'job' ? (
-                <View style={$wrapActiveTab}>
-                  <View style={$activeTabCurve} />
-                  <View style={$activeTab}>
-                    <Image
-                      style={$activeTabBarIcon}
-                      resizeMode="contain"
-                      tintColor={colors.palette.white}
-                      source={images[`${key}` as ImageKeys]}
-                    />
-                  </View>
+                <View style={$activeTab}>
+                  <Image source={images[`${key}` as ImageKeys]} />
                 </View>
               ) : (
                 <Image
@@ -97,7 +93,7 @@ const BottomTabs = (props: BottomTabBarProps) => {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ImageBackground>
     </View>
   );
 };
@@ -108,51 +104,19 @@ const $tabBarContainer: ViewStyle = {
   flexDirection: 'row',
   paddingVertical: spacing.sm,
   paddingHorizontal: spacing.md,
-  backgroundColor: colors.primary,
-};
-
-const $wrapActiveTab: ViewStyle = {
-  top: -scale(43),
-  width: scale(76),
-  height: scale(76),
-  position: 'absolute',
-  alignItems: 'center',
-  justifyContent: 'center',
-  backgroundColor: colors.transparent,
-};
-
-const $activeTabCurve: ViewStyle = {
-  bottom: 0,
-  width: scale(76),
-  height: scale(43),
-  position: 'absolute',
-  borderBottomLeftRadius: scale(38),
-  borderBottomRightRadius: scale(38),
-  backgroundColor: colors.background,
 };
 
 const $activeTab: ViewStyle = {
-  borderWidth: 0,
-  width: scale(56),
-  height: scale(56),
-  alignItems: 'center',
-  justifyContent: 'center',
-  paddingVertical: spacing.sm,
-  paddingHorizontal: spacing.md,
-  backgroundColor: colors.primary,
-  borderRadius: spacing.xxxl + spacing.xl,
-};
-
-const $activeTabBarIcon: ImageStyle = {
-  width: scale(20),
-  height: scale(20),
+  bottom: '50%',
+  position: 'absolute',
+  marginBottom: scale(4),
 };
 
 const $tabBarIcon: ImageStyle = {
   width: scale(15),
   height: scale(15),
-  marginTop: scale(4),
 };
+
 const $tabBarLabel: TextStyle = {
   textAlign: 'center',
   marginTop: scale(4),

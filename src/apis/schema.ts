@@ -188,7 +188,7 @@ export const editProfile = yup.object().shape({
   name: yup.string().required('validation.required'),
   email: yup.string().required('validation.required'),
   phone: yup.string().required('validation.required'),
-  location: yup.string().required('validation.required'),
+  address: yup.string().required('validation.required'),
   profile_image: yup.string(),
 });
 

@@ -383,6 +383,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxs,
     borderRadius: spacing.sm,
     paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
     backgroundColor: colors.palette.dimGreen,
   },
   verifiedText: {

@@ -131,7 +131,7 @@ const EditProfile: FC<Props> = props => {
       name,
       email,
       phone,
-      location: address?.address!,
+      address: address?.address!,
       profile_image: imageURI,
     };
     editProfile
@@ -141,7 +141,7 @@ const EditProfile: FC<Props> = props => {
         formData.append('name', params.name);
         formData.append('email', params.email);
         formData.append('phone', params.phone);
-        formData.append('location', params.location);
+        formData.append('address', params.address);
         formData.append('latitude', address.location.lat);
         formData.append('longitude', address.location.lng);
         if (imageFormData) {

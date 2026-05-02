@@ -308,7 +308,7 @@ export const updateProfile = createAsyncThunk(
         data,
       });
       toast.show(response.data.message, { type: 'success' });
-      return response.data.data;
+      return response.data.data.profile;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }
