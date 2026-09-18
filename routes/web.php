@@ -1,0 +1,83 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LoginController;
+use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\JobController;
+use App\Http\Controllers\HomeController;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::view('/stripe/onboarding/return', 'stripe.onboarding-callback', ['refresh' => false])
+    ->name('stripe.onboarding.return');
+Route::view('/stripe/onboarding/refresh', 'stripe.onboarding-callback', ['refresh' => true])
+    ->name('stripe.onboarding.refresh');
+
+Route::get('cache', function () {
+    Artisan::call('cache:clear');
+    Artisan::call('config:clear');
+    Artisan::call('route:clear');
+    Artisan::call('view:clear');
+
+    return response()->json([
+        'status' => true,
+        'message' => 'All caches cleared successfully'
+    ]);
+});
+
+// Route::get('/admin', [LoginController::class, 'index'])->name('login');
+Route::get('/admin', [LoginController::class, 'index'])->name('admin_home');
+Route::post('/admin/login', [LoginController::class, 'admin_login'])->name('admin_login');
+
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/logout', [ProfileController::class, 'logout'])->name('admin.logout');
+
+    Route::get('/profile', [ProfileController::class, 'index'])->name('admin.profile');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('admin.profile.update');
+    Route::post('/profile/upload-photo', [ProfileController::class, 'uploadPhoto'])->name('admin.profile.upload_photo');
+    Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('admin.profile.update_password');
+
+    // users routes
+    Route::prefix('users')->group(function () {
+        // Route::get('/', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.list');
+        Route::get('/', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
+        Route::post('/get_users', [\App\Http\Controllers\Admin\UserController::class, 'user_list'])->name('admin.users.index_users');
+        Route::post('/update_status/{id}', [\App\Http\Controllers\Admin\UserController::class, 'update_status'])->name('admin.users.update_status');
+        Route::get('/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])->name('admin.users.create');
+        Route::post('/store', [\App\Http\Controllers\Admin\UserController::class, 'store'])->name('admin.users.store');
+        Route::get('/edit/{id}', [\App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');
+        Route::post('/update/{id}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.update');
+        Route::get('/delete/{id}', [\App\Http\Controllers\Admin\UserController::class, 'delete'])->name('admin.users.delete');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('admin.users.show');
+    });
+
+    Route::prefix('category')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])->name('admin.category.index');
+        Route::post('/get_categories', [\App\Http\Controllers\Admin\CategoryController::class, 'category_list'])->name('admin.category.get_categories');
+        Route::get('/create', [\App\Http\Controllers\Admin\CategoryController::class, 'create'])->name('admin.category.create');
+        Route::post('/store', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])->name('admin.category.store');
+        Route::get('/edit/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'edit'])->name('admin.category.edit');
+        Route::post('/update/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'update'])->name('admin.category.update');
+        Route::get('/delete/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'delete'])->name('admin.category.delete');
+    });
+
+
+    Route::get('jobs', [\App\Http\Controllers\Admin\JobController::class, 'index'])->name('admin.jobs.index');
+    Route::post('job-get-ajax', [\App\Http\Controllers\Admin\JobController::class, 'job_list'])->name('admin.jobs.job_list');
+    Route::get('project/view/{id}', [\App\Http\Controllers\Admin\JobController::class, 'project_view'])->name('admin.jobs.project_view');
+
+
+    Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('admin.settings');
+    Route::post('/settings/update', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('admin.settings.update');
+
+});
+// update price for gold and silver
+Route::get('/update-price', [HomeController::class, 'update_price'])->name('admin.update_price');
