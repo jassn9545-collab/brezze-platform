@@ -1,6 +1,10 @@
 
+const API_BASE_URL = __DEV__
+  ? 'http://127.0.0.1:8000/api'
+  : 'https://hirephpdeveloperindia.com/bezzie/api';
+
 const URLs = {
-  base: 'https://hirephpdeveloperindia.com/bezzie/api',
+  base: API_BASE_URL,
 
   socketUrl: '',
 
