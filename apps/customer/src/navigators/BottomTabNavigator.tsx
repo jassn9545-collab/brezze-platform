@@ -1,0 +1,69 @@
+import * as Screens from '../screens';
+
+import { AppStackParamList } from './AppStack';
+import {
+  BottomTabScreenProps,
+  createBottomTabNavigator,
+} from '@react-navigation/bottom-tabs';
+import React, { FC } from 'react';
+
+import { CompositeScreenProps } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import TabBar from '../components/BottomTabs';
+// import {BookingTabbar} from './BookingNavigator';
+// import {EarningTabbar} from './EarningsNavigator';
+import { colors } from '../theme';
+// import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
+import { DrawerScreenProps } from '@react-navigation/drawer';
+import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
+// import { View } from 'react-native-reanimated/lib/typescript/Animated';
+
+export type BottomTabNavigatorParamList = {
+  Home: undefined;
+  Service: undefined;
+  Job: undefined
+  Chat: undefined;
+  Profile: undefined;
+};
+
+// Documentation: https://reactnavigation.org/docs/tab-based-navigation/
+const Tab = createBottomTabNavigator<BottomTabNavigatorParamList>();
+
+export type AppBottomTabScreenProps<
+  T extends keyof BottomTabNavigatorParamList,
+> = CompositeScreenProps<
+  BottomTabScreenProps<BottomTabNavigatorParamList, T>,
+  CompositeScreenProps<
+    NativeStackScreenProps<AppStackParamList>,
+    DrawerScreenProps<DrawerParamsList>
+  >
+>;
+
+type NavigationProps = AppDrawerScreenProps<'BottomTab'>;
+
+export const BottomTabNavigator: FC<NavigationProps> = () => {
+  return (
+    <Tab.Navigator
+      initialRouteName="Home"
+      tabBar={TabBar}
+      screenOptions={() => ({
+        headerShown: false,
+        sceneStyle: { backgroundColor: colors.background },
+      })}
+      screenListeners={({ route, navigation }) => ({
+        tabPress: (e) => {
+          if (route.name === "Job") {
+            e.preventDefault();
+            navigation.getParent()?.navigate("JobPost");
+          }
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={Screens.HomeScreen} /> 
+      <Tab.Screen name="Service" component={Screens.ServiceListScreen} />
+      <Tab.Screen name="Job" component={Screens.DummyScreen} />
+      <Tab.Screen name="Chat" component={Screens.ChatScreen} />
+      <Tab.Screen name="Profile" component={Screens.ProfileScreen} />
+    </Tab.Navigator>
+  );
+};
