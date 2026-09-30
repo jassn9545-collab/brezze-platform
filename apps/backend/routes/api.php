@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\Client\JobController as ClientJobController;
 use App\Http\Controllers\Api\Client\ClientHomeController;
 use App\Http\Controllers\Api\Freelancer\FreelancerJobController;
+use App\Http\Controllers\Api\Freelancer\ServiceCatalogController;
+use App\Http\Controllers\Api\PaymentController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +23,7 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post('/update-password', [AuthController::class, 'updatePassword']);
 });
 Route::post('/setting', [AuthController::class, 'setting']);
+Route::post('/stripe/webhook', [PaymentController::class, 'webhook']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -54,6 +57,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('job-details', [ClientJobController::class, 'jobDetails']);
         Route::post('hire-now', [ClientJobController::class, 'hireNow']);
         Route::post('job-mark-completed', [ClientJobController::class, 'jobMarkCompleted']);
+        Route::post('payments/intent', [PaymentController::class, 'createIntent']);
+        Route::get('payments/jobs/{jobId}', [PaymentController::class, 'status']);
+        Route::post('payments/{paymentId}/verify', [PaymentController::class, 'verify']);
+        Route::post('payments/{paymentId}/cancel', [PaymentController::class, 'cancel']);
 
         Route::post('freelancer-profile', [ClientHomeController::class, 'freelancerProfile']);
         Route::post('my-profile', [ClientHomeController::class, 'myProfile']);
@@ -75,6 +82,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('my-profile', [FreelancerJobController::class, 'myProfile']);
         Route::post('profile-update', [FreelancerJobController::class, 'profileUpdate']);
         Route::post('submit-work', [FreelancerJobController::class, 'submitWork']);
+        Route::post('payments', [PaymentController::class, 'providerHistory']);
+        Route::get('catalogs', [ServiceCatalogController::class, 'index']);
+        Route::post('catalogs', [ServiceCatalogController::class, 'store']);
 
     });
 

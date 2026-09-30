@@ -67,6 +67,10 @@ export interface Job {
   saved: boolean;
   client_name: string;
   client_profile_pic: string;
+  payment_status?: 'unpaid' | 'pending' | 'processing' | 'succeeded' | 'failed' | 'cancelled';
+  provider_earnings?: string | null;
+  transaction_id?: string | null;
+  paid_at?: string | null;
   client: {
     name: string;
     profile_image: string;

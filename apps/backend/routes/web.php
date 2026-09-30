@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\JobController;
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\HomeController;
 
 Route::get('/', function () {
@@ -75,6 +76,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('jobs', [\App\Http\Controllers\Admin\JobController::class, 'index'])->name('admin.jobs.index');
     Route::post('job-get-ajax', [\App\Http\Controllers\Admin\JobController::class, 'job_list'])->name('admin.jobs.job_list');
     Route::get('project/view/{id}', [\App\Http\Controllers\Admin\JobController::class, 'project_view'])->name('admin.jobs.project_view');
+
+    Route::get('/payments', [PaymentController::class, 'index'])->name('admin.payments.index');
 
 
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('admin.settings');

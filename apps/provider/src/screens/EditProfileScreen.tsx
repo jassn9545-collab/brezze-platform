@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 
 import { AppStackScreenProps } from '../navigators';
 import {
@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, images, spacing, typography } from '../theme';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Keyboard,
@@ -35,6 +36,8 @@ import { authActions, updateProfile } from '../slices/auth.slice';
 import { ImagePickerResponse } from 'react-native-image-picker';
 import FastImage from '@d11/react-native-fast-image';
 import { AddressType } from '../slices/address.types';
+import { useFocusEffect } from '@react-navigation/native';
+import { getServiceCatalogs, ProviderCatalog } from '../apis/catalogs';
 
 type NavigationProps = AppStackScreenProps<'EditProfile'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -97,6 +100,25 @@ const EditProfile: FC<Props> = props => {
   } | null>(null);
 
   const [error, setError] = useState<FieldError>({});
+  const [catalogs, setCatalogs] = useState<ProviderCatalog[]>([]);
+  const [catalogsLoading, setCatalogsLoading] = useState(true);
+
+  const loadCatalogs = useCallback(async () => {
+    setCatalogsLoading(true);
+    try {
+      setCatalogs(await getServiceCatalogs());
+    } catch {
+      // The API interceptor displays the server error.
+    } finally {
+      setCatalogsLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCatalogs();
+    }, [loadCatalogs]),
+  );
 
   const labelStyle = {
     style: {
@@ -361,11 +383,23 @@ const EditProfile: FC<Props> = props => {
               onPress={() => props.navigation.navigate('AddCatalogModal')}
             />
           </View>
-          <FlatList
-            data={[1]}
-            scrollEnabled={false}
-            renderItem={info => <Service {...info} />}
-          />
+          {catalogsLoading ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <FlatList
+              data={catalogs.slice(0, 3)}
+              keyExtractor={item => item.id.toString()}
+              scrollEnabled={false}
+              ListEmptyComponent={
+                <Text
+                  size="xs"
+                  tx="profile.noCatalogs"
+                  style={styles.emptyCatalogText}
+                />
+              }
+              renderItem={info => <Service {...info} />}
+            />
+          )}
         </View>
         <Button
           onPress={validate}
@@ -494,6 +528,11 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     color: colors.primary,
+  },
+  emptyCatalogText: {
+    color: colors.textDim,
+    textAlign: 'center',
+    marginVertical: spacing.md,
   },
   buttonStyle: {
     marginHorizontal: spacing.md,

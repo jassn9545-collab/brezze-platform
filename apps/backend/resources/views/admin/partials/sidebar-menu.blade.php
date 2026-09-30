@@ -40,11 +40,7 @@
                                 </ul>
                             </li>
                             <li>
-                                <a href="#App" class="has-arrow"><i class="fa fa-users"></i><span>Payments</span></a>
-                                <ul aria-expanded="false" class="collapse">
-                                    <li><a href="">Payment History</a></li>
-                                    <li><a href="">Payment Requests</a></li>
-                                </ul>
+                                <a href="{{ route('admin.payments.index') }}" class=""><i class="fa fa-credit-card"></i><span>Payments</span></a>
                             </li>
                             
                             <li>

@@ -2,6 +2,7 @@ import {
   BackButtom,
   Button,
   Loader,
+  JobPaymentButton,
   ReadMore,
   Screen,
   Text,
@@ -127,6 +128,19 @@ const JobPostDetails: FC<Props> = props => {
               ]}
               tx="jobPostDetails.completeJob"
               onPress={onPressCompleteJob}
+            />
+          </>
+        )}
+        {props.data?.status === 'completed' && (
+          <>
+            <View style={styles.flexOne} />
+            <JobPaymentButton
+              jobId={props.data.id}
+              style={[
+                styles.button,
+                { marginBottom: insets.bottom + spacing.md },
+              ]}
+              onPaid={() => get({ job_id: props.data!.id })}
             />
           </>
         )}

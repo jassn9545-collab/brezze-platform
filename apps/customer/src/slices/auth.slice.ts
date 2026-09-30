@@ -27,7 +27,12 @@ export const getAuthorization = createAsyncThunk(
       const lang = await AsyncStorage.getItem('language');
       const initialUrl = await Linking.getInitialURL();
       const inviteCode = handleInviteURL(initialUrl);
-      return { authorized: isAuthorized === 'true', token, inviteCode, lang };
+      return {
+        authorized: isAuthorized === 'true' && !!token,
+        token,
+        inviteCode,
+        lang,
+      };
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }

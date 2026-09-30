@@ -1,29 +1,86 @@
-import { BackButtom, Screen } from '../components';
-import { FlatList, StyleSheet } from 'react-native';
-import React, { FC } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import React, { FC, useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { AppStackScreenProps } from '../navigators';
+import { BackButtom, Screen, Text } from '../components';
 import { Service } from './ProfileScreen';
-import { spacing } from '../theme';
+import { colors, spacing } from '../theme';
+import {
+  getServiceCatalogs,
+  ProviderCatalog,
+} from '../apis/catalogs';
 
-type NavigationProps = AppStackScreenProps<'ServiceCatalog'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-type Props = NavigationProps;
+type Props = AppStackScreenProps<'ServiceCatalog'>;
 
-const ServiceCatalog: FC<Props> = () => {
+const ServiceCatalog: FC<Props> = props => {
+  const [catalogs, setCatalogs] = useState<ProviderCatalog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadCatalogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      setCatalogs(await getServiceCatalogs());
+    } catch {
+      // The API interceptor displays the server error.
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCatalogs();
+    }, [loadCatalogs]),
+  );
+
   return (
     <Screen
       preset="fixed"
       safeAreaEdges={['top']}
       contentContainerStyle={styles.container}
     >
-      <BackButtom headingTx="drawer.serviceCatalogs" />
-      <FlatList
-        style={styles.flatlist}
-        data={[1, 1, 1, 1, 1, 1]}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
-        renderItem={info => <Service {...info} />}
+      <BackButtom
+        headingTx="drawer.serviceCatalogs"
+        rightComponent={
+          <TouchableOpacity
+            onPress={() => props.navigation.navigate('AddCatalogModal')}
+          >
+            <Text
+              size="xxs"
+              weight="semiBold"
+              tx="profile.addCatalog"
+              style={styles.primaryText}
+            />
+          </TouchableOpacity>
+        }
       />
+      {loading ? (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          style={styles.flatlist}
+          data={catalogs}
+          keyExtractor={item => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.contentContainer}
+          ListEmptyComponent={
+            <Text
+              size="xs"
+              tx="profile.noCatalogs"
+              style={styles.emptyText}
+            />
+          }
+          renderItem={info => <Service {...info} />}
+        />
+      )}
     </Screen>
   );
 };
@@ -41,17 +98,20 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: spacing.md,
   },
+  loader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: colors.textDim,
+    textAlign: 'center',
+    marginTop: spacing.xl,
+  },
+  primaryText: {
+    color: colors.primary,
+    marginRight: spacing.md,
+  },
 });
-// const mapStateToProps = (state: RootState) => ({
-//   totalcount: state.auth.totalNotifications,
-//   notification: state.auth.userNotifications,
-//   fetching: state.auth.userNotificationsLoading,
-// });
-
-// const mapDispatch = {
-//   get: getNotifications,
-// };
-
-// const connector = connect(mapStateToProps, mapDispatch);
 
 export const ServiceCatalogScreen = ServiceCatalog;

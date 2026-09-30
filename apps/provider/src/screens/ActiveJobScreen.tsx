@@ -186,6 +186,29 @@ export const TripCell: FC<TripCellProps> = ({
           />
         </View>
       </View>
+      {item.payment_status && (
+        <View style={$paymentRow}>
+          <Text
+            size="xxs"
+            weight="medium"
+            text={`PAYMENT ${item.payment_status.toUpperCase()}`}
+            style={{
+              color:
+                item.payment_status === 'succeeded'
+                  ? colors.palette.green
+                  : colors.textDim,
+            }}
+          />
+          {item.payment_status === 'succeeded' && item.provider_earnings ? (
+            <Text
+              size="xs"
+              weight="semiBold"
+              text={`${Currency.code} ${Currency.sign}${item.provider_earnings}`}
+              style={{ color: colors.palette.green }}
+            />
+          ) : null}
+        </View>
+      )}
       <View style={$rowWrapper}>
         <View style={$smallBox}>
           <Text
@@ -255,6 +278,17 @@ const $spaceBetween: ViewStyle = {
   flexDirection: 'row',
   alignItems: 'center',
   justifyContent: 'space-between',
+};
+
+const $paymentRow: ViewStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: spacing.xs,
+  paddingTop: spacing.xs,
+  borderTopWidth: 1,
+  borderTopColor: colors.separator,
 };
 
 const $status: TextStyle = {

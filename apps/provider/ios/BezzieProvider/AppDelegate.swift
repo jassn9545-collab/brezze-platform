@@ -31,7 +31,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     )
 
     // Google Map
-    GMSServices.provideAPIKey("AIzaSyDNTfjQV3HyxQQrQsjFtFrNv06Lu67AdvM")
+    GMSServices.provideAPIKey("AIzaSyBSFnamWZn0ZwVlv9zby2DLCOX0zNw5s6E")
 
     return true
   }

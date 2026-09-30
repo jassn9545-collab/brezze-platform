@@ -113,7 +113,7 @@ export const completeJob = createAsyncThunk(
         },
         data: JSON.stringify(params),
       });
-      navigationRef.navigate('JobCompleted');
+      navigationRef.navigate('JobCompleted', { jobId: params.job_id });
       return response.data.data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);

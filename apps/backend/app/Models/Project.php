@@ -94,4 +94,9 @@ class Project extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'project_id');
+    }
 }

@@ -42,6 +42,10 @@ const URLs = {
   jobDetail: '/client/job-details',
   hireJob: '/client/hire-now',
   completeJob: '/client/job-mark-completed',
+  paymentIntent: '/client/payments/intent',
+  paymentStatus: '/client/payments/jobs',
+  paymentVerify: '/client/payments',
+  paymentCancel: '/client/payments',
 
   // Review Api 
   submitReview: '/submit-review',

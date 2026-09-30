@@ -1,7 +1,9 @@
 
 
 const URLs = {
-  base: 'https://hirephpdeveloperindia.com/bezzie/api',
+  base: __DEV__
+    ? 'http://127.0.0.1:8000/api'
+    : 'https://hirephpdeveloperindia.com/bezzie/api',
 
   socketUrl: '',
 
@@ -38,6 +40,8 @@ const URLs = {
   activeJobs: '/freelancer/active-jobs',
   completeJobs: '/freelancer/completed-jobs',
   submitJob: '/freelancer/submit-work',
+  paymentHistory: '/freelancer/payments',
+  catalogs: '/freelancer/catalogs',
 };
 
 export default URLs;

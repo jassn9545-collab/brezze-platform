@@ -59,7 +59,7 @@ export type AppStackParamList = {
   HelpSupport: undefined;
   ChatDetail: undefined;
   EditProfile: undefined;
-  JobCompleted: undefined;
+  JobCompleted: { jobId: number };
   ReviewScreen: undefined;
 
   //modal

@@ -18,4 +18,5 @@ export * from './ReadMore';
 export * from './ListEmptyComponent';
 export * from './TapRating';
 export * from './Star';
+export * from './JobPaymentButton';
 

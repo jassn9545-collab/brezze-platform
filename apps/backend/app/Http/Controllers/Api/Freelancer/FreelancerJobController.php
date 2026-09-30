@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Traits\ApiResponse;
 use App\Models\Project;
 use App\Models\ProjectImage;
+use App\Models\Payment;
 use Illuminate\Support\Str;
 
 class FreelancerJobController extends BaseFreelancerController
@@ -251,7 +252,10 @@ class FreelancerJobController extends BaseFreelancerController
         $paginator = \App\Models\Bid::with([
                 'project' => function ($q) {
                     $q->withCount('bids')
-                    ->with('user:id,name,profile_image');
+                    ->with([
+                        'user:id,name,profile_image',
+                        'payment:id,project_id,provider_id,transaction_id,provider_earnings,status,paid_at',
+                    ]);
                 }
             ])
             ->where('user_id', $user->id)
@@ -266,6 +270,8 @@ class FreelancerJobController extends BaseFreelancerController
         $jobs = $paginator->getCollection()->map(function ($item) {
             if (!$item->project) return null;
 
+            $payment = $item->project->payment;
+
             return array_merge(
                 $item->project->toArray(),
                 [
@@ -275,6 +281,10 @@ class FreelancerJobController extends BaseFreelancerController
 
                     'client_name' => $item->project->user->name ?? null,
                     'client_profile_pic' => $item->project->user->profile_image ?? null, // fixed key
+                    'payment_status' => $payment?->status ?? 'unpaid',
+                    'provider_earnings' => $payment?->provider_earnings,
+                    'transaction_id' => $payment?->transaction_id,
+                    'paid_at' => $payment?->paid_at?->toISOString(),
                 ]
             );
         })->filter()->values();
@@ -397,8 +407,14 @@ class FreelancerJobController extends BaseFreelancerController
         $user = auth()->user();
         $user->proof = UserProof::where('user_id', $user->id)->first();
         $user->job_success_score = 100;
-        $user->total_jobs = 0;
-        $user->total_earnings = 0;
+        $user->total_jobs = Payment::query()
+            ->where('provider_id', $user->id)
+            ->where('status', Payment::STATUS_SUCCEEDED)
+            ->count();
+        $user->total_earnings = number_format((float) Payment::query()
+            ->where('provider_id', $user->id)
+            ->where('status', Payment::STATUS_SUCCEEDED)
+            ->sum('provider_earnings'), 2, '.', '');
         $user->is_top_rated = true;
         $categoryIds = $user->skills ? explode(',', $user->skills) : [];
 
@@ -454,8 +470,14 @@ class FreelancerJobController extends BaseFreelancerController
 
         $user->proof = UserProof::where('user_id', $user->id)->first();
         $user->job_success_score = 100;
-        $user->total_jobs = 0;
-        $user->total_earnings = 0;
+        $user->total_jobs = Payment::query()
+            ->where('provider_id', $user->id)
+            ->where('status', Payment::STATUS_SUCCEEDED)
+            ->count();
+        $user->total_earnings = number_format((float) Payment::query()
+            ->where('provider_id', $user->id)
+            ->where('status', Payment::STATUS_SUCCEEDED)
+            ->sum('provider_earnings'), 2, '.', '');
         $user->is_top_rated = true;
         $categoryIds = $user->skills ? explode(',', $user->skills) : [];
 

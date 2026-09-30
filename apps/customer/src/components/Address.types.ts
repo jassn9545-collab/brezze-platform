@@ -1,6 +1,7 @@
 export interface GoogleAddressAutocompleteResult {
   predictions: AddressPrediction[];
   status: string;
+  error_message?: string;
 }
 
 export interface GoogleAddress {
@@ -42,6 +43,7 @@ export interface ReverseGeocodingResponse {
   plus_code: PlusCode;
   results: GeocodingResult[];
   status: string;
+  error_message?: string;
 }
 
 export interface PlusCode {
@@ -81,6 +83,7 @@ export interface Directions {
 export interface PlaceDetailResponse {
   result: PlaceDetail;
   status: string;
+  error_message?: string;
   address_components: AddressComponent[];
 }
 

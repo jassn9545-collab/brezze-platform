@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   ListRenderItemInfo,
@@ -13,7 +14,7 @@ import {
   TapRating,
   Text,
 } from '../components';
-import React, { FC, useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 
 import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 import { colors, images, spacing } from '../theme';
@@ -23,6 +24,8 @@ import { HITSLOP, parseSource } from '../utils/util';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
 import FastImage from '@d11/react-native-fast-image';
+import { useFocusEffect } from '@react-navigation/native';
+import { getServiceCatalogs, ProviderCatalog } from '../apis/catalogs';
 
 type NavigationProps = AppBottomTabScreenProps<'Profile'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -34,6 +37,25 @@ const Profile: FC<Props> = props => {
   const [visibleMenu, setVisibleMenu] = useState<VisibleMenuType>({
     visible: false,
   });
+  const [catalogs, setCatalogs] = useState<ProviderCatalog[]>([]);
+  const [catalogsLoading, setCatalogsLoading] = useState(true);
+
+  const loadCatalogs = useCallback(async () => {
+    setCatalogsLoading(true);
+    try {
+      setCatalogs(await getServiceCatalogs());
+    } catch {
+      // The API interceptor displays the server error.
+    } finally {
+      setCatalogsLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCatalogs();
+    }, [loadCatalogs]),
+  );
 
   const rightHeaderComponent = React.useMemo(
     () => (
@@ -132,18 +154,49 @@ const Profile: FC<Props> = props => {
         <View style={styles.servicesCatalogContainer}>
           <View style={styles.catalogHeading}>
             <Text size="md" weight="semiBold" tx="profile.serviceCatalog" />
+            <TouchableOpacity
+              hitSlop={HITSLOP.MEDIUM}
+              onPress={() => props.navigation.navigate('AddCatalogModal')}
+            >
+              <Text
+                size="xxs"
+                weight="semiBold"
+                tx="profile.addCatalog"
+                style={styles.primaryText}
+              />
+            </TouchableOpacity>
+          </View>
+          {catalogsLoading ? (
+            <ActivityIndicator
+              color={colors.primary}
+              style={styles.catalogLoader}
+            />
+          ) : (
+            <FlatList
+              data={catalogs.slice(0, 3)}
+              keyExtractor={item => item.id.toString()}
+              scrollEnabled={false}
+              ListEmptyComponent={
+                <Text
+                  size="xs"
+                  tx="profile.noCatalogs"
+                  style={styles.emptyCatalogText}
+                />
+              }
+              renderItem={info => <Service {...info} />}
+            />
+          )}
+          <TouchableOpacity
+            style={styles.viewAllCatalogs}
+            onPress={() => props.navigation.navigate('ServiceCatalog')}
+          >
             <Text
               size="xxs"
               weight="semiBold"
               tx="profile.viewAll"
               style={styles.primaryText}
             />
-          </View>
-          <FlatList
-            data={[1, 1, 1]}
-            scrollEnabled={false}
-            renderItem={info => <Service {...info} />}
-          />
+          </TouchableOpacity>
         </View>
         <View style={styles.reviewContainer}>
           <View style={styles.reviewHeading}>
@@ -183,10 +236,18 @@ const Profile: FC<Props> = props => {
   );
 };
 
-type ServiceCardProps = ListRenderItemInfo<any>;
+type ServiceCardProps = ListRenderItemInfo<ProviderCatalog>;
 export const Service = ({ item }: ServiceCardProps) => {
+  const numericPrice = Number(item.price);
+  const price = Number.isFinite(numericPrice)
+    ? numericPrice.toFixed(2)
+    : item.price;
+  const imageSource = item.image_urls?.[0]
+    ? { uri: item.image_urls[0] }
+    : require('../assets/images/dummy/plug.png');
+
   return (
-    <View key={item.id} style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.serviceDetail}>
         <View style={styles.rating}>
           <Image
@@ -195,26 +256,20 @@ export const Service = ({ item }: ServiceCardProps) => {
             resizeMode="contain"
             style={styles.star}
           />
-          <Text style={styles.extraSmallText} text="4.84 ( 20K Reviews )" />
+          <Text style={styles.extraSmallText} text="0.00 ( 0 Reviews )" />
         </View>
-        <Text size="sm" weight="medium" text="Switchbox Installation" />
+        <Text size="sm" weight="medium" text={item.heading} />
         <Text
           style={styles.extraSmallText}
-          text="Installed in specified area for new power outlet"
+          text={item.description}
+          numberOfLines={2}
         />
         <View style={styles.priceWrapper}>
           <Text
             size="xs"
             weight="semiBold"
             style={styles.priceText}
-            text={Currency.code + Currency.sign + '49.00'}
-          />
-          <View style={styles.verticalLine} />
-          <Text
-            size="xs"
-            weight="semiBold"
-            style={styles.timeText}
-            text="30 mins"
+            text={Currency.code + Currency.sign + price}
           />
         </View>
 
@@ -228,7 +283,11 @@ export const Service = ({ item }: ServiceCardProps) => {
         </TouchableOpacity>
       </View>
 
-      <Image source={require('../assets/images/dummy/plug.png')} />
+      <Image
+        source={imageSource}
+        resizeMode="cover"
+        style={styles.catalogImage}
+      />
     </View>
   );
 };
@@ -353,6 +412,18 @@ const styles = StyleSheet.create({
   primaryText: {
     color: colors.primary,
   },
+  catalogLoader: {
+    marginVertical: spacing.md,
+  },
+  emptyCatalogText: {
+    color: colors.textDim,
+    textAlign: 'center',
+    marginVertical: spacing.md,
+  },
+  viewAllCatalogs: {
+    alignSelf: 'flex-end',
+    paddingVertical: spacing.sm,
+  },
   card: {
     gap: spacing.md,
     padding: spacing.sm,
@@ -366,6 +437,11 @@ const styles = StyleSheet.create({
   serviceDetail: {
     flex: 1,
     gap: spacing.xxs,
+  },
+  catalogImage: {
+    width: 88,
+    height: 88,
+    borderRadius: spacing.xs,
   },
   rating: {
     gap: spacing.xxs,
