@@ -81,7 +81,9 @@
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
-                        var ress = JSON.parse(response);
+                        const ress = typeof response === 'string'
+                            ? JSON.parse(response)
+                            : response;
                         if(ress.status === 'success') {
                             toastr.success('Login successful');
                             window.location.href = "{{ url('admin/dashboard') }}";
@@ -92,7 +94,7 @@
                         // window.location.href = "{{ url('admin/dashboard') }}";
                     },
                     error: function(xhr) {
-                        toastr.error('Login failed. Please check your credentials.');
+                        toastr.error(xhr.responseJSON?.message || 'Login failed. Please check your credentials.');
                     }
                 });
             });
