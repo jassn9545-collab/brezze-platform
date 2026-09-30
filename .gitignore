@@ -1,0 +1,9 @@
+/.repo-backups/
+.DS_Store
+Thumbs.db
+__MACOSX/
+/.idea/
+/.vscode/
+*.log
+*.tmp
+/apps/backend/bezzie (1).sql

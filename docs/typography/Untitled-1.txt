@@ -1,0 +1,74 @@
+[
+    'account_id' => 'acc_SINLM58JgYaBOI',
+
+    'contains' => [
+        'payment'
+    ],
+
+    'created_at' => 1790269821,
+
+    'entity' => 'event',
+
+    'event' => 'payment.authorized',
+
+    'payload' => [
+        'payment' => [
+            'entity' => [
+                'acquirer_data' => [
+                    'rrn' => '663356161286'
+                ],
+
+                'amount' => 10000,
+                'amount_refunded' => 0,
+                'amount_transferred' => 0,
+                'bank' => null,
+                'captured' => false,
+                'card_id' => null,
+                'contact' => '+919164612695',
+                'created_at' => 1790269798,
+                'currency' => 'INR',
+                'description' => 'Payment requested by Gandharva',
+                'email' => 'raffeqmohammed09@gmail.com',
+                'entity' => 'payment',
+
+                'error_code' => null,
+                'error_description' => null,
+                'error_reason' => null,
+                'error_source' => null,
+                'error_step' => null,
+
+                'fee' => null,
+
+                'id' => 'pay_Tfx2yBCeRFizgs',
+
+                'international' => false,
+                'invoice_id' => null,
+
+                'method' => 'upi',
+
+                'notes' => [],
+
+                'order_id' => 'order_Tfx2oB1tgpDzUi',
+
+                'provider' => null,
+
+                'refund_status' => null,
+                'reward' => null,
+
+                'status' => 'authorized',
+
+                'tax' => null,
+
+                'upi' => [
+                    'flow' => 'intent',
+                    'payer_account_type' => 'bank_account',
+                    'vpa' => 'raffeqmohammed09-2@okicici'
+                ],
+
+                'vpa' => 'raffeqmohammed09-2@okicici',
+
+                'wallet' => null
+            ]
+        ]
+    ]
+];
