@@ -21,13 +21,15 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
+        $credentials['user_type'] = 'admin';
+
         if (auth()->attempt($credentials)) {
-            return json_encode(['status' => 'success', 'message' => 'Login successful']);
-        }else{
-            return json_encode(['status' => 'error', 'message' => 'Invalid credentials']);
+            $request->session()->regenerate();
+
+            return response()->json(['status' => 'success', 'message' => 'Login successful']);
         }
 
-        
+        return response()->json(['status' => 'error', 'message' => 'Invalid credentials'], 401);
     }
 
     public function logout()

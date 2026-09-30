@@ -40,4 +40,8 @@ return [
         'onboarding_base_url' => env('STRIPE_ONBOARDING_BASE_URL', env('APP_URL')),
     ],
 
+    'metal_price' => [
+        'key' => env('METAL_PRICE_API_KEY'),
+    ],
+
 ];

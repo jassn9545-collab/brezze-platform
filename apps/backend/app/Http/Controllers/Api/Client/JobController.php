@@ -13,6 +13,7 @@ use App\Traits\ApiResponse;
 use App\Models\Project;
 use App\Models\ProjectImage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class JobController extends BaseClientController
 {
@@ -129,7 +130,10 @@ class JobController extends BaseClientController
             return $this->error($validator->errors()->first(), 400, $validator->errors());
         }
 
-        $job = Project::with('bids')->withCount('is_hired')->find($request->job_id);
+        $job = Project::with('bids')
+            ->withCount('is_hired')
+            ->where('user_id', auth()->id())
+            ->find($request->job_id);
 
         if (!$job) {
             return $this->error('Job not found.', 404);
@@ -152,12 +156,14 @@ class JobController extends BaseClientController
             return $this->error($validator->errors()->first(), 400, $validator->errors());
         }
 
-        $job = Project::find($request->job_id);
+        $job = Project::where('user_id', auth()->id())
+            ->where('status', 'active')
+            ->find($request->job_id);
         if (!$job) {
             return $this->error('Job not found.', 404);
         }
 
-        $bid = \App\Models\Bid::find($request->bid_id);
+        $bid = \App\Models\Bid::where('project_id', $job->id)->find($request->bid_id);
         if (!$bid) {
             return $this->error('Bid not found.', 404);
         }
@@ -166,18 +172,14 @@ class JobController extends BaseClientController
             return $this->error('Freelancer not found.', 404);
         }
 
-        // Mark all other bids as not hired
-        \App\Models\Bid::where('project_id', $job->id)->update(['is_hired' => 0]);
-
-        // Mark the selected bid as hired
-        $bid->is_hired = 1;
-        $bid->save();
-
-        $job->status = 'in progress';
-        $job->save();
+        DB::transaction(function () use ($job, $bid) {
+            \App\Models\Bid::where('project_id', $job->id)->update(['is_hired' => 0]);
+            $bid->update(['is_hired' => 1]);
+            $job->update(['status' => 'in progress']);
+        });
         
 
-        Mail::html("Hi {$user->freelancer_name}, <br/>Congratulations! You have been hired for the job: {$job->title}. <br/><br/>Best regards,<br/>The Team Bezzie", function ($message) use ($user) {
+        Mail::html("Hi {$user->name}, <br/>Congratulations! You have been hired for the job: {$job->title}. <br/><br/>Best regards,<br/>The Team Bezzie", function ($message) use ($user) {
             $message->to($user->email)
                     ->subject('You have been hired!');
         });

@@ -29,6 +29,7 @@ class FreelancerJobController extends BaseFreelancerController
         $userId = auth()->id();
 
         $query = Project::withCount('bids')
+            ->where('status', 'active')
             ->withExists(['savedProjects as saved' => function ($q) use ($userId) {
                 $q->where('user_id', $userId);
             }])
@@ -61,6 +62,11 @@ class FreelancerJobController extends BaseFreelancerController
             return $this->error('Validation error.', 400,$validator->errors());
         }
         $user = auth()->user();
+        $project = Project::where('status', 'active')->find($request->project_id);
+        if (!$project) {
+            return $this->error('This job is no longer accepting applications.', 400);
+        }
+
         $alreadyApplied = \App\Models\Bid::where('project_id', $request->project_id)
         ->where('user_id', $user->id)
         ->exists();
@@ -477,6 +483,9 @@ class FreelancerJobController extends BaseFreelancerController
         $bid = \App\Models\Bid::where('project_id', $request->project_id)
             ->where('user_id', auth()->id())
             ->where('is_hired', 1)
+            ->whereHas('project', function ($query) {
+                $query->where('status', 'in progress');
+            })
             ->first();
 
         if (!$bid) {
@@ -499,9 +508,6 @@ class FreelancerJobController extends BaseFreelancerController
             'work_description' => $request->work_description,
             'end_date_time' => date('Y-m-d H:i:s'),
         ]);
-        \App\Models\Project::where('id', $request->project_id)
-            ->update(['status' => 'completed']);
-        
         $clientEmail = $bid->project->user->email;
         $clientmessage = '<p>Dear ' . $bid->project->user->name . ',</p>';
         $clientmessage .= '<p>Work has been submitted for project: ' . $bid->project->title . '</p>';

@@ -8,16 +8,20 @@ use App\Http\Controllers\Api\Freelancer\FreelancerJobController;
 
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
-Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
-Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
-Route::post('/forget-password-otp-verification', [AuthController::class, 'forgetPasswordOtpVerification']);
-Route::post('/update-password', [AuthController::class, 'updatePassword']);
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
+});
+
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
+    Route::post('/forget-password-otp-verification', [AuthController::class, 'forgetPasswordOtpVerification']);
+    Route::post('/update-password', [AuthController::class, 'updatePassword']);
+});
 Route::post('/setting', [AuthController::class, 'setting']);
 
-Route::get('/test', [AuthController::class, 'test']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -75,7 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::post('submit-review', [FreelancerJobController::class, 'submitReview']);
-    Route::post('update-password', [HomeController::class, 'updatePassword']);
+    Route::post('account/update-password', [HomeController::class, 'updatePassword']);
 });
 
 ?>

@@ -106,11 +106,6 @@ import {
     useEffect(() => {
       if (props.loading === 'loaded') {
         props.resetVerifyOtp();
-        if (props.route.params.from === 'forgotPassword') {
-          props.navigation.replace('ResetPassword', {
-            user_id: params.user_id!,
-          });
-        }
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.loading]);
@@ -276,4 +271,3 @@ import {
   const connector = connect(mapStateToProps, mapDispatch);
   
   export const VerificationScreen = connector(Verification);
-  

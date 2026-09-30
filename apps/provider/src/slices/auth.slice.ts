@@ -270,7 +270,12 @@ export const verifyOTP = createAsyncThunk(
         data: JSON.stringify(params),
       });
       toast.show(response.data.message, { type: 'success' });
-      return response.data.data;
+      const data = response.data.data;
+      navigationRef.navigate('ResetPassword', {
+        user_id: params.user_id!,
+        reset_token: data.reset_token,
+      });
+      return data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }

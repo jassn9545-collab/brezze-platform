@@ -20,23 +20,25 @@ Route::view('/stripe/onboarding/return', 'stripe.onboarding-callback', ['refresh
 Route::view('/stripe/onboarding/refresh', 'stripe.onboarding-callback', ['refresh' => true])
     ->name('stripe.onboarding.refresh');
 
-Route::get('cache', function () {
-    Artisan::call('cache:clear');
-    Artisan::call('config:clear');
-    Artisan::call('route:clear');
-    Artisan::call('view:clear');
-
-    return response()->json([
-        'status' => true,
-        'message' => 'All caches cleared successfully'
-    ]);
-});
-
 // Route::get('/admin', [LoginController::class, 'index'])->name('login');
 Route::get('/admin', [LoginController::class, 'index'])->name('admin_home');
 Route::post('/admin/login', [LoginController::class, 'admin_login'])->name('admin_login');
 
-Route::middleware(['auth'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::post('/cache', function () {
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        \Illuminate\Support\Facades\Artisan::call('route:clear');
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+
+        return response()->json([
+            'status' => true,
+            'message' => 'All caches cleared successfully'
+        ]);
+    })->name('admin.cache.clear');
+
+    Route::post('/update-price', [HomeController::class, 'update_price'])->name('admin.update_price');
+
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/logout', [ProfileController::class, 'logout'])->name('admin.logout');
 
@@ -79,5 +81,3 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::post('/settings/update', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('admin.settings.update');
 
 });
-// update price for gold and silver
-Route::get('/update-price', [HomeController::class, 'update_price'])->name('admin.update_price');

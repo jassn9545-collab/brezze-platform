@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Mail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Traits\ApiResponse;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -29,13 +30,15 @@ class AuthController extends Controller
             'confirm_password' => 'required|same:password',
             'user_type' => 'nullable|string|in:client,freelancer',
             'country' => 'nullable|string',
+            'country_code' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return $this->error($validator->errors()->first(), 400, $validator->errors());
         }
 
-        if ($request->filled('country') && !$this->normalizeStripeCountry($request->country)) {
+        $country = $request->input('country', $request->input('country_code'));
+        if ($country && !$this->normalizeStripeCountry($country)) {
             return $this->error('Country must be Australia or India.', 400);
         }
 
@@ -67,7 +70,8 @@ class AuthController extends Controller
             'confirm_password' => 'required|same:password',
             'reference' => 'nullable|string',
             'user_type' => 'nullable|string|in:client,freelancer',
-            'country' => 'required|string',
+            'country' => 'required_without:country_code|string',
+            'country_code' => 'required_without:country|string',
             'latitude' => 'nullable|string|max:191',
             'longitude' => 'nullable|string|max:191',
             'return_url' => 'required_with:refresh_url|url:http,https',
@@ -78,19 +82,23 @@ class AuthController extends Controller
             return $this->error($validator->errors()->first(), 400, $validator->errors());
         }
 
-        $stripeCountry = $this->normalizeStripeCountry($request->country);
+        $stripeCountry = $this->normalizeStripeCountry(
+            $request->input('country', $request->input('country_code'))
+        );
 
         if (!$stripeCountry) {
             return $this->error('Country must be Australia or India.', 400);
         }
 
-        if (!config('services.stripe.secret')) {
+        $needsStripeAccount = ($request->user_type ?? 'client') === 'freelancer';
+
+        if ($needsStripeAccount && !config('services.stripe.secret')) {
             return $this->error('Stripe is not configured. Please add STRIPE_SECRET.', 500);
         }
 
         [$returnUrl, $refreshUrl] = $this->onboardingCallbackUrls($request);
 
-        if (str_starts_with((string) config('services.stripe.secret'), 'sk_live_')
+        if ($needsStripeAccount && str_starts_with((string) config('services.stripe.secret'), 'sk_live_')
             && (!str_starts_with($returnUrl, 'https://') || !str_starts_with($refreshUrl, 'https://'))) {
             return $this->error('Stripe live-mode onboarding URLs must use HTTPS.', 400);
         }
@@ -102,13 +110,13 @@ class AuthController extends Controller
         }
 
         try {
-            $user = DB::transaction(function () use ($request, $stripeCountry, $stripe) {
+            $user = DB::transaction(function () use ($request, $stripeCountry, $stripe, $needsStripeAccount) {
                 $user = User::create([
                     'name'      => $request->name,
                     'email'     => $request->email,
                     'phone'     => $request->phone,
                     'password'  => \Hash::make($request->password),
-                    'user_type' => $request->user_type ?? '',
+                    'user_type' => $request->user_type ?? 'client',
                     'is_verified' => true,
                     'email_verified_at' => date('Y-m-d H:i:s'),
                     'refrence' => $request->reference ?? null,
@@ -118,12 +126,14 @@ class AuthController extends Controller
                     'longitude' => $request->longitude,
                 ]);
 
-                $stripeAccount = $this->createStripeConnectedAccount($user, $stripeCountry, $stripe);
+                $stripeAccount = $needsStripeAccount
+                    ? $this->createStripeConnectedAccount($user, $stripeCountry, $stripe)
+                    : null;
 
                 // Generate referral code
                 $referral_code = strtoupper(substr($user->name, 0, 3)) . $user->id;
                 $user->refral_code = $referral_code;
-                $user->stripe_account_id = $stripeAccount->id;
+                $user->stripe_account_id = $stripeAccount?->id;
                 $user->save();
 
                 return $user;
@@ -142,16 +152,18 @@ class AuthController extends Controller
         // Generate token
         $token = $user->createToken('api-token')->plainTextToken;
 
-        try {
-            $accountLink = $this->createStripeOnboardingLink(
-                $user,
-                $returnUrl,
-                $refreshUrl,
-                $stripe
-            );
-        } catch (Throwable $e) {
-            report($e);
-            $accountLink = null;
+        $accountLink = null;
+        if ($needsStripeAccount) {
+            try {
+                $accountLink = $this->createStripeOnboardingLink(
+                    $user,
+                    $returnUrl,
+                    $refreshUrl,
+                    $stripe
+                );
+            } catch (Throwable $e) {
+                report($e);
+            }
         }
 
         $user->makeHidden(['password', 'remember_token']);
@@ -172,7 +184,7 @@ class AuthController extends Controller
             'token' => $token,
             'onboarding_url' => $accountLink?->url,
             'onboarding_link_expires_at' => $accountLink?->expires_at,
-        ], $accountLink
+        ], !$needsStripeAccount || $accountLink
             ? 'OTP verified. Registration complete.'
             : 'OTP verified. Registration complete. Request a new Stripe onboarding link to continue.');
     }
@@ -183,7 +195,8 @@ class AuthController extends Controller
 
         return match ($country) {
             'au', 'aus', 'australia' => 'AU',
-            'in', 'ind', 'india' => 'IN',
+            'in', 'ind', 'india', '91', '+91' => 'IN',
+            '61', '+61' => 'AU',
             default => null,
         };
     }
@@ -270,6 +283,10 @@ class AuthController extends Controller
         }
 
         $user = $request->user();
+
+        if ($user->user_type !== 'freelancer') {
+            return $this->error('Stripe onboarding is only available to freelancers.', 403);
+        }
 
         if (!$user->stripe_account_id) {
             $stripeCountry = $this->normalizeStripeCountry($user->country);
@@ -397,7 +414,7 @@ class AuthController extends Controller
             'basic_info' => $basic_info,
             'profile_pic' => $profile_pic,
             'proof' => $proof,
-            'is_verification_completed' => $user_proof->is_verified
+            'is_verification_completed' => $user_proof?->is_verified ?? 0
         ]);
     }
 
@@ -448,7 +465,7 @@ class AuthController extends Controller
             return $this->error('This email is not associated with the selected user type', 400);
         }
         $user_proof = UserProof::where('user_id', $user->id)->first();
-        if($user_proof->is_verified==2){
+        if($user_proof?->is_verified === 2){
             return $this->error('Your ID verification has been rejected. Please contact support for further assistance.', 400);
 
         }
@@ -501,34 +518,6 @@ class AuthController extends Controller
         return response()->json(['status'  => 'success','message' => 'Logged out'], 200);
     }
 
-    public function test(Request $request){
-        // Validate the email
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
-        // Generate OTP
-        $otp = random_int(100000, 999999);
-
-        // Prepare email content
-        $subject = 'OTP for Email Verification';
-        $html = '<h2>Hello user</h2>
-                <p>Your OTP is <strong>' . $otp . '</strong></p>';
-
-        // Send email
-        Mail::send([], [], function ($message) use ($request, $html, $subject) {
-            $message->to($request->email)
-                    ->subject($subject)
-                    ->html($html);
-        });
-
-        // Return response (for testing only, remove OTP in production)
-        return response()->json([
-            'message' => 'OTP sent successfully',
-            'otp' => $otp,
-        ], 200);
-    }
-
     public function profile(Request $request)
     {
         $user = $request->user();
@@ -554,8 +543,11 @@ class AuthController extends Controller
         // Generate new password
         $otp = random_int(100000, 999999);
 
-        // Store OTP in cache for 5 minutes (you can also use DB)
-        Cache::put('user_otp_' . $user->id, $otp, now()->addMinutes(5));
+        Cache::put(
+            'password_reset_otp_' . $user->id,
+            Hash::make((string) $otp),
+            now()->addMinutes(5)
+        );
 
         // Send OTP via email
         Mail::send([], [], function ($message) use ($user, $otp) {
@@ -579,21 +571,32 @@ class AuthController extends Controller
         }
 
         $user = User::find($request->user_id);
-        $cachedOtp = Cache::get('user_otp_' . $user->id);
+        $cacheKey = 'password_reset_otp_' . $user->id;
+        $cachedOtp = Cache::get($cacheKey);
 
-        if (!$cachedOtp || $cachedOtp != $request->otp) {
+        if (!$cachedOtp || !Hash::check((string) $request->otp, $cachedOtp)) {
             return $this->error('Invalid or expired OTP.', 400);
         }
 
-        // Optionally, delete OTP from cache
-        Cache::forget('user_otp_' . $user->id);
+        Cache::forget($cacheKey);
 
-        return $this->success(['user_id' => $user->id], 'OTP verified. You can now reset your password.');
+        $resetToken = Str::random(64);
+        Cache::put(
+            'password_reset_token_' . $user->id,
+            hash('sha256', $resetToken),
+            now()->addMinutes(10)
+        );
+
+        return $this->success([
+            'user_id' => $user->id,
+            'reset_token' => $resetToken,
+        ], 'OTP verified. You can now reset your password.');
     }
 
     public function updatePassword(Request $request){
         $validator = \Validator::make($request->all(), [
             'user_id'          => 'required|exists:users,id',
+            'reset_token'      => 'required|string|size:64',
             'new_password'     => 'required|min:6',
             'confirmed_password' => 'required|same:new_password',
         ]);
@@ -603,8 +606,17 @@ class AuthController extends Controller
         }
 
         $user = User::find($request->user_id);
+        $cacheKey = 'password_reset_token_' . $user->id;
+        $cachedToken = Cache::get($cacheKey);
+
+        if (!$cachedToken || !hash_equals($cachedToken, hash('sha256', $request->reset_token))) {
+            return $this->error('Invalid or expired password reset token.', 400);
+        }
+
         $user->password = Hash::make($request->new_password);
         $user->save();
+        $user->tokens()->delete();
+        Cache::forget($cacheKey);
 
         Mail::send([], [], function ($message) use ($user) {
             $message->to($user->email)

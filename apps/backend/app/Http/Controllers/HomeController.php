@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Mail;
 use DB;
 class HomeController extends Controller
@@ -13,8 +14,22 @@ class HomeController extends Controller
 
     public function update_price()
     {
-        $response = file_get_contents("https://api.metalpriceapi.com/v1/latest?api_key=3ca429ce18af4f488b2fc3a5aa466e9d&base=INR&currencies=XAU,XAG");
-        $data = json_decode($response, true);
+        $apiKey = config('services.metal_price.key');
+        if (!$apiKey) {
+            return response()->json(['message' => 'Metal price API is not configured.'], 503);
+        }
+
+        $response = Http::timeout(10)->get('https://api.metalpriceapi.com/v1/latest', [
+            'api_key' => $apiKey,
+            'base' => 'INR',
+            'currencies' => 'XAU,XAG',
+        ]);
+
+        if ($response->failed() || !$response->has(['rates.INRXAU', 'rates.INRXAG'])) {
+            return response()->json(['message' => 'Unable to retrieve metal prices.'], 502);
+        }
+
+        $data = $response->json();
         $pricePerOunce = $data['rates']['INRXAU'];
         $pricePerOunceSilver = $data['rates']['INRXAG'];
         $gold_price = $pricePerOunce / 31.1035;

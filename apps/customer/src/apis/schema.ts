@@ -100,6 +100,7 @@ export type ChangePasswordParams = yup.InferType<typeof changePasswordSchema>;
 
 export const resetPasswordSchema = yup.object().shape({
   user_id: yup.number(),
+  reset_token: yup.string().required(),
   new_password: yup
     .string()
     .min(6, 'validation.shortPassword')

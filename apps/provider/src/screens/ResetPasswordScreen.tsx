@@ -23,6 +23,7 @@ type FieldError = {
 
 export type ResetParams = {
   user_id: number;
+  reset_token: string;
 };
 
 const ResetPassword: FC<Props> = props => {
@@ -61,6 +62,7 @@ const ResetPassword: FC<Props> = props => {
       new_password: newPass,
       confirmed_password: confirmNewPass,
       user_id: props.route.params?.user_id!,
+      reset_token: props.route.params?.reset_token!,
     };
     resetPasswordSchema
       .validate(params, { abortEarly: false })
