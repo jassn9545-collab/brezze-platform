@@ -194,12 +194,12 @@ it('returns usable profile photo URLs for both message lists', function () {
     ])->assertOk();
     $conversationId = $response->json('data.conversation.id');
     expect(parse_url($response->json('data.conversation.other_user.profile_image'), PHP_URL_PATH))
-        ->toBe('/public/uploads/user/provider.jpg');
+        ->toBe('/uploads/user/provider.jpg');
 
     Sanctum::actingAs($this->provider);
     $response = $this->getJson('/api/chat/conversations')->assertOk();
     expect(parse_url($response->json('data.conversations.0.other_user.profile_image'), PHP_URL_PATH))
-        ->toBe('/public/uploads/user/client.jpg');
+        ->toBe('/uploads/user/client.jpg');
 
     $this->getJson("/api/chat/conversations/{$conversationId}/messages")
         ->assertJsonPath('data.conversation.other_user.id', $this->client->id);

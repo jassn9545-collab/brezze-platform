@@ -3,14 +3,25 @@
 import {NativeModules} from 'react-native';
 
 const getDevelopmentApiHost = (): string => {
-  const scriptURL = NativeModules.SourceCode?.scriptURL as string | undefined;
-  const metroHost = scriptURL?.match(/^https?:\/\/([^:/?#]+)/i)?.[1];
-
-  if (metroHost && !['localhost', '127.0.0.1', '0.0.0.0'].includes(metroHost.toLowerCase())) {
-    return metroHost;
+  try {
+    const sourceCode = NativeModules.SourceCode;
+    const scriptURL: unknown =
+      sourceCode?.getConstants?.()?.scriptURL ?? sourceCode?.scriptURL;
+    if (typeof scriptURL === 'string') {
+      const host = /^https?:\/\/(\[[^\]]+\]|[^:/?#]+)(?::\d+)?(?:[/?#]|$)/i.exec(scriptURL)?.[1];
+      if (host) {
+        const normalizedHost = host.replace(/^\[|\]$/g, '').toLowerCase();
+        // USB devices reach the backend through adb reverse, just like Metro.
+        return ['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(normalizedHost)
+          ? '127.0.0.1'
+          : host;
+      }
+    }
+  } catch {
+    // Metro URL is unavailable; use the USB-forwarded backend.
   }
 
-  return '192.168.1.42';
+  return '127.0.0.1';
 };
 
 const URLs = {
