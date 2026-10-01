@@ -251,6 +251,7 @@ const en = {
   },
   chat: {
     messages: 'Messages',
+    messageClient: 'Message Client',
     read: 'Read',
     pending: 'Pending',
     messagePlaceholder: 'Type message...',
@@ -262,7 +263,7 @@ const en = {
     hireJobs: 'Hire Jobs',
     savedJobs: 'Saved Jobs',
     walletEarning: 'Wallet & Earning',
-    serviceCatalogs: 'Services Catalogs List',
+    serviceCatalogs: 'Service Catalog List',
     helpSupport: 'Help & Support',
     logout: 'Logout',
   },
@@ -304,8 +305,14 @@ const en = {
   },
   context: {
     edit: 'Edit',
+    addCatalog: 'Add Catalog',
   },
   catalog: {
+    serviceDetails: 'Service Details',
+    servicePrice: 'Service price',
+    serviceOverview: 'Service Overview',
+    loadFailed: 'Could not load service catalogs.',
+    retry: 'Try Again',
     addServiceCatalog: 'Add Service Catalog',
     addServiceHeading: 'Add Service Heading',
     addServiceDescription: 'Add Service Description',

@@ -178,6 +178,13 @@ const JobDetail: FC<Props> = props => {
           </View> */}
         </View>
       </Screen>
+      {(props.route.params.from === 'ApplyJob' || props.route.params.from === 'ActiveJob') && (
+        <Button
+          tx="chat.messageClient"
+          onPress={() => props.navigation.navigate('ChatDetail', { projectId: props.route.params.id })}
+          style={styles.chatButton}
+        />
+      )}
       <Button
         tx={
           props.route.params.from === 'ActiveJob' ||
@@ -258,6 +265,10 @@ const styles = StyleSheet.create({
   },
   buttonStyle: {
     marginHorizontal: spacing.md,
+  },
+  chatButton: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
   },
 });
 

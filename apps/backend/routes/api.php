@@ -4,9 +4,11 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\Client\JobController as ClientJobController;
 use App\Http\Controllers\Api\Client\ClientHomeController;
+use App\Http\Controllers\Api\Client\ServiceCatalogController as ClientServiceCatalogController;
 use App\Http\Controllers\Api\Freelancer\FreelancerJobController;
 use App\Http\Controllers\Api\Freelancer\ServiceCatalogController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ChatController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +31,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
+    Route::prefix('chat')->group(function () {
+        Route::get('conversations', [ChatController::class, 'index']);
+        Route::post('conversations', [ChatController::class, 'store']);
+        Route::get('conversations/{conversation}/messages', [ChatController::class, 'messages']);
+        Route::post('conversations/{conversation}/messages', [ChatController::class, 'send'])
+            ->middleware('throttle:60,1');
+    });
 
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
     Route::get('/contact-us', [UserController::class, 'contactUs']);
@@ -51,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // jobs routes
     Route::prefix('client')->group(function () {
+        Route::get('freelancer-catalogs/{provider}', [ClientServiceCatalogController::class, 'index']);
 
         Route::post('new-job', [ClientJobController::class, 'createJob']);
         Route::post('my-jobs', [ClientJobController::class, 'myJobs']);

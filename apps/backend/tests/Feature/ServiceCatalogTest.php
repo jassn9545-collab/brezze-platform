@@ -95,7 +95,8 @@ it('lists only the authenticated providers catalogs', function () {
     $this->getJson('/api/freelancer/catalogs')
         ->assertOk()
         ->assertJsonCount(1, 'data.catalogs')
-        ->assertJsonPath('data.catalogs.0.heading', 'My service');
+        ->assertJsonPath('data.catalogs.0.heading', 'My service')
+        ->assertJsonPath('data.catalogs.0.image_urls.0', 'http://localhost/public/uploads/catalogs/mine.jpg');
 });
 
 it('rejects catalog access for a customer account', function () {
@@ -108,4 +109,86 @@ it('rejects catalog access for a customer account', function () {
     Sanctum::actingAs($customer);
 
     $this->getJson('/api/freelancer/catalogs')->assertForbidden();
+});
+
+it('shows a client only the selected freelancer active catalogs, newest first', function () {
+    $customer = User::create([
+        'name' => 'Customer',
+        'email' => 'customer-list@catalog.test',
+        'password' => Hash::make('password'),
+        'user_type' => 'client',
+    ]);
+    $otherProvider = User::create([
+        'name' => 'Other Provider',
+        'email' => 'other-list@catalog.test',
+        'password' => Hash::make('password'),
+        'user_type' => 'freelancer',
+    ]);
+
+    $older = ServiceCatalog::create([
+        'provider_id' => $this->provider->id,
+        'heading' => 'Older service',
+        'description' => 'Older description',
+        'price' => '20.00',
+        'images' => ['uploads/catalogs/older.jpg'],
+        'status' => true,
+    ]);
+    $older->created_at = now()->subDay();
+    $older->save();
+
+    ServiceCatalog::create([
+        'provider_id' => $this->provider->id,
+        'heading' => 'Newest service',
+        'description' => 'Newest description',
+        'price' => '40.00',
+        'images' => ['uploads/catalogs/newest.jpg'],
+        'status' => true,
+    ]);
+    ServiceCatalog::create([
+        'provider_id' => $this->provider->id,
+        'heading' => 'Inactive service',
+        'description' => 'Should remain hidden',
+        'price' => '50.00',
+        'images' => ['uploads/catalogs/inactive.jpg'],
+        'status' => false,
+    ]);
+    ServiceCatalog::create([
+        'provider_id' => $otherProvider->id,
+        'heading' => 'Other provider service',
+        'description' => 'Should remain hidden',
+        'price' => '60.00',
+        'images' => ['uploads/catalogs/other.jpg'],
+        'status' => true,
+    ]);
+
+    Sanctum::actingAs($customer);
+
+    $this->getJson("/api/client/freelancer-catalogs/{$this->provider->id}")
+        ->assertOk()
+        ->assertJsonPath('data.provider.id', $this->provider->id)
+        ->assertJsonPath('data.provider.name', 'Provider')
+        ->assertJsonCount(2, 'data.catalogs')
+        ->assertJsonPath('data.catalogs.0.heading', 'Newest service')
+        ->assertJsonPath('data.catalogs.0.price', '40.00')
+        ->assertJsonPath('data.catalogs.0.image_urls.0', 'http://localhost/public/uploads/catalogs/newest.jpg')
+        ->assertJsonPath('data.catalogs.1.heading', 'Older service');
+});
+
+it('limits freelancer catalog viewing to authenticated clients and valid freelancers', function () {
+    $customer = User::create([
+        'name' => 'Customer',
+        'email' => 'customer-access@catalog.test',
+        'password' => Hash::make('password'),
+        'user_type' => 'client',
+    ]);
+    $providerUrl = "/api/client/freelancer-catalogs/{$this->provider->id}";
+
+    $this->getJson($providerUrl)->assertUnauthorized();
+
+    Sanctum::actingAs($this->provider);
+    $this->getJson($providerUrl)->assertForbidden();
+
+    Sanctum::actingAs($customer);
+    $this->getJson("/api/client/freelancer-catalogs/{$customer->id}")->assertNotFound();
+    $this->getJson('/api/client/freelancer-catalogs/999999')->assertNotFound();
 });

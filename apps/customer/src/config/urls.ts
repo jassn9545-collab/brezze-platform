@@ -1,6 +1,30 @@
+import { NativeModules } from 'react-native';
+
+const DEVELOPMENT_FALLBACK_HOST = '192.168.1.42';
+
+const getDevelopmentApiHost = () => {
+  try {
+    const sourceCode = NativeModules.SourceCode;
+    const scriptURL: unknown =
+      sourceCode?.getConstants?.()?.scriptURL ?? sourceCode?.scriptURL;
+    if (typeof scriptURL === 'string') {
+      const host = /^https?:\/\/(\[[^\]]+\]|[^:/?#]+)(?::\d+)?(?:[/?#]|$)/i.exec(scriptURL)?.[1];
+      if (host) {
+        const normalizedHost = host.replace(/^\[|\]$/g, '').toLowerCase();
+        if (!['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(normalizedHost)) {
+          return host;
+        }
+      }
+    }
+  } catch {
+    // Metro URL is unavailable; use the development machine's Wi-Fi address.
+  }
+
+  return DEVELOPMENT_FALLBACK_HOST;
+};
 
 const API_BASE_URL = __DEV__
-  ? 'http://127.0.0.1:8000/api'
+  ? `http://${getDevelopmentApiHost()}:8000/api`
   : 'https://hirephpdeveloperindia.com/bezzie/api';
 
 const URLs = {

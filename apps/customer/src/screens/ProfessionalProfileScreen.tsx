@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   ListRenderItemInfo,
+  ActivityIndicator,
 } from 'react-native';
 import React, { FC } from 'react';
 import { spacing, images, colors } from '../theme';
@@ -17,18 +18,79 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from '@d11/react-native-fast-image';
 import { Currency } from '../config/defaults';
 import { parseSource } from '../utils/util';
+import { openChatConversation } from '../apis/chat';
+import { getFreelancerCatalogs, ServiceCatalog } from '../apis/catalogs';
 
 type NavigationProps = AppStackScreenProps<'ProfessionalProfile'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
 
 const ProfessionalProfile: FC<Props> = props => {
   const insets = useSafeAreaInsets();
+  const [openingChat, setOpeningChat] = React.useState(false);
+  const [catalogs, setCatalogs] = React.useState<ServiceCatalog[]>([]);
+  const [catalogsLoading, setCatalogsLoading] = React.useState(true);
+  const [catalogsError, setCatalogsError] = React.useState(false);
   React.useEffect(() => {
     if (props.route.params?.id) {
       props.getFreelancerProfile({ id: props.route.params.id });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.route.params?.id]);
+
+  React.useEffect(() => {
+    const providerId = props.route.params?.id;
+    if (!providerId) {
+      setCatalogs([]);
+      setCatalogsError(true);
+      setCatalogsLoading(false);
+      return;
+    }
+    let active = true;
+    setCatalogs([]);
+    setCatalogsLoading(true);
+    setCatalogsError(false);
+    getFreelancerCatalogs(providerId)
+      .then(result => {
+        if (active) setCatalogs(result.catalogs);
+      })
+      .catch(() => {
+        if (active) setCatalogsError(true);
+      })
+      .finally(() => {
+        if (active) setCatalogsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [props.route.params?.id]);
+
+  const openServiceDetails = (catalogId?: number) => {
+    props.navigation.navigate('ServiceDetails', {
+      providerId: props.route.params.id,
+      initialCatalogId: catalogId,
+      projectId: props.route.params.projectId,
+    });
+  };
+
+  const onPressMessage = async () => {
+    if (openingChat) return;
+    setOpeningChat(true);
+    try {
+      const conversation = await openChatConversation(
+        props.route.params.id,
+        props.route.params.projectId,
+      );
+      props.navigation.navigate('ChatDetail', {
+        conversationId: conversation.id,
+        participantName: conversation.other_user.name,
+        participantImage: conversation.other_user.profile_image,
+      });
+    } catch {
+      // The API client shows the request error; keep this screen available for retry.
+    } finally {
+      setOpeningChat(false);
+    }
+  };
 
   return (
     <>
@@ -77,6 +139,20 @@ const ProfessionalProfile: FC<Props> = props => {
             )}
           </View>
         </View>
+        {props.profileData?.id === props.route.params.id ? (
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={onPressMessage}
+            disabled={openingChat}
+          >
+            <Text
+              size="sm"
+              weight="semiBold"
+              tx={openingChat ? 'chat.opening' : 'chat.message'}
+              style={styles.messageButtonText}
+            />
+          </TouchableOpacity>
+        ) : null}
         <View style={styles.userProfile}>
           <View style={styles.singleProfileContent}>
             <Text
@@ -150,18 +226,35 @@ const ProfessionalProfile: FC<Props> = props => {
               weight="semiBold"
               tx="professionalProfile.serviceCatalog"
             />
-            <Text
-              size="xxs"
-              weight="semiBold"
-              tx="profile.viewAll"
-              style={styles.primaryText}
-            />
+            <TouchableOpacity
+              onPress={() => openServiceDetails()}
+              accessibilityRole="button"
+              accessibilityLabel="View all services"
+            >
+              <Text
+                size="xxs"
+                weight="semiBold"
+                tx="profile.viewAll"
+                style={styles.primaryText}
+              />
+            </TouchableOpacity>
           </View>
-          <FlatList
-            data={[1, 1, 1]}
-            scrollEnabled={false}
-            renderItem={info => <Service {...info} />}
-          />
+          {catalogsLoading ? (
+            <ActivityIndicator color={colors.primary} style={styles.catalogLoading} />
+          ) : catalogsError ? (
+            <Text text="Could not load services. Tap View All to retry." size="xs" style={styles.catalogMessage} />
+          ) : catalogs.length === 0 ? (
+            <Text text="No services added yet." size="xs" style={styles.catalogMessage} />
+          ) : (
+            <FlatList
+              data={catalogs.slice(0, 3)}
+              keyExtractor={item => String(item.id)}
+              scrollEnabled={false}
+              renderItem={({ item }) => (
+                <Service catalog={item} onPress={() => openServiceDetails(item.id)} />
+              )}
+            />
+          )}
         </View>
         <View style={styles.reviewContainer}>
           <View style={styles.reviewHeading}>
@@ -191,53 +284,49 @@ const ProfessionalProfile: FC<Props> = props => {
   );
 };
 
-type ServiceCardProps = ListRenderItemInfo<any>;
-export const Service = ({ item }: ServiceCardProps) => {
-  return (
-    <View key={item.id} style={styles.card}>
-      <View style={styles.serviceDetail}>
-        <View style={styles.rating}>
-          <Image
-            source={images.star}
-            tintColor={colors.palette.black}
-            resizeMode="contain"
-            style={styles.star}
-          />
-          <Text style={styles.extraSmallText} text="4.84 ( 20K Reviews )" />
-        </View>
-        <Text size="sm" weight="medium" text="Switchbox Installation" />
-        <Text
-          style={styles.extraSmallText}
-          text="Installed in specified area for new power outlet"
-        />
-        <View style={styles.priceWrapper}>
-          <Text
-            size="xs"
-            weight="semiBold"
-            style={styles.priceText}
-            text={Currency.code + Currency.sign + '49.00'}
-          />
-          <View style={styles.verticalLine} />
-          <Text
-            size="xs"
-            weight="semiBold"
-            style={styles.timeText}
-            text="30 mins"
-          />
-        </View>
+type ServiceCardProps = {
+  catalog: ServiceCatalog;
+  onPress: () => void;
+};
 
-        <TouchableOpacity style={styles.viewServiceDetail}>
+export const Service = ({ catalog, onPress }: ServiceCardProps) => {
+  const amount = Number(catalog.price);
+  const price = Number.isFinite(amount) ? amount.toFixed(2) : catalog.price;
+  const imageUrl = catalog.image_urls?.[0];
+
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={'View details for ' + catalog.heading}
+    >
+      <View style={styles.serviceDetail}>
+        <Text size="sm" weight="semiBold" text={catalog.heading} numberOfLines={2} />
+        <Text style={styles.extraSmallText} text={catalog.description} numberOfLines={2} />
+        <Text
+          size="xs"
+          weight="semiBold"
+          style={styles.priceText}
+          text={Currency.code + ' ' + Currency.sign + price}
+        />
+        <View style={styles.viewServiceDetail}>
           <Text
             size="xxs"
             weight="medium"
             style={styles.primaryText}
             tx="professionalProfile.viewDetails"
           />
-        </TouchableOpacity>
+        </View>
       </View>
-
-      <Image source={require('../assets/images/switchbox.png')} />
-    </View>
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} resizeMode="cover" style={styles.catalogImage} />
+      ) : (
+        <View style={[styles.catalogImage, styles.catalogPlaceholder]}>
+          <Image source={images.service} style={styles.catalogPlaceholderIcon} />
+        </View>
+      )}
+    </TouchableOpacity>
   );
 };
 
@@ -325,6 +414,15 @@ const styles = StyleSheet.create({
   verifiedIcon: {
     color: colors.palette.white,
   },
+  messageButton: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.sm,
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+  },
+  messageButtonText: { color: colors.palette.white },
   userProfile: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -377,6 +475,11 @@ const styles = StyleSheet.create({
     borderColor: colors.palette.borderColor,
     backgroundColor: colors.palette.offWhite2,
   },
+  catalogLoading: { marginVertical: spacing.md },
+  catalogMessage: { color: colors.textDim, marginBottom: spacing.md },
+  catalogImage: { width: 80, height: 80, borderRadius: spacing.xs },
+  catalogPlaceholder: { backgroundColor: colors.primaryDimmed, alignItems: 'center', justifyContent: 'center' },
+  catalogPlaceholderIcon: { width: 32, height: 32, resizeMode: 'contain', tintColor: colors.primary },
   servicesCatalogContainer: {
     borderBottomWidth: 1,
     marginBottom: spacing.md,

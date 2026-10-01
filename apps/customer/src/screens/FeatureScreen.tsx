@@ -6,12 +6,9 @@ import {
 } from 'react-native';
 import React, { FC } from 'react';
 import { colors, images } from '../theme';
-import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 
-type NavigationProps = AppBottomTabScreenProps<'Feature'>;
-type Props = NavigationProps;
 
-const Feature: FC<Props> = () => {
+const Feature: FC = () => {
 
     const professionals = [
         {

@@ -24,6 +24,7 @@ export * from './SavedJobScreen';
 export * from './SubmitWorkScreen';
 export * from './WalletScreen';
 export * from './ServiceCatalogScreen';
+export * from './CatalogDetailScreen';
 export * from './ChatScreen';
 export * from './ChatDetailScreen';
 export * from './NotificationScreen';

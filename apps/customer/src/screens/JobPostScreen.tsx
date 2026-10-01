@@ -28,9 +28,9 @@ type FieldError = {
 
 const JobPost: FC<Props> = props => {
   const dropDownRef = useRef<TrueSheet>(null);
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(props.route.params?.title ?? '');
   const [category, setCategory] = useState<DataType | null>(null);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(props.route.params?.description ?? '');
   const [error, setError] = useState<FieldError>({});
 
   const validate = () => {

@@ -18,6 +18,7 @@ import {
 } from '../components/ImageViewer';
 import { useAppDispatch } from '../store/hooks';
 import { getProfile } from '../slices/auth.slice';
+import type { ProviderCatalog } from '../apis/catalogs';
 
 /**
  * This type allows TypeScript to know what routes are defined in this navigator
@@ -44,7 +45,8 @@ export type AppStackParamList = {
   SubmitWork: undefined;
   Wallet: undefined;
   ServiceCatalog: undefined;
-  ChatDetail: undefined;
+  CatalogDetail: { catalog: ProviderCatalog };
+  ChatDetail: { conversationId: number; projectId?: never } | { projectId: number; conversationId?: never };
   Notification: undefined;
   EditProfile: undefined;
   HelpSupport: undefined;
@@ -133,6 +135,10 @@ export const AppStack: FC = () => {
       <Stack.Screen
         name="ServiceCatalog"
         component={Screens.ServiceCatalogScreen}
+      />
+      <Stack.Screen
+        name="CatalogDetail"
+        component={Screens.CatalogDetailScreen}
       />
       <Stack.Screen name="Wallet" component={Screens.WalletScreen} />
       <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />

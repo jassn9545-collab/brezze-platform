@@ -11,11 +11,13 @@ const api = axios.create({
   },
 });
 api.interceptors.request.use(request => {
-  console.log(
-    request.url,
-    'request ==>',
-    typeof request.data === 'string' ? JSON.parse(request.data) : request.data,
-  );
+  if (!request.url?.startsWith('/chat/')) {
+    console.log(
+      request.url,
+      'request ==>',
+      typeof request.data === 'string' ? JSON.parse(request.data) : request.data,
+    );
+  }
   return request;
 });
 api.interceptors.response.use(

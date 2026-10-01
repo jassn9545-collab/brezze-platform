@@ -76,7 +76,7 @@ class ServiceCatalogController extends BaseFreelancerController
     private function catalogData(ServiceCatalog $catalog, Request $request): array
     {
         $images = $catalog->images ?? [];
-        $origin = $request->getSchemeAndHttpHost();
+        $origin = $request->root();
 
         return [
             'id' => $catalog->id,
@@ -85,7 +85,7 @@ class ServiceCatalogController extends BaseFreelancerController
             'price' => $catalog->price,
             'images' => $images,
             'image_urls' => array_map(
-                fn (string $image) => $origin.'/'.ltrim($image, '/'),
+                fn (string $image) => $origin.'/public/'.ltrim(preg_replace('#^/?public/#', '', $image), '/'),
                 $images
             ),
             'created_at' => $catalog->created_at?->toISOString(),

@@ -12,7 +12,7 @@ export type ProviderCatalog = {
 };
 
 export const getServiceCatalogs = async (): Promise<ProviderCatalog[]> => {
-  const response = await api.get(URLs.catalogs);
+  const response = await api.get(URLs.catalogs, {timeout: 10000});
   return response.data.data.catalogs ?? [];
 };
 

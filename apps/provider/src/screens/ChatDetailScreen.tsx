@@ -1,318 +1,305 @@
-import React, { FC, useState } from 'react';
+import React, {FC, useCallback, useRef, useState} from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
-  ImageStyle,
+  Platform,
+  StyleSheet,
   TextInput,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from 'react-native';
-import { AppStackScreenProps } from '../navigators';
-import { Screen, Text } from '../components';
-import { colors, images, spacing } from '../theme';
+import {useFocusEffect} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import moment from 'moment';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { translate } from '../i18n';
-import { parseSource } from '../utils/util';
+import {AppStackScreenProps} from '../navigators';
+import {Screen, Text} from '../components';
+import {
+  ChatMessage,
+  Conversation,
+  getConversationMessages,
+  getOrCreateConversation,
+  sendConversationMessage,
+} from '../apis/chat';
+import {useAppSelector, useIsForeground} from '../store/hooks';
+import {colors, images, spacing} from '../theme';
+import {translate} from '../i18n';
+import {parseSource} from '../utils/util';
 
-type NavigationProps = AppStackScreenProps<'ChatDetail'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+type Props = AppStackScreenProps<'ChatDetail'>;
 
-const sampleChats = [
-  {
-    _id: '1',
-    msg: 'Hey! How are you?',
-    sendBy: 2,
-    date_created_utc: '2025-01-10T10:15:00Z',
-  },
-  {
-    _id: '2',
-    msg: "I'm good! What about you?",
-    sendBy: 1,
-    date_created_utc: '2025-01-10T10:16:30Z',
-  },
-  {
-    _id: '3',
-    msg: 'All good here, heading to the office.',
-    sendBy: 2,
-    date_created_utc: '2025-01-10T10:17:10Z',
-  },
-  {
-    _id: '4',
-    msg: 'Great! Talk later.',
-    sendBy: 1,
-    date_created_utc: '2025-01-10T10:18:00Z',
-  },
-  {
-    _id: '5',
-    msg: 'Sure!',
-    sendBy: 2,
-    date_created_utc: '2025-01-10T10:18:30Z',
-  },
-];
-
-const ChatDetail: FC<NavigationProps> = props => {
-  const [message, setMessage] = useState('');
+const ChatDetail: FC<Props> = props => {
   const insets = useSafeAreaInsets();
-  //   const trip = props.rideDetails;
-  //   const profile = trip?.driver?.profileImage?.link;
+  const isForeground = useIsForeground();
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [sending, setSending] = useState(false);
+  const conversationIdRef = useRef<number | null>(
+    props.route.params.conversationId ?? null,
+  );
+  const activeRef = useRef(false);
+  const fetchingRef = useRef(false);
+  const latestMessageIdRef = useRef(0);
 
-  //   useFocusEffect(
-  //     useCallback(() => {
-  //       if (trip && trip.driver) {
-  //         let userId = trip.user._id;
-  //         let driverId = trip.driver._id;
-  //         Socket.joinChatRoomUser(userId, trip._id);
-  //         Socket.getMessagesList({
-  //           sender: userId,
-  //           receiver: driverId,
-  //           orderId: trip._id,
-  //         });
-  //         return () => Socket.leaveChatRoomUser(userId);
-  //       } else {
-  //         props.navigation.goBack();
-  //       }
-  //     }, [props.navigation, trip]),
-  //   );
+  const loadMessages = useCallback(async (showError: boolean) => {
+    const id = conversationIdRef.current;
+    if (!id || fetchingRef.current) {
+      return;
+    }
+    fetchingRef.current = true;
+    try {
+      const result = await getConversationMessages(
+        id,
+        showError ? undefined : latestMessageIdRef.current,
+      );
+      if (activeRef.current) {
+        latestMessageIdRef.current = Math.max(
+          latestMessageIdRef.current,
+          ...result.messages.map(item => item.id),
+        );
+        setConversation(result.conversation);
+        setMessages(current => {
+          const merged = new Map<number, ChatMessage>();
+          current.forEach(item => merged.set(item.id, item));
+          result.messages.forEach(item => merged.set(item.id, item));
+          return [...merged.values()].sort(
+            (a, b) =>
+              Date.parse(a.created_at) - Date.parse(b.created_at) || a.id - b.id,
+          );
+        });
+        setLoadError(false);
+      }
+    } catch {
+      if (activeRef.current && showError) {
+        setLoadError(true);
+      }
+    } finally {
+      fetchingRef.current = false;
+    }
+  }, []);
 
-  //   const sendMessageAction = () => {
-  //     if (trip && trip.driver) {
-  //       let userId = trip.user._id;
-  //       let driverId = trip.driver._id;
-  //       if (message.trim() === '') {
-  //         toast.show(translate('chat.validation'), {type: 'warning'});
-  //         return;
-  //       }
-  //       setMessage('');
-  //       Socket.sendMessage({
-  //         sender: userId,
-  //         receiver: driverId,
-  //         orderId: trip._id,
-  //         msg: message,
-  //         sendBy: 1,
-  //       });
-  //     } else {
-  //       Alert.alert(translate('chat.error'), translate('chat.errorMessage'), [
-  //         {
-  //           text: translate('common.ok'),
-  //           onPress: () => props.navigation.goBack(),
-  //         },
-  //       ]);
-  //     }
-  //   };
+  const initialize = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      if (!conversationIdRef.current && props.route.params.projectId) {
+        const created = await getOrCreateConversation(props.route.params.projectId);
+        conversationIdRef.current = created.id;
+        if (activeRef.current) {
+          setConversation(created);
+        }
+      }
+      if (!conversationIdRef.current) {
+        throw new Error('Conversation unavailable');
+      }
+      await loadMessages(true);
+    } catch {
+      if (activeRef.current) {
+        setLoadError(true);
+      }
+    } finally {
+      if (activeRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [loadMessages, props.route.params.projectId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isForeground) return;
+      activeRef.current = true;
+      initialize();
+      const timer = setInterval(() => loadMessages(false), 5000);
+      return () => {
+        activeRef.current = false;
+        clearInterval(timer);
+      };
+    }, [initialize, isForeground, loadMessages]),
+  );
+
+  const sendMessage = async () => {
+    const body = message.trim();
+    const id = conversationIdRef.current;
+    if (!body || !id || sending) {
+      return;
+    }
+    setSending(true);
+    try {
+      const sent = await sendConversationMessage(id, body);
+      if (activeRef.current) {
+        setMessages(current =>
+          current.some(item => item.id === sent.id) ? current : [...current, sent],
+        );
+        setMessage(current => current.trim() === body ? '' : current);
+      }
+    } catch {
+      // Keep the draft so the user can retry. The API interceptor shows the error.
+    } finally {
+      if (activeRef.current) {
+        setSending(false);
+      }
+    }
+  };
+
+  const visibleMessages = [...messages].reverse();
 
   return (
     <Screen
       preset="fixed"
+      style={styles.screen}
       safeAreaEdges={['top']}
       keyboardOffset={-insets.bottom}
-      contentContainerStyle={$containerStyle}
+      keyboardAvoidingViewProps={Platform.OS === 'android' ? {behavior: undefined} : undefined}
+      contentContainerStyle={styles.container}
     >
-      <View style={$header}>
-        <TouchableOpacity onPress={props.navigation.goBack} style={$backIcon}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => props.navigation.goBack()}
+          style={styles.backIcon}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <Image source={images.leftArrow} />
         </TouchableOpacity>
-        <View style={$userName}>
+        <View style={styles.userName}>
           <Image
-            {...parseSource('https://i.pravatar.cc/300', images.user)}
-            style={$profileImage}
+            {...parseSource(conversation?.other_user.profile_image ?? undefined, images.user)}
+            style={styles.profileImage}
           />
-          <Text preset="heading" size="lg" style={{ flexShrink: spacing.one }}>
-            {'Mandeep Saini'}
-          </Text>
-        </View>
-        <View style={$view} />
-      </View>
-      <View style={$mainView}>
-        <FlatList
-          //   data={props.chats}
-          data={sampleChats}
-          style={$mainViewStyle}
-          inverted
-          keyExtractor={item => item._id}
-          ListEmptyComponent={
+          <View style={styles.headerText}>
             <Text
-              tx="chat.noChatMessage"
-              preset="subheading"
               size="sm"
-              style={$noAddress}
+              weight="semiBold"
+              text={conversation?.other_user.name ?? translate('chat.messages')}
+              numberOfLines={1}
             />
-          }
-          renderItem={({ item }) => {
-            const self = item.sendBy === 1;
-            const color = self ? colors.palette.white : colors.text;
-            return (
-              <View style={self ? $sendMessageRow : $recievedMessageRow}>
-                <View style={self ? $sendMessage : $recievedMessage}>
-                  <Text style={[$messageText, { color }]}>{item.msg}</Text>
-                </View>
-                <Text style={$timeText} size="xxs">
-                  {moment
-                    .utc(item.date_created_utc)
-                    .local(false)
-                    .format('hh:mm A')}
-                </Text>
-              </View>
-            );
-          }}
-        />
+            {!!conversation?.project_title && (
+              <Text
+                size="xxs"
+                style={styles.projectTitle}
+                text={conversation.project_title}
+                numberOfLines={1}
+              />
+            )}
+          </View>
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
-      <View style={$bottomView}>
+      <View style={styles.mainView}>
+        {loading && messages.length === 0 ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : loadError && messages.length === 0 ? (
+          <View style={styles.center}>
+            <Text text="Could not load this conversation." size="xs" style={styles.stateText} />
+            <TouchableOpacity onPress={initialize} style={styles.retry} accessibilityRole="button">
+              <Text text="Try Again" size="xs" style={styles.retryText} />
+            </TouchableOpacity>
+          </View>
+        ) : messages.length === 0 ? (
+          <View style={styles.center}>
+            <Text tx="chat.noChatMessage" size="xs" style={styles.stateText} />
+          </View>
+        ) : (
+          <FlatList
+            data={visibleMessages}
+            keyExtractor={item => item.id.toString()}
+            inverted
+            style={styles.messageList}
+            contentContainerStyle={styles.messageContent}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({item}) => {
+              const self = Number(item.sender_id) === Number(ownUserId);
+              return (
+                <View style={self ? styles.sentRow : styles.receivedRow}>
+                  <View style={self ? styles.sentBubble : styles.receivedBubble}>
+                    <Text
+                      text={item.body}
+                      size="xs"
+                      style={self ? styles.sentText : styles.receivedText}
+                    />
+                  </View>
+                  <Text
+                    size="xxs"
+                    style={styles.timeText}
+                    text={moment(item.created_at).format('hh:mm A')}
+                  />
+                </View>
+              );
+            }}
+          />
+        )}
+      </View>
+      <View style={styles.bottomView}>
         <TextInput
           value={message}
-          style={$messageInput}
-          keyboardType="default"
+          style={styles.messageInput}
           onChangeText={setMessage}
           placeholder={translate('chat.messagePlaceholder')}
+          placeholderTextColor={colors.textDim}
+          multiline
+          maxLength={5000}
+          accessibilityLabel="Message"
         />
         <TouchableOpacity
-          style={$sendBtn}
-          //   onPress={sendMessageAction}
-          //   disabled={props.sending}
+          style={styles.sendBtn}
+          onPress={sendMessage}
+          disabled={sending || !message.trim() || !conversationIdRef.current}
+          accessibilityRole="button"
+          accessibilityLabel="Send message"
         >
-          <Image source={images.share} />
+          {sending ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Image
+              source={images.share}
+              style={[
+                styles.sendIcon,
+                !message.trim() || !conversationIdRef.current ? styles.disabledSend : undefined,
+              ]}
+            />
+          )}
         </TouchableOpacity>
       </View>
-      <View style={[$bottomArea, { height: insets.bottom }]} />
+      <View style={{height: insets.bottom, backgroundColor: colors.palette.white}} />
     </Screen>
   );
 };
 
-const $containerStyle: ViewStyle = {
-  flexGrow: 1,
-};
-
-const $view: ViewStyle = {
-  width: spacing.xl,
-};
-
-const $userName: ViewStyle = {
-  gap: spacing.xs,
-  flexDirection: 'row',
-  alignItems: 'center',
-};
-
-const $header: ViewStyle = {
-  gap: spacing.sm,
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginVertical: spacing.sm,
-  marginHorizontal: spacing.md,
-  justifyContent: 'space-between',
-};
-
-const $backIcon: ViewStyle = {
-  alignSelf: 'flex-end',
-  borderRadius: spacing.xl,
-  paddingHorizontal: spacing.sm,
-  paddingVertical: spacing.sm + 2,
-  backgroundColor: colors.palette.offWhite2,
-};
-
-const $profileImage: ImageStyle = {
-  height: spacing.xl + spacing.xs,
-  width: spacing.xl + spacing.xs,
-  borderRadius: spacing.xl,
-  marginRight: spacing.sm,
-  resizeMode: 'cover',
-};
-
-const $mainView: ViewStyle = {
-  flex: 1,
-  paddingBottom: spacing.xs,
-};
-
-const $bottomView: ViewStyle = {
-  height: 54,
-  borderWidth: 1,
-  overflow: 'hidden',
-  alignItems: 'center',
-  flexDirection: 'row',
-  paddingLeft: spacing.sm,
-  borderRadius: spacing.xl,
-  marginHorizontal: spacing.md,
-  borderColor: colors.palette.light,
-  shadowColor: colors.palette.black,
-  backgroundColor: colors.palette.white,
-};
-
-const $messageInput: TextStyle = {
-  flex: 1,
-  height: 54,
-  fontSize: 16,
-  color: colors.text,
-  borderRadius: spacing.lg,
-  paddingHorizontal: spacing.md,
-  paddingVertical: spacing.xxs,
-  backgroundColor: colors.palette.white,
-};
-
-const $sendBtn: ViewStyle = {
-  marginLeft: spacing.xs,
-  marginRight: spacing.sm,
-};
-
-const $mainViewStyle: ViewStyle = {
-  paddingHorizontal: spacing.md,
-};
-
-const $sendMessageRow: ViewStyle = {
-  alignItems: 'flex-end',
-  marginVertical: spacing.xxs,
-  paddingLeft: spacing.lg,
-};
-
-const $recievedMessageRow: ViewStyle = {
-  alignItems: 'flex-start',
-  marginVertical: spacing.xs,
-  paddingRight: spacing.lg,
-};
-
-const $recievedMessage: ViewStyle = {
-  borderRadius: spacing.md,
-  borderBottomStartRadius: 0,
-  paddingVertical: spacing.xs,
-  backgroundColor: colors.palette.offWhite2,
-  paddingHorizontal: spacing.md + spacing.xxs,
-};
-
-const $sendMessage: ViewStyle = {
-  borderTopRightRadius: 0,
-  borderRadius: spacing.md,
-  paddingVertical: spacing.xs,
-  backgroundColor: colors.primary,
-  paddingHorizontal: spacing.md + spacing.xxs,
-};
-
-const $messageText: TextStyle = {
-  fontSize: 15,
-  fontWeight: '400',
-};
-
-const $timeText: TextStyle = {
-  textAlign: 'right',
-  marginTop: spacing.xxxs,
-};
-
-const $bottomArea: ViewStyle = {
-  backgroundColor: colors.palette.white,
-};
-
-const $noAddress: TextStyle = {
-  marginTop: spacing.xxl,
-  textAlign: 'center',
-};
-
-// const mapStateToProps = (state: RootState) => ({
-//   loading: state.auth.createPasswordLoading,
-//     rideDetails: state.ride.tripDetail,
-//   chats: state.chats,
-//   sending: false,
-// });
-
-// const connector = connect(mapStateToProps);
+const styles = StyleSheet.create({
+  screen: {height: 'auto'},
+  container: {flex: 1},
+  header: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: spacing.sm, marginHorizontal: spacing.md},
+  backIcon: {borderRadius: spacing.xl, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm + 2, backgroundColor: colors.palette.offWhite2},
+  userName: {flex: 1, gap: spacing.xs, flexDirection: 'row', alignItems: 'center'},
+  profileImage: {height: 40, width: 40, borderRadius: 20, resizeMode: 'cover'},
+  headerText: {flex: 1},
+  projectTitle: {color: colors.textDim},
+  headerSpacer: {width: spacing.xl},
+  mainView: {flex: 1},
+  center: {flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.md},
+  stateText: {textAlign: 'center', color: colors.textDim},
+  retry: {marginTop: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: spacing.xs, backgroundColor: colors.primary},
+  retryText: {color: colors.palette.white},
+  messageList: {flex: 1},
+  messageContent: {paddingHorizontal: spacing.md, paddingVertical: spacing.sm},
+  sentRow: {alignItems: 'flex-end', marginVertical: spacing.xxs, paddingLeft: spacing.lg},
+  receivedRow: {alignItems: 'flex-start', marginVertical: spacing.xxs, paddingRight: spacing.lg},
+  sentBubble: {borderRadius: spacing.md, borderTopRightRadius: 0, paddingVertical: spacing.xs, paddingHorizontal: spacing.md, backgroundColor: colors.primary},
+  receivedBubble: {borderRadius: spacing.md, borderBottomLeftRadius: 0, paddingVertical: spacing.xs, paddingHorizontal: spacing.md, backgroundColor: colors.palette.offWhite2},
+  sentText: {color: colors.palette.white},
+  receivedText: {color: colors.text},
+  timeText: {marginTop: spacing.xxxs, color: colors.textDim},
+  bottomView: {minHeight: 56, maxHeight: 120, borderWidth: 1, alignItems: 'center', flexDirection: 'row', paddingLeft: spacing.sm, borderRadius: spacing.xl, marginHorizontal: spacing.md, borderColor: colors.palette.light, backgroundColor: colors.palette.white},
+  messageInput: {flex: 1, minWidth: 0, minHeight: 52, maxHeight: 118, fontSize: 16, color: colors.text, paddingHorizontal: spacing.md, paddingVertical: spacing.xs},
+  sendBtn: {width: 48, height: 48, marginLeft: spacing.xs, marginRight: spacing.sm, alignItems: 'center', justifyContent: 'center'},
+  sendIcon: {width: 44, height: 44, resizeMode: 'contain'},
+  disabledSend: {opacity: 0.4},
+});
 
 export const ChatDetailScreen = ChatDetail;

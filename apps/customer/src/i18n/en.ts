@@ -366,7 +366,13 @@ const en = {
     noChatMessage: 'No chat message found',
     messagePlaceholder: 'Message....',
     messages: 'Messages',
-    read: 'Read'
+    read: 'Read',
+    startChatting: 'Start chatting',
+    loadConversationsFailed: 'Could not load conversations. Tap to retry.',
+    loadMessagesFailed: 'Could not load messages. Tap to retry.',
+    sendFailed: 'Message not sent. Try again.',
+    opening: 'Opening chat...',
+    message: 'Message'
   },
 
 };

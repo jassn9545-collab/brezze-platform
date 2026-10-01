@@ -23,6 +23,7 @@ export * from './JobPostDetailsScreen'
 export * from './HireHistoryScreen';
 export * from './HireHistoryDetailsScreen';
 export * from './ProfessionalProfileScreen';
+export * from './ServiceDetailsScreen';
 export * from './CenterModal';
 export * from './HelpSupportScreen';
 export * from './ChatDetailScreen';

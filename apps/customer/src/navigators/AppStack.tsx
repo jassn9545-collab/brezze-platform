@@ -48,16 +48,17 @@ import { getProfile } from '../slices/auth.slice';
 export type AppStackParamList = {
   BottomTab: NavigatorScreenParams<BottomTabNavigatorParamList>;
   Drawer: NavigatorScreenParams<DrawerParamsList>;
-  JobPost: undefined;
+  JobPost: { title?: string; description?: string } | undefined;
   JobPostStep2: JobPostFirstParams;
   JobPostList: undefined;
   jobPostDetails: Screens.JobPostDetailParams;
   HireHistory: undefined;
   Categories: undefined;
   HireHistoryDetails: undefined;
-  ProfessionalProfile: { id: number };
+  ProfessionalProfile: { id: number; projectId?: number };
+  ServiceDetails: { providerId: number; initialCatalogId?: number; projectId?: number };
   HelpSupport: undefined;
-  ChatDetail: undefined;
+  ChatDetail: { conversationId: number; participantName: string; participantImage: string | null };
   EditProfile: undefined;
   JobCompleted: { jobId: number };
   ReviewScreen: undefined;
@@ -133,6 +134,7 @@ export const AppStack: FC = () => {
       />
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
+      <Stack.Screen name="ServiceDetails" component={Screens.ServiceDetailsScreen} />
       <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
       <Stack.Screen
         name="JobCompleted"

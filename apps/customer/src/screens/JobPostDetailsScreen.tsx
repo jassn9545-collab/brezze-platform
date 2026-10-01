@@ -33,6 +33,7 @@ import ListEmptyComponent from '../components/ListEmptyComponent';
 import { BasicData } from '../slices/setting.slice';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { translate } from '../i18n';
+import { openChatConversation } from '../apis/chat';
 
 type NavigationProps = AppStackScreenProps<'jobPostDetails'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
@@ -44,6 +45,7 @@ export type JobPostDetailParams = {
 const JobPostDetails: FC<Props> = props => {
   const insets = useSafeAreaInsets();
   const [currentJobId, setCurrentJobId] = React.useState<number | null>(null);
+  const [openingChatBidId, setOpeningChatBidId] = React.useState<number | null>(null);
   const { route, hireJobLoading, get } = props;
 
   useEffect(() => {
@@ -60,7 +62,24 @@ const JobPostDetails: FC<Props> = props => {
   }, [hireJobLoading, currentJobId, get]);
 
   const onPressProfile = (_data: Bid) => {
-    props.navigation.navigate('ProfessionalProfile', { id: _data.user_id });
+    props.navigation.navigate('ProfessionalProfile', { id: _data.user_id, projectId: route.params?.id });
+  };
+
+  const onPressChat = async (data: Bid) => {
+    if (openingChatBidId !== null) return;
+    setOpeningChatBidId(data.id);
+    try {
+      const conversation = await openChatConversation(data.user_id, route.params?.id);
+      props.navigation.navigate('ChatDetail', {
+        conversationId: conversation.id,
+        participantName: conversation.other_user.name,
+        participantImage: conversation.other_user.profile_image,
+      });
+    } catch {
+      // The API client shows the request error; keep this screen available for retry.
+    } finally {
+      setOpeningChatBidId(null);
+    }
   };
 
   const onPressHire = (data: Bid) => {
@@ -102,6 +121,8 @@ const JobPostDetails: FC<Props> = props => {
                 {...info}
                 setting={props.setting!}
                 onPressProfile={onPressProfile}
+                onPressChat={onPressChat}
+                openingChatBidId={openingChatBidId}
                 onPressHire={onPressHire}
                 isHired={info.item.is_hired || false}
                 hireJobLoading={props.hireJobLoading === 'loading'}
@@ -195,6 +216,8 @@ const JobCard = ({ item }: { item: Job }) => {
 type BidCardProps = ListRenderItemInfo<Bid> & {
   setting: BasicData;
   onPressProfile: (data: Bid) => void;
+  onPressChat: (data: Bid) => void;
+  openingChatBidId: number | null;
   onPressHire: (data: Bid) => void;
   isHired: boolean;
   hireJobLoading: boolean;
@@ -205,6 +228,8 @@ const BidCard = ({
   item,
   setting,
   onPressProfile,
+  onPressChat,
+  openingChatBidId,
   onPressHire,
   isHired,
   hireJobLoading,
@@ -275,6 +300,18 @@ const BidCard = ({
               />
             </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            style={styles.chatBtn}
+            onPress={() => onPressChat(item)}
+            disabled={openingChatBidId !== null}
+          >
+            <Text
+              size="xxs"
+              weight="semiBold"
+              text={openingChatBidId === item.id ? translate('chat.opening') : translate('chat.title')}
+              style={styles.chatBtnText}
+            />
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -400,6 +437,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     backgroundColor: colors.primary,
   },
+  chatBtn: {
+    marginTop: spacing.xs,
+    minHeight: 32,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatBtnText: { color: colors.primary },
   hireBtn: {
     backgroundColor: colors.primary,
     borderRadius: spacing.xs,

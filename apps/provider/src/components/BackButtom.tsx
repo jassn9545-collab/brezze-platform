@@ -21,6 +21,7 @@ export type BackButtomProps = {
   headingTx?: TxKeyPath;
   arrow?: ImageSourcePropType;
   arrowColor?: string;
+  onBackPress?: () => void;
   // Extras
   rightComponent?: React.ReactNode;
 };
@@ -31,13 +32,19 @@ export const BackButtom = ({
   style = { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   arrow,
   arrowColor,
+  onBackPress,
   rightComponent,
 }: BackButtomProps) => {
   const navigation = useNavigation();
 
   return (
     <View style={[$container, style]}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={$wrapArrow}>
+      <TouchableOpacity
+        onPress={onBackPress ?? (() => navigation.goBack())}
+        style={$wrapArrow}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+      >
         <Image
           source={arrow ? arrow : images.leftArrow}
           tintColor={arrowColor ? arrowColor : colors.palette.black}

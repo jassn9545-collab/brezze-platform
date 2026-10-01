@@ -7,3 +7,5 @@ __MACOSX/
 *.log
 *.tmp
 /apps/backend/bezzie (1).sql
+/artifacts/apk/
+/apps/backend/public/downloads/

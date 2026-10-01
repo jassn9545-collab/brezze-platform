@@ -43,10 +43,10 @@ const ApplyJob: FC<Props> = props => {
   };
 
 
-  const onPressJob = () => {
+  const onPressJob = (job: Job) => {
     props.navigation.navigate('JobDetail', {
       from: 'ApplyJob',
-      id: 9
+      id: job.id,
     });
   };
 

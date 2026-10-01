@@ -1,8 +1,21 @@
 
 
+import {NativeModules} from 'react-native';
+
+const getDevelopmentApiHost = (): string => {
+  const scriptURL = NativeModules.SourceCode?.scriptURL as string | undefined;
+  const metroHost = scriptURL?.match(/^https?:\/\/([^:/?#]+)/i)?.[1];
+
+  if (metroHost && !['localhost', '127.0.0.1', '0.0.0.0'].includes(metroHost.toLowerCase())) {
+    return metroHost;
+  }
+
+  return '192.168.1.42';
+};
+
 const URLs = {
   base: __DEV__
-    ? 'http://127.0.0.1:8000/api'
+    ? `http://${getDevelopmentApiHost()}:8000/api`
     : 'https://hirephpdeveloperindia.com/bezzie/api',
 
   socketUrl: '',
@@ -42,6 +55,7 @@ const URLs = {
   submitJob: '/freelancer/submit-work',
   paymentHistory: '/freelancer/payments',
   catalogs: '/freelancer/catalogs',
+  chatConversations: '/chat/conversations',
 };
 
 export default URLs;

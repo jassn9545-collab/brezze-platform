@@ -75,6 +75,7 @@ const ActiveJob: FC<Props> = props => {
           item={item}
           index={index}
           baseURl={props.baseURl!}
+          onChat={() => props.navigation.navigate('ChatDetail', { projectId: item.id })}
           viewDetail={() =>
             props.navigation.navigate('JobDetail', {
               from: 'ActiveJob',
@@ -109,6 +110,7 @@ type TripCellProps = {
   from?: string;
   baseURl: string;
   viewDetail?: () => void;
+  onChat?: () => void;
   cancelAction?: () => void;
 };
 
@@ -118,6 +120,7 @@ export const TripCell: FC<TripCellProps> = ({
   from,
   baseURl,
   viewDetail,
+  onChat,
 }) => {
   const status = getStatusStyle(item?.status);
   return (
@@ -240,6 +243,12 @@ export const TripCell: FC<TripCellProps> = ({
           </TouchableOpacity>
         )}
       </View>
+      {onChat && (
+        <TouchableOpacity onPress={onChat} style={$chatButton} accessibilityRole="button">
+          <Image source={images.chat} style={$chatIcon} tintColor={colors.primary} />
+          <Text tx="chat.messageClient" size="xs" weight="semiBold" style={$chatText} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -324,6 +333,20 @@ const $button: ViewStyle = {
   paddingHorizontal: spacing.md,
   backgroundColor: colors.primary,
 };
+
+const $chatButton: ViewStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: spacing.xs,
+  paddingVertical: spacing.xs,
+  borderWidth: 1,
+  borderColor: colors.primary,
+  borderRadius: spacing.xs,
+};
+
+const $chatIcon: ImageStyle = { width: spacing.md, height: spacing.md, resizeMode: 'contain' };
+const $chatText: TextStyle = { color: colors.primary };
 
 const $arrow: ImageStyle = {
   transform: [{ rotate: '180deg' }],

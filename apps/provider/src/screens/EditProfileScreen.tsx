@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 
 import { AppStackScreenProps } from '../navigators';
 import {
@@ -16,8 +16,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, images, spacing, typography } from '../theme';
 import {
-  ActivityIndicator,
-  FlatList,
   Image,
   Keyboard,
   ScrollView,
@@ -27,7 +25,6 @@ import {
 } from 'react-native';
 import { TxKeyPath } from '../i18n';
 import { commonStyle } from '../theme/style';
-import { Service } from './ProfileScreen';
 import { buildError, editProfile, EditProfileParams } from '../apis/schema';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
@@ -36,8 +33,6 @@ import { authActions, updateProfile } from '../slices/auth.slice';
 import { ImagePickerResponse } from 'react-native-image-picker';
 import FastImage from '@d11/react-native-fast-image';
 import { AddressType } from '../slices/address.types';
-import { useFocusEffect } from '@react-navigation/native';
-import { getServiceCatalogs, ProviderCatalog } from '../apis/catalogs';
 
 type NavigationProps = AppStackScreenProps<'EditProfile'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -100,26 +95,6 @@ const EditProfile: FC<Props> = props => {
   } | null>(null);
 
   const [error, setError] = useState<FieldError>({});
-  const [catalogs, setCatalogs] = useState<ProviderCatalog[]>([]);
-  const [catalogsLoading, setCatalogsLoading] = useState(true);
-
-  const loadCatalogs = useCallback(async () => {
-    setCatalogsLoading(true);
-    try {
-      setCatalogs(await getServiceCatalogs());
-    } catch {
-      // The API interceptor displays the server error.
-    } finally {
-      setCatalogsLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadCatalogs();
-    }, [loadCatalogs]),
-  );
-
   const labelStyle = {
     style: {
       color: colors.primary,
@@ -372,35 +347,6 @@ const EditProfile: FC<Props> = props => {
           </View>
         </View>
 
-        <View style={styles.servicesCatalogContainer}>
-          <View style={styles.catalogHeading}>
-            <Text size="md" weight="semiBold" tx="editProfile.serviceCatalog" />
-            <Text
-              size="xxs"
-              weight="semiBold"
-              tx="editProfile.addCatalog"
-              style={styles.primaryText}
-              onPress={() => props.navigation.navigate('AddCatalogModal')}
-            />
-          </View>
-          {catalogsLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <FlatList
-              data={catalogs.slice(0, 3)}
-              keyExtractor={item => item.id.toString()}
-              scrollEnabled={false}
-              ListEmptyComponent={
-                <Text
-                  size="xs"
-                  tx="profile.noCatalogs"
-                  style={styles.emptyCatalogText}
-                />
-              }
-              renderItem={info => <Service {...info} />}
-            />
-          )}
-        </View>
         <Button
           onPress={validate}
           style={styles.buttonStyle}
@@ -512,27 +458,6 @@ const styles = StyleSheet.create({
   dropdownItem: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-  },
-  servicesCatalogContainer: {
-    borderBottomWidth: 1,
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderColor: colors.palette.borderColor,
-  },
-  catalogHeading: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    marginBottom: spacing.md,
-    justifyContent: 'space-between',
-  },
-  primaryText: {
-    color: colors.primary,
-  },
-  emptyCatalogText: {
-    color: colors.textDim,
-    textAlign: 'center',
-    marginVertical: spacing.md,
   },
   buttonStyle: {
     marginHorizontal: spacing.md,
