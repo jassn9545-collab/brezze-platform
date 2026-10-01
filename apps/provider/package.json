@@ -6,6 +6,7 @@
     "android": "react-native run-android --port 8082",
     "ios": "react-native run-ios",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "start": "react-native start --port 8082",
     "test": "jest"
   },
@@ -68,6 +69,6 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20"
+    "node": "^20.19.4 || ^22.13.0 || >=24.0.0"
   }
 }

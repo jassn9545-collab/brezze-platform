@@ -15,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(StripeClient::class, fn () => new StripeClient([
-            'api_key' => config('services.stripe.secret'),
+            'api_key' => config('services.stripe.secret') ?: null,
         ]));
         $this->app->bind(PaymentGateway::class, StripePaymentGateway::class);
     }

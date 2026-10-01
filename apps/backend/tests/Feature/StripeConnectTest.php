@@ -9,6 +9,10 @@ use Stripe\StripeClient;
 use Stripe\V2\Core\Account;
 use Stripe\V2\Core\AccountLink;
 
+beforeEach(function () {
+    config()->set('services.stripe.secret', 'sk_test_not_a_real_key');
+});
+
 function connectedUser(?string $accountId = 'acct_test_123'): User
 {
     $user = new User([
@@ -253,6 +257,7 @@ test('an account under review is not marked ready but needs no more onboarding',
 });
 
 test('account status is clear for users without a connected account', function () {
+    config()->set('services.stripe.secret', '');
     Sanctum::actingAs(connectedUser(null));
 
     $this->getJson('/api/stripe/account-status')->assertOk()
