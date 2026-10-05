@@ -521,7 +521,7 @@ class AuthController extends Controller
     public function profile(Request $request)
     {
         $user = $request->user();
-        $user->profile = url('public/uploads/user/'.$user->profile);
+        $user->profile = url('uploads/user/'.$user->profile);
 
         return response()->json([
             'status' => 'success',
@@ -676,7 +676,7 @@ class AuthController extends Controller
             $user->profile_image = 'uploads/user/' . $filename;
             $user->save();
 
-            return $this->success(['profile_image' => url('public/uploads/user/'.$filename)], 'Profile photo uploaded successfully.');
+            return $this->success(['profile_image' => url('uploads/user/'.$filename)], 'Profile photo uploaded successfully.');
         } else {
             return $this->error('No file uploaded.', 400);
         }
@@ -729,7 +729,7 @@ class AuthController extends Controller
     public function setting(Request $request){
         $data['skills'] = DB::table('categories')->select('id', 'name','slug','photo')->get();
         $data['proof_type'] = DB::table('proof_type')->select('name')->get();
-        $data['base_url'] = url('public/');
+        $data['base_url'] = url('/');
 
         return $this->success($data, 'Settings retrieved successfully.');
     }

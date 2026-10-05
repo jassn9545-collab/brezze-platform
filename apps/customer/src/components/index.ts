@@ -19,4 +19,5 @@ export * from './ListEmptyComponent';
 export * from './TapRating';
 export * from './Star';
 export * from './JobPaymentButton';
+export * from './ProfessionalCard';
 

@@ -1,45 +1,64 @@
-import { BackButtom, Button, Screen, Text, TextField,  } from '../components';
+import { BackButtom, Button, Screen, Text, TextField } from '../components';
 import {
+    ActivityIndicator,
     Image,
     StyleSheet,
     View,
     TouchableOpacity,
 } from 'react-native';
-import React, { FC } from 'react';
+import React, { FC, useEffect, useMemo, useState } from 'react';
 import { images, spacing, colors } from '../theme';
-import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
+import { Currency } from '../config/defaults';
+import { DiscoveryService, getDiscovery } from '../apis/discovery';
 
-type NavigationProps = AppBottomTabScreenProps<'Service'>;
-type Props = NavigationProps;
+type Props = {
+    route?: { params?: { categoryId?: number; categoryName?: string } };
+    navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
+};
 
-const Service: FC<Props> = () => {
+const Service: FC<Props> = props => {
 
-    const services = [
-        {
-            title: 'Switchbox Installation',
-            description: 'Installed in specified area for new power outlet',
-            price: 'AUD $49.00',
-            time: '30 mins',
-            rating: '4.8',
-            image: images.switchbox,
-        },
-        {
-            title: 'AC Switchbox Installation',
-            description: 'Installed in specified area for new power outlet',
-            price: 'AUD $49.00',
-            time: '30 mins',
-            rating: '4.8',
-            image: images.switchbox,
-        },
-        {
-            title: 'Fan Regulator Installation',
-            description: 'Installed in specified area for new power outlet',
-            price: 'AUD $49.00',
-            time: '30 mins',
-            rating: '4.8',
-            image: images.switchbox,
-        },
-    ];
+    const categoryId = props.route?.params?.categoryId;
+    const categoryName = props.route?.params?.categoryName;
+    const [services, setServices] = useState<DiscoveryService[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [query, setQuery] = useState('');
+
+    useEffect(() => {
+        let active = true;
+        setLoading(true);
+        getDiscovery({ categoryId })
+            .then(data => {
+                if (active) setServices(data.services);
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [categoryId]);
+
+    const visibleServices = useMemo(() => {
+        const search = query.trim().toLowerCase();
+        if (!search) return services;
+
+        return services.filter(service =>
+            [service.heading, service.description, service.provider_name, service.provider_title]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase()
+                .includes(search),
+        );
+    }, [query, services]);
+
+    const openService = (service: DiscoveryService) => {
+        props.navigation.navigate('ServiceDetails', {
+            providerId: service.provider_id,
+            initialCatalogId: service.id,
+        });
+    };
 
     return (
         <Screen
@@ -68,8 +87,8 @@ const Service: FC<Props> = () => {
                 <TextField
                     placeholderTx="Services.Searchservices"
                     containerStyle={styles.flex}
-                    // LeftAccessory={leftAccessory}
-
+                    value={query}
+                    onChangeText={setQuery}
                 />
 
                 <TouchableOpacity style={styles.searchButton}>
@@ -90,44 +109,67 @@ const Service: FC<Props> = () => {
 
             {/* SERVICE LIST */}
 
-            {services.map((item, index) => (
+            {loading ? (
+                <ActivityIndicator color={colors.primary} style={styles.loading} />
+            ) : visibleServices.length === 0 ? (
+                <View style={styles.emptyState}>
+                    <Image source={images.service} style={styles.emptyIcon} />
+                    <Text
+                        text={categoryName
+                            ? `No ${categoryName} services have been added yet.`
+                            : 'No freelancer services are available yet.'}
+                        size="sm"
+                        style={styles.emptyText}
+                    />
+                </View>
+            ) : visibleServices.map(item => (
 
-                <View key={index} style={styles.serviceCard}>
+                <TouchableOpacity
+                    key={item.id}
+                    style={styles.serviceCard}
+                    onPress={() => openService(item)}
+                >
 
                     <View style={styles.serviceContent}>
 
                         <View style={styles.ratingRow}>
-                            <Text text={'⭐ ' + item.rating} size="xs" />
-                            <Text tx="Services.reviews" text=" (20K Reviews)" size="xs" />
+                            <Text text={`⭐ ${item.provider_rating || 'New'}`} size="xs" />
+                            <Text text={` (${item.review_count} reviews)`} size="xs" />
                         </View>
 
-                        <Text text={item.title} weight="semiBold" />
-
+                        <Text text={item.heading} weight="semiBold" numberOfLines={2} />
                         <Text
                             text={item.description}
                             size="xs"
+                            numberOfLines={2}
                             style={styles.descriptionText}
                         />
 
                         <View style={styles.priceRow}>
-                            <Text text={item.price} weight="semiBold" style={styles.priceText} />
-                            <Text text={'  |  ' + item.time} size="xs" style={styles.timeText} />
+                            <Text
+                                text={`${Currency.code} ${Currency.sign}${Number(item.price).toFixed(2)}`}
+                                weight="semiBold"
+                                style={styles.priceText}
+                            />
+                            <Text text="  |  Service" size="xs" style={styles.timeText} />
                         </View>
 
                         <Button
                             style={styles.addButton}
                             tx="Services.addService"
                             textStyle={styles.addButtonText}
+                            onPress={() => openService(item)}
                         />
 
                     </View>
 
                     <Image
-                        source={item.image}
+                        source={item.image_urls[0] ? { uri: item.image_urls[0] } : images.service}
                         style={styles.serviceImage}
+                        resizeMode="cover"
                     />
 
-                </View>
+                </TouchableOpacity>
 
             ))}
 
@@ -203,7 +245,6 @@ const styles = StyleSheet.create({
     descriptionText: {
         marginTop: 4,
     },
-
     priceText: {
         color: colors.palette.primaryBlue,
     },
@@ -257,7 +298,11 @@ const styles = StyleSheet.create({
         lineHeight: 15,
         letterSpacing: 0,
         color: colors.palette.primaryColor,
-    }
+    },
+    loading: { marginTop: spacing.xl },
+    emptyState: { alignItems: 'center', padding: spacing.xl },
+    emptyIcon: { width: 56, height: 56, resizeMode: 'contain', tintColor: colors.primary },
+    emptyText: { color: colors.textDim, textAlign: 'center', marginTop: spacing.sm },
 
 });
 

@@ -8,6 +8,7 @@ class ServiceCatalog extends Model
 {
     protected $fillable = [
         'provider_id',
+        'category_id',
         'heading',
         'description',
         'price',
@@ -24,5 +25,10 @@ class ServiceCatalog extends Model
     public function provider()
     {
         return $this->belongsTo(User::class, 'provider_id');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
     }
 }

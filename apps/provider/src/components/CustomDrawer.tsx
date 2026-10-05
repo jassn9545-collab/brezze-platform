@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,16 +18,39 @@ import FastImage from '@d11/react-native-fast-image';
 const CustomDrawer: FC<DrawerContentComponentProps> = props => {
   const insets = useSafeAreaInsets();
   const profile = useAppSelector(store => store.auth.myProfile?.user);
-  const baseURl = useAppSelector(store => store.setting.basic?.base_url);
+  const baseUrl = useAppSelector(store => store.setting.basic?.base_url);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
+
+  const profileImageUri = useMemo(() => {
+    const image =
+      typeof profile?.profile_image === 'string'
+        ? profile.profile_image.trim()
+        : '';
+
+    if (!image) return undefined;
+    if (/^https?:\/\//i.test(image)) return image;
+    if (!baseUrl) return undefined;
+
+    return `${baseUrl.replace(/\/+$/, '')}/${image.replace(/^\/+/, '')}`;
+  }, [baseUrl, profile?.profile_image]);
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profileImageUri]);
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
-        <FastImage
-          resizeMode="cover"
-          style={styles.userImage}
-          source={{ uri: baseURl + '/' + profile?.profile_image }}
-        />
+        {profileImageUri && !profileImageFailed ? (
+          <FastImage
+            resizeMode="cover"
+            style={styles.userImage}
+            source={{ uri: profileImageUri }}
+            onError={() => setProfileImageFailed(true)}
+          />
+        ) : (
+          <Image source={images.user} style={styles.userImage} />
+        )}
         <View style={styles.userDetail}>
           <Text size="md" text={profile?.name} />
           {profile?.profile_title && (

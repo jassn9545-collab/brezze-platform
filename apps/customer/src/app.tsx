@@ -13,6 +13,7 @@ import { toastProps } from './utils/toast';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import AppNavigator from './navigators/AppNavigator';
+import api from './apis/api';
 // import {UpdateView} from './screens/UpdateView';
 // import {AnimatedBootSplash, AnimatedBootSplashRef} from './components';
 // import BootSplash from 'react-native-bootsplash';
@@ -50,7 +51,14 @@ interface TextInputWithDefaultProps extends TextInput {
 //   }
 // });
 
-function App(): React.JSX.Element {
+type AppProps = {
+  apiBaseUrl?: string;
+};
+
+function App({ apiBaseUrl }: AppProps): React.JSX.Element {
+  if (apiBaseUrl) {
+    api.defaults.baseURL = apiBaseUrl;
+  }
   // const animatedBootSplash = React.useRef<AnimatedBootSplashRef>(null);
   // const {onReady, onStateChange} = useScreenLog();
 

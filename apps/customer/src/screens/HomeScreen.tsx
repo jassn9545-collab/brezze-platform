@@ -1,5 +1,13 @@
-import { Button, Screen, Text, TextField, TextFieldAccessoryProps } from '../components';
 import {
+  Button,
+  ProfessionalCard,
+  Screen,
+  Text,
+  TextField,
+  TextFieldAccessoryProps,
+} from '../components';
+import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -8,11 +16,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { FC } from 'react';
+import React, { FC, useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors, images, spacing } from '../theme';
 import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
-import { commonStyle } from '../theme/style';
-import { Currency } from '../config/defaults';
+import {
+  DiscoveryCategory,
+  DiscoveryProfessional,
+  getDiscovery,
+} from '../apis/discovery';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 // type StoreProps = ConnectedProps<typeof connector>;
@@ -21,48 +33,33 @@ type Props = NavigationProps;
 const screenWidth = Dimensions.get('window').width;
 
 const Home: FC<Props> = (props) => {
-  //   const insets = useSafeAreaInsets();
+  const [categories, setCategories] = useState<DiscoveryCategory[]>([]);
+  const [professionals, setProfessionals] = useState<DiscoveryProfessional[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  //   const [activeIndex, setActiveIndex] = useState(0);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setLoading(true);
 
-  //   useEffect(() => {
-  //     props.getHomeData();
-  //     props.getCategories();
-  //     props.getProfile();
-  //     // eslint-disable-next-line react-hooks/exhaustive-deps
-  //   }, []);
+    getDiscovery()
+      .then(data => {
+        if (!active) return;
+        setCategories(data.categories);
+        setProfessionals(data.featured_professionals.slice(0, 3));
+      })
+      .catch(() => {
+        if (!active) return;
+        setCategories([]);
+        setProfessionals([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-  // dummy data for categories
-
-  const categories = [
-    { title: 'Electrician', image: images.electrician },
-    { title: 'Plumbing', image: images.plumbing },
-    { title: 'Carpenter', image: images.carpenter },
-    { title: 'Cleaning', image: images.cleaning },
-    { title: 'Carpet maker', image: images.carpet },
-    { title: 'Appliance', image: images.appliance },
-    { title: 'AC Repair', image: images.acrepair },
-    { title: 'Garden', image: images.garden },
-  ];
-
-  const professionals = [
-    {
-      name: 'Michael Rodriguez ',
-      role: 'Master Electrician',
-      rating: '4.9',
-      price: 45,
-      image: images.profile1,
-      tags: ['Wiring', 'Emergency Repair'],
-    },
-    {
-      name: 'Rodriguez Tony',
-      role: 'Master Plumber',
-      rating: '4.7',
-      price: 40,
-      image: images.profile2,
-      tags: ['Leakage', 'Emergency Repair'],
-    },
-  ];
+    return () => {
+      active = false;
+    };
+  }, []));
 
   return (
     <>
@@ -137,7 +134,7 @@ const Home: FC<Props> = (props) => {
         <View style={styles.categoryHeader}>
           <Text tx="home.Categories" weight="semiBold" size="md" />
           <TouchableOpacity onPress={() => props.navigation.navigate('Categories')}>
-            <Text tx="home.viewAll" size="xs" weight='semiBold' style={styles.viewAllText} />
+            <Text tx="home.viewAll" size="xxs" weight="semiBold" style={styles.viewAllText} />
           </TouchableOpacity>
         </View>
 
@@ -145,28 +142,38 @@ const Home: FC<Props> = (props) => {
 
         <FlatList
           data={categories}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={item => String(item.id)}
           numColumns={4}
           contentContainerStyle={styles.categoryContainer}
           scrollEnabled={false}
           renderItem={({ item }) => (
-            <View style={styles.categoryItem}>
-              <Image source={item.image} style={styles.categoryImage} />
+            <TouchableOpacity
+              style={styles.categoryItem}
+              onPress={() =>
+                props.navigation.navigate('CategoryServices', {
+                  categoryId: item.id,
+                  categoryName: item.name,
+                })
+              }
+            >
+              <Image source={{ uri: item.image_url }} style={styles.categoryImage} />
               <Text
-                text={item.title}
+                text={item.name}
                 weight="regular"
                 size="xxs"
                 style={styles.categoryText}
+                numberOfLines={2}
               />
-            </View>
+            </TouchableOpacity>
           )}
+          ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : null}
         />
 
         {/* FEATURED HEADER */}
 
         <View style={styles.featureHeader}>
           <Text tx="home.featuredProfessionals" weight="semiBold" size="lg" />
-          <TouchableOpacity onPress={() => props.navigation.navigate('Service')}>
+          <TouchableOpacity onPress={() => props.navigation.navigate('FeaturedProfessionals')}>
             <Text tx="home.viewAll" size="xxs" weight="medium" style={styles.viewAllText} />
           </TouchableOpacity>
         </View>
@@ -174,50 +181,16 @@ const Home: FC<Props> = (props) => {
         {/* FEATURED LIST */}
 
         <FlatList
-          data={professionals}
-          keyExtractor={(item, index) => index.toString()}
+          data={professionals.slice(0, 3)}
+          keyExtractor={item => String(item.id)}
           scrollEnabled={false}
           renderItem={({ item }) => (
-            <View style={[styles.card, commonStyle.customShadow]}>
-
-              <View style={styles.cardContent}>
-                <Image source={item.image} style={styles.profileImage} />
-
-                <View style={{ flex: 1 }}>
-                  <Text text={item.name} weight="semiBold" />
-                  <Text text={item.role} size="xs" />
-
-                  <View style={styles.tagContainer}>
-                    {item.tags.map((tag, i) => (
-                      <View key={i} style={styles.tag}>
-                        <Text text={tag} size="xxs" />
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                <Text text={`⭐ ${item.rating}`} />
-              </View>
-
-              <View style={styles.cardBottom}>
-                <Text
-                  tx="home.servicePrice"
-                  txOptions={{ value: Currency.sign + item.price }}
-                  size="xs"
-                />
-
-                <TouchableOpacity style={styles.profileBtn}>
-                  <Text
-                    tx="home.viewProfile"
-                    size="xxs"
-                    weight="bold"
-                    style={styles.viewAllText}
-                  />
-                </TouchableOpacity>
-              </View>
-
-            </View>
+            <ProfessionalCard
+              professional={item}
+              onPress={() => props.navigation.navigate('ProfessionalProfile', { id: item.id })}
+            />
           )}
+          ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : null}
         />
 
         {/* <View>
@@ -337,33 +310,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    marginTop: 25,
-    marginBottom: 5,
+    paddingHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 10,
   },
 
   categoryContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 15,
-    marginTop: 10,
+    paddingHorizontal: 20,
   },
 
   categoryItem: {
-    width: '25%',   // exact 4 columns
+    width: '25%',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 22,
   },
 
   categoryImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginBottom: 8,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 7,
   },
   categoryText: {
     textAlign: 'center',
-    marginTop: 4,
+    lineHeight: 16,
   },
   featureHeader: {
     flexDirection: 'row',
@@ -372,53 +342,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
-  card: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: spacing.sm,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    backgroundColor: colors.palette.offWhite,
-  },
-
-  profileImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-  },
-
-  cardContent: {
-    flex: 1,
-    gap: spacing.md,
-    flexDirection: 'row',
-  },
-
-  tagContainer: {
-    flexDirection: 'row',
-    marginTop: 5,
-  },
-
-  tag: {
-    backgroundColor: colors.palette.offWhite2,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 5,
-    marginRight: 5,
-  },
-
-  cardBottom: {
-    gap: spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  profileBtn: {
-    borderRadius: spacing.xs,
-    paddingVertical: spacing.xxs,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: colors.primaryDimmed,
-  },
   viewAllText: {
     color: colors.primary,
   },

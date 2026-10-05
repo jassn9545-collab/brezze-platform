@@ -54,6 +54,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
         Route::post('/get_users', [\App\Http\Controllers\Admin\UserController::class, 'user_list'])->name('admin.users.index_users');
         Route::post('/update_status/{id}', [\App\Http\Controllers\Admin\UserController::class, 'update_status'])->name('admin.users.update_status');
+        Route::post('/update_featured/{id}', [\App\Http\Controllers\Admin\UserController::class, 'update_featured'])->name('admin.users.update_featured');
         Route::get('/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])->name('admin.users.create');
         Route::post('/store', [\App\Http\Controllers\Admin\UserController::class, 'store'])->name('admin.users.store');
         Route::get('/edit/{id}', [\App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');

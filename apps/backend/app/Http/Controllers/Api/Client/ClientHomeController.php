@@ -45,8 +45,11 @@ class ClientHomeController extends BaseClientController
 
         $profile->user_proof = UserProof::where('user_id', $profile->id)->first();
         $profile->job_success_score = 100;
-        $profile->total_jobs = DB::table('projects')
-            ->where('status', 'completed')
+        $profile->total_jobs = DB::table('bids')
+            ->join('projects', 'projects.id', '=', 'bids.project_id')
+            ->where('bids.user_id', $profile->id)
+            ->where('bids.is_hired', 1)
+            ->where('projects.status', 'completed')
             ->count();
         $profile->total_earnings = 0;
         $profile->is_top_rated = true;

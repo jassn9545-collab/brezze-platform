@@ -84,6 +84,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        buildConfigField "String", "LOCAL_API_BASE_URL", '""'
     }
     signingConfigs {
         debug {
@@ -105,6 +106,13 @@ android {
             manifestPlaceholders = [usesCleartextTraffic: 'false']
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+        standalone {
+            initWith release
+            signingConfig signingConfigs.debug
+            manifestPlaceholders = [usesCleartextTraffic: 'true']
+            buildConfigField "String", "LOCAL_API_BASE_URL", '"http://192.168.1.10:8000/api"'
+            matchingFallbacks = ['release']
         }
     }
 }

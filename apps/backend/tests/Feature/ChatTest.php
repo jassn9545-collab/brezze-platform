@@ -33,6 +33,16 @@ beforeEach(function () {
         $table->boolean('is_hired')->default(false);
     });
 
+    Schema::create('service_bookings', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('client_id');
+        $table->unsignedBigInteger('provider_id');
+        $table->string('status');
+        $table->unsignedBigInteger('conversation_id')->nullable();
+        $table->timestamp('responded_at')->nullable();
+        $table->timestamps();
+    });
+
     $this->chatMigration = require database_path('migrations/2026_10_01_000001_create_chat_tables.php');
     $this->chatMigration->up();
 
@@ -62,6 +72,7 @@ beforeEach(function () {
 
 afterEach(function () {
     $this->chatMigration->down();
+    Schema::dropIfExists('service_bookings');
     Schema::dropIfExists('bids');
     Schema::dropIfExists('projects');
     Schema::dropIfExists('users');
@@ -122,14 +133,12 @@ it('lets both participants exchange messages and tracks unread status', function
         ->assertJsonPath('data.messages.1.body', 'Thanks, when are you available?');
 });
 
-it('allows a direct client-provider conversation without a project', function () {
+it('requires an accepted service request for direct chat while project chat remains available', function () {
     Sanctum::actingAs($this->client);
 
     $this->postJson('/api/chat/conversations', [
         'recipient_id' => $this->provider->id,
-    ])->assertOk()
-        ->assertJsonPath('data.conversation.project_id', null)
-        ->assertJsonPath('data.conversation.other_user.name', 'Provider');
+    ])->assertForbidden();
 
     $this->postJson('/api/chat/conversations', [
         'recipient_id' => $this->client->id,
@@ -190,6 +199,7 @@ it('returns usable profile photo URLs for both message lists', function () {
 
     Sanctum::actingAs($this->client);
     $response = $this->postJson('/api/chat/conversations', [
+        'project_id' => $this->project->id,
         'recipient_id' => $this->provider->id,
     ])->assertOk();
     $conversationId = $response->json('data.conversation.id');

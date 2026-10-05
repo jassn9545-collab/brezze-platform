@@ -41,7 +41,7 @@ class HomeController extends Controller
         if(!$products){
             return response()->json(['status'  => 'failed','message' => 'No products found in this category.'], 404);
         }
-        return response()->json(['status'  => 'success','message' => 'Products fetched successfully.','data' => $products,'image_base_url'=>url('public')], 200);
+        return response()->json(['status'  => 'success','message' => 'Products fetched successfully.','data' => $products,'image_base_url'=>url('/')], 200);
     }
 
     public function productDetails(Request $request, $id)
@@ -50,7 +50,7 @@ class HomeController extends Controller
         if(!$product){
             return response()->json(['status'  => 'failed','message' => 'Product not found.'], 404);
         }
-        return response()->json(['status'  => 'success','message' => 'Product details fetched successfully.','data' => $product,'image_base_url'=>url('public')], 200);
+        return response()->json(['status'  => 'success','message' => 'Product details fetched successfully.','data' => $product,'image_base_url'=>url('/')], 200);
     }
 
     public function updatePassword(Request $request)

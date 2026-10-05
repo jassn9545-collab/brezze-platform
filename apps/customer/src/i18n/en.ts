@@ -27,7 +27,7 @@ const en = {
     password: 'Enter your password',
     forgotPassword: 'Forgot Password?',
     signIn: 'Sign In',
-    newUser: 'New to Bezzie? ',
+    newUser: 'New to Our Bezzie Provider? ',
     signUp: 'Sign up now',
   },
   auth: {
@@ -38,7 +38,7 @@ const en = {
     mobilePlaceholder: 'Enter your Phone',
     passwordPlaceholder: 'Enter your password',
     confirmPasswordPlaceholder: 'Confirm password',
-    agree: 'I agree with Bezzie’s ',
+    agree: 'I agree with Our Bezzie Provider’s ',
     termsAndConditions: 'Term & Conditions',
     signUp: 'Sign Up',
     alreadyMember: 'Already have an account? ',

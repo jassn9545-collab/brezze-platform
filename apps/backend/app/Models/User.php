@@ -20,6 +20,7 @@ class User extends Authenticatable
         'user_type',
         'alternate_phone',
         'is_verified',
+        'is_featured',
         'refral_code',
         'refrence',
         'latitude',
@@ -40,6 +41,10 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    protected $casts = [
+        'is_featured' => 'boolean',
     ];
 
     public function proof()

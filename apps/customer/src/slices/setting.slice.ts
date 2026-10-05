@@ -3,7 +3,6 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { LoadStatus } from './types';
 import URLs from '../config/urls';
 import api from '../apis/api';
-import { getAuthorization } from './auth.slice';
 
 export interface BasicData {
   skills: Skill[]
@@ -38,8 +37,6 @@ export const getBasicSettings = createAsyncThunk(
       return data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
-    } finally {
-      thunkAPI.dispatch(getAuthorization());
     }
   },
 );

@@ -55,12 +55,16 @@ class UserController extends Controller
                         <option value="1" '.($profile && $profile->is_verified == 1 ? 'selected' : '').'>Verified</option>
                         <option value="2" '.($profile && $profile->is_verified == 2 ? 'selected' : '').'>Rejected</option>
                     </select>';
+            $featured = $row->user_type === 'freelancer'
+                ? '<input type="checkbox" class="user-featured" data-id="'.$row->id.'" '.($row->is_featured ? 'checked' : '').' aria-label="Show '.e($row->name).' on home screen">'
+                : '<span class="text-muted">&mdash;</span>';
             $final[] = [
                 "DT_RowId" => $row->id,
                 $row->name,
                 $row->email,
                 $row->phone,
                 $status,
+                $featured,
                 ($row->profile_image)
                 ? '<img src="'.asset('public/'.$row->profile_image).'" width="50" height="50" />'
                 : '<img src="https://ui-avatars.com/api/?name='.urlencode($row->name).'&background=0063b7&size=128&rounded=true&color=fff&length=1" width="50" height="50" />',
@@ -96,6 +100,41 @@ class UserController extends Controller
         $status = $request->input('status');
         DB::table('user_proofs')->where('user_id', $id)->update(['is_verified' => $status]);
         return response()->json(['status' => true]);
+    }
+
+    public function update_featured(Request $request, $id)
+    {
+        $request->validate([
+            'featured' => 'required|boolean',
+        ]);
+
+        $user = User::query()
+            ->where('user_type', 'freelancer')
+            ->findOrFail($id);
+        $featured = $request->boolean('featured');
+
+        if ($featured && !$user->is_featured) {
+            $featuredCount = User::query()
+                ->where('user_type', 'freelancer')
+                ->where('is_featured', true)
+                ->count();
+
+            if ($featuredCount >= 3) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Only 3 professionals can be featured on the home screen.',
+                ], 422);
+            }
+        }
+
+        $user->update(['is_featured' => $featured]);
+
+        return response()->json([
+            'status' => true,
+            'message' => $featured
+                ? 'Professional added to the home screen.'
+                : 'Professional removed from the home screen.',
+        ]);
     }
 
     public function store(Request $request)

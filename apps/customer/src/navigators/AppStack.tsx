@@ -25,7 +25,6 @@ import {
   HelpSupportScreen,
   HireHistoryDetailsScreen,
 } from '../screens';
-import { CategoriesScreen } from '../screens';
 import { JobPostFirstParams } from '../apis/schema';
 
 import { useAppDispatch } from '../store/hooks';
@@ -53,7 +52,7 @@ export type AppStackParamList = {
   JobPostList: undefined;
   jobPostDetails: Screens.JobPostDetailParams;
   HireHistory: undefined;
-  Categories: undefined;
+  CategoryServices: { categoryId: number; categoryName: string };
   HireHistoryDetails: undefined;
   ProfessionalProfile: { id: number; projectId?: number };
   ServiceDetails: { providerId: number; initialCatalogId?: number; projectId?: number };
@@ -119,7 +118,7 @@ export const AppStack: FC = () => {
       <Stack.Screen name="BottomTab" component={BottomTabNavigator} />
 
       <Stack.Screen name="JobPost" component={JobPostScreen} />
-      <Stack.Screen name="Categories" component={CategoriesScreen} />
+      <Stack.Screen name="CategoryServices" component={Screens.ServiceListScreen} />
       <Stack.Screen name="JobPostStep2" component={JobPostConfirmScreen} />
       <Stack.Screen name="JobPostList" component={jobPostListScreen} />
       <Stack.Screen name="jobPostDetails" component={jobPostDetailsScreen} />

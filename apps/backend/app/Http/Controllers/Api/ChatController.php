@@ -7,6 +7,7 @@ use App\Models\Bid;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\Project;
+use App\Models\ServiceBooking;
 use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -122,6 +123,36 @@ class ChatController extends Controller
 
             $clientId = $user->user_type === 'client' ? $user->id : $recipient->id;
             $providerId = $user->user_type === 'freelancer' ? $user->id : $recipient->id;
+
+            $acceptedBooking = ServiceBooking::query()
+                ->where('client_id', $clientId)
+                ->where('provider_id', $providerId)
+                ->where('status', 'accepted')
+                ->whereNotNull('conversation_id')
+                ->latest('responded_at')
+                ->first();
+            if (!$acceptedBooking) {
+                return $this->error(
+                    'Chat becomes available after a service request is accepted or a freelancer is hired.',
+                    403
+                );
+            }
+
+            $bookingConversation = ChatConversation::query()->find($acceptedBooking->conversation_id);
+            if ($bookingConversation) {
+                $bookingConversation->load([
+                    'client:id,name,profile_image',
+                    'provider:id,name,profile_image',
+                    'project:id,title',
+                    'latestMessage',
+                ]);
+                $bookingConversation->unread_count = 0;
+
+                return $this->success(
+                    ['conversation' => $this->conversationData($bookingConversation, $user, $request)],
+                    'Conversation ready.'
+                );
+            }
         }
 
         $key = $project

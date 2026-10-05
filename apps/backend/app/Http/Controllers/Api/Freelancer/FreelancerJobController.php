@@ -117,7 +117,7 @@ class FreelancerJobController extends BaseFreelancerController
         if (!$project) {
             return $this->error('Project not found.', 400);
         }
-        $project->base_url = url('public/');
+        $project->base_url = url('/');
 
         return $this->success($project, 'Job details retrieved successfully.');
     }

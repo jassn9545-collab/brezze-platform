@@ -1,51 +1,47 @@
 import { BackButtom, Screen, Text, } from '../components';
 import {
+  ActivityIndicator,
   FlatList,
   // Dimensions,
   Image,
   StyleSheet,
-  View,
+  TouchableOpacity,
 } from 'react-native';
-import React, { FC } from 'react';
-import { images } from '../theme';
-import { AppStackScreenProps } from '../navigators/AppStack';
+import React, { FC, useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { colors } from '../theme';
+import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
+import { DiscoveryCategory, getDiscovery } from '../apis/discovery';
 
-type NavigationProps = AppStackScreenProps<'Categories'>;
+type NavigationProps = AppBottomTabScreenProps<'Categories'>;
 // type StoreProps = ConnectedProps<typeof connector>;
 type Props = NavigationProps;
 
 // const screenWidth = Dimensions.get('window').width;
 
-const Categories: FC<Props> = () => {
+const Categories: FC<Props> = props => {
+  const [categories, setCategories] = useState<DiscoveryCategory[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // dummy data for categories
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setLoading(true);
 
-  const categories = [
-    { title: 'Electrician', image: images.electrician },
-    { title: 'Plumbing', image: images.plumbing },
-    { title: 'Carpenter', image: images.carpenter },
-    { title: 'Cleaning', image: images.cleaning },
-    { title: 'Carpet maker', image: images.carpet },
-    { title: 'Appliance', image: images.appliance },
-    { title: 'AC Repair', image: images.acrepair },
-    { title: 'Garden', image: images.garden },
-    { title: 'Electrician', image: images.electrician },
-    { title: 'Plumbing', image: images.plumbing },
-    { title: 'Carpenter', image: images.carpenter },
-    { title: 'Cleaning', image: images.cleaning },
-    { title: 'Carpet maker', image: images.carpet },
-    { title: 'Appliance', image: images.appliance },
-    { title: 'AC Repair', image: images.acrepair },
-    { title: 'Garden', image: images.garden },
-    { title: 'Electrician', image: images.electrician },
-    { title: 'Plumbing', image: images.plumbing },
-    { title: 'Carpenter', image: images.carpenter },
-    { title: 'Cleaning', image: images.cleaning },
-    { title: 'Carpet maker', image: images.carpet },
-    { title: 'Appliance', image: images.appliance },
-    { title: 'AC Repair', image: images.acrepair },
-    { title: 'Garden', image: images.garden },
-  ];
+    getDiscovery()
+      .then(data => {
+        if (active) setCategories(data.categories);
+      })
+      .catch(() => {
+        if (active) setCategories([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []));
 
 
 
@@ -73,27 +69,43 @@ const Categories: FC<Props> = () => {
 
 
 
-        <BackButtom headingTx='home.Categories' />
+        <BackButtom headingTx="home.Categories" style={styles.header} />
 
         {/* CATEGORY GRID */}
 
         <FlatList
           data={categories}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={item => String(item.id)}
           numColumns={4}
           contentContainerStyle={styles.categoryContainer}
           scrollEnabled={false}
           renderItem={({ item }) => (
-            <View style={styles.categoryItem}>
-              <Image source={item.image} style={styles.categoryImage} />
+            <TouchableOpacity
+              style={styles.categoryItem}
+              onPress={() =>
+                props.navigation.navigate('CategoryServices', {
+                  categoryId: item.id,
+                  categoryName: item.name,
+                })
+              }
+            >
+              <Image source={{ uri: item.image_url }} style={styles.categoryImage} />
               <Text
-                text={item.title}
+                text={item.name}
                 weight="regular"
-                size="xs"
+                size="xxs"
                 style={styles.categoryText}
+                numberOfLines={2}
               />
-            </View>
+            </TouchableOpacity>
           )}
+          ListEmptyComponent={
+            loading ? (
+              <ActivityIndicator color={colors.primary} style={styles.loading} />
+            ) : (
+              <Text text="No categories available." style={styles.emptyText} />
+            )
+          }
         />
         {/* <View>
           <Carousel
@@ -142,33 +154,38 @@ const styles = StyleSheet.create({
 
   container: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: 24,
+  },
+
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
 
 
   categoryContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 15,
-    marginTop: 10,
+    paddingHorizontal: 20,
+    paddingTop: 18,
   },
 
   categoryItem: {
-    width: '25%',   // exact 4 columns
+    width: '25%',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
 
   categoryImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginBottom: 8,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 7,
   },
   categoryText: {
     textAlign: 'center',
-    marginTop: 4,
+    lineHeight: 16,
   },
+  loading: { marginTop: 40 },
+  emptyText: { width: '100%', textAlign: 'center', marginTop: 40 },
 
 
 });

@@ -59,7 +59,7 @@ export const payForJob = async (jobId: number): Promise<JobPayment> => {
     stripeAccountId: intent.stripe_account_id,
   });
   const initialized = await initPaymentSheet({
-    merchantDisplayName: 'Bezzie',
+    merchantDisplayName: 'Our Bezzie Provider',
     paymentIntentClientSecret: intent.client_secret,
     returnURL: 'bezzie://stripe-redirect',
     allowsDelayedPaymentMethods: false,

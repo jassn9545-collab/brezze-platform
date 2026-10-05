@@ -20,7 +20,9 @@ import { AppDrawerScreenProps, DrawerParamsList } from './DrawerNavigator';
 
 export type BottomTabNavigatorParamList = {
   Home: undefined;
-  Service: undefined;
+  Categories: undefined;
+  FeaturedProfessionals: undefined;
+  Service: { categoryId?: number; categoryName?: string } | undefined;
   Job: undefined
   Chat: undefined;
   Profile: undefined;
@@ -60,6 +62,8 @@ export const BottomTabNavigator: FC<NavigationProps> = () => {
       })}
     >
       <Tab.Screen name="Home" component={Screens.HomeScreen} /> 
+      <Tab.Screen name="Categories" component={Screens.CategoriesScreen} />
+      <Tab.Screen name="FeaturedProfessionals" component={Screens.FeatureScreen} />
       <Tab.Screen name="Service" component={Screens.ServiceListScreen} />
       <Tab.Screen name="Job" component={Screens.DummyScreen} />
       <Tab.Screen name="Chat" component={Screens.ChatScreen} />

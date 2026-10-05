@@ -30,6 +30,7 @@ const MainNavigator: FC<Props> = props => {
   useBackButtonHandler(routeName => exitRoutes.includes(routeName));
 
   useEffect(() => {
+    props.getAuthorization();
     props.getBasicSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

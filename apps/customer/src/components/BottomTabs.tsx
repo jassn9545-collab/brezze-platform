@@ -23,6 +23,10 @@ type ImageKeys = Extract<AppImage, string>;
 const BottomTabs = (props: BottomTabBarProps) => {
   const { state, descriptors, navigation } = props;
   const insets = useSafeAreaInsets();
+  const activeRouteName = state.routes[state.index]?.name;
+  const visibleRoutes = state.routes.filter(
+    route => route.name !== 'Categories' && route.name !== 'FeaturedProfessionals',
+  );
 
   return (
     <View style={{ backgroundColor: colors.background }}>
@@ -30,13 +34,16 @@ const BottomTabs = (props: BottomTabBarProps) => {
         source={require('../assets/images/bottomTab.png')}
         style={[$tabBarContainer, { marginBottom: insets.bottom }]}
       >
-        {state?.routes.map((route, index) => {
+        {visibleRoutes.map(route => {
           const { options } = descriptors[route.key];
           const label = route.name;
 
           const key =
             route.name.substring(0, 1).toLowerCase() + route.name.substring(1);
-          const isFocused = state.index === index;
+          const isFocused =
+            activeRouteName === route.name ||
+            ((activeRouteName === 'Categories' || activeRouteName === 'FeaturedProfessionals') &&
+              route.name === 'Home');
 
           const onPress = () => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);

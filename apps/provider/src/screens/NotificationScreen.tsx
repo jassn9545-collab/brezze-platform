@@ -1,5 +1,6 @@
 import { BackButtom, Screen, Text } from '../components';
 import {
+  Alert,
   FlatList,
   Image,
   ListRenderItemInfo,
@@ -7,41 +8,89 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { FC } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 import { AppStackScreenProps } from '../navigators';
 import moment from 'moment';
-// import { RootState } from '../store';
-// import { getNotifications } from '../slices/auth.slice';
-// import { Notification as NotificationType } from '../slices/types';
+import { useFocusEffect } from '@react-navigation/native';
+import {
+  getServiceBookings,
+  respondToServiceBooking,
+  ServiceBooking,
+} from '../apis/bookings';
+import { Currency } from '../config/defaults';
 
 type NavigationProps = AppStackScreenProps<'Notification'>;
-// type StoreProps = ConnectedProps<typeof connector>;
-// type Props = NavigationProps & StoreProps;
+const Notification: FC<NavigationProps> = ({ navigation }) => {
+  const [bookings, setBookings] = useState<ServiceBooking[]>([]);
+  const [actionId, setActionId] = useState<number | null>(null);
 
-// let page = 1;
-const Notification: FC<NavigationProps> = () => {
-  //   const flatlist = useRef<FlatList<NotificationType>>(null);
+  const load = useCallback(async () => {
+    try {
+      const result = await getServiceBookings();
+      setBookings(result.bookings);
+    } catch {
+      // The shared API client displays the server error.
+    }
+  }, []);
 
-  //   const fetching = props.fetching === 'loading';
-  //   const loadMore = () => {
-  //     if (!fetching && props.totalcount > props.notification.length) {
-  //       page++;
-  //       getData();
-  //     }
-  //   };
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
-  //   const load = () => {
-  //     page = 1;
-  //     getData();
-  //   };
+  const openChat = (booking: ServiceBooking) => {
+    if (!booking.conversation_id) return;
+    navigation.navigate('ChatDetail', { conversationId: booking.conversation_id });
+  };
 
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  //   useEffect(load, []);
+  const respond = async (
+    booking: ServiceBooking,
+    action: 'accept' | 'reject',
+  ) => {
+    if (actionId !== null) return;
+    setActionId(booking.id);
+    try {
+      const updated = await respondToServiceBooking(booking.id, action);
+      setBookings(current =>
+        current.map(item => (item.id === updated.id ? updated : item)),
+      );
+      toast.show(
+        action === 'accept'
+          ? 'Request accepted. The job and chat are now active.'
+          : 'Service request rejected.',
+        { type: 'success' },
+      );
+    } catch {
+      // The shared API client displays the server error.
+    } finally {
+      setActionId(null);
+    }
+  };
 
-  //   const getData = () => {
-  //     props.get({ page });
-  //   };
+  const openBooking = (booking: ServiceBooking) => {
+    if (booking.status === 'accepted') {
+      openChat(booking);
+      return;
+    }
+    if (booking.status === 'rejected' || actionId !== null) return;
+
+    Alert.alert(
+      'Service request',
+      `${booking.client.name} requested ${booking.service_title}.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reject',
+          style: 'destructive',
+          onPress: () => respond(booking, 'reject'),
+        },
+        { text: 'Accept', onPress: () => respond(booking, 'accept') },
+      ],
+    );
+  };
+
   return (
     <Screen
       preset="fixed"
@@ -50,48 +99,51 @@ const Notification: FC<NavigationProps> = () => {
     >
       <BackButtom headingTx="home.notification" />
       <FlatList
-        // ref={flatlist}
-        // data={props.notification}
-        data={[1, 1, 1, 1, 1, 1, 1, 1]}
+        data={bookings}
         style={styles.flatlist}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
-        // keyExtractor={item => item?.id?.toString()}
-        // onEndReached={loadMore}
-        // onEndReachedThreshold={0.8}
-        renderItem={info => <NotificationCard {...info} />}
-        // ListEmptyComponent={
-        //   <View style={styles.empty}>
-        //     <ListEmptyComponent tx="common.noDataFound" />
-        //   </View>
-        // }
-        // ListFooterComponent={
-        //   <View style={styles.extaFetch}>
-        //     {page !== 1 && fetching ? (
-        //       <ActivityIndicator size="small" color={colors.primary} />
-        //     ) : null}
-        //   </View>
-        // }
+        keyExtractor={item => item.id.toString()}
+        renderItem={info => (
+          <NotificationCard {...info} onPress={() => openBooking(info.item)} />
+        )}
       />
     </Screen>
   );
 };
 
-// type NotificationCardProps = ListRenderItemInfo<NotificationType>;
-type NotificationCardProps = ListRenderItemInfo<any>;
-const NotificationCard = ({ item }: NotificationCardProps) => {
+type NotificationCardProps = ListRenderItemInfo<ServiceBooking> & {
+  onPress: () => void;
+};
+
+const NotificationCard = ({ item, onPress }: NotificationCardProps) => {
+  const title =
+    item.status === 'pending'
+      ? 'New Service Request'
+      : item.status === 'accepted'
+        ? 'Service Request Accepted'
+        : 'Service Request Rejected';
+  const action =
+    item.status === 'pending'
+      ? 'Review'
+      : item.status === 'accepted'
+        ? 'Open Chat'
+        : 'Rejected';
+  const price = `${Currency.code} ${Currency.sign}${Number(item.price).toFixed(2)}`;
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
       key={item.id}
       style={styles.singleNotification}
+      onPress={onPress}
     >
       <View style={styles.titleWrappper}>
         <View style={styles.dot} />
         <Text
           size="sm"
           weight="medium"
-          text="Apply Success"
+          text={title}
           style={styles.whiteText}
         />
       </View>
@@ -100,7 +152,7 @@ const NotificationCard = ({ item }: NotificationCardProps) => {
         size="xs"
         weight="medium"
         style={styles.whiteText}
-        text="Please verify your profile information to continue using this app"
+        text={`${item.client.name} requested ${item.service_title} for ${price}`}
       />
       <View style={styles.spaceBetween}>
         <View style={styles.timer}>
@@ -116,7 +168,7 @@ const NotificationCard = ({ item }: NotificationCardProps) => {
           size="xs"
           weight="semiBold"
           style={styles.whiteText}
-          tx="home.markRead"
+          text={action}
         />
       </View>
     </TouchableOpacity>
@@ -184,17 +236,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
 });
-
-// const mapStateToProps = (state: RootState) => ({
-//   totalcount: state.auth.totalNotifications,
-//   notification: state.auth.userNotifications,
-//   fetching: state.auth.userNotificationsLoading,
-// });
-
-// const mapDispatch = {
-//   get: getNotifications,
-// };
-
-// const connector = connect(mapStateToProps, mapDispatch);
 
 export const NotificationScreen = Notification;

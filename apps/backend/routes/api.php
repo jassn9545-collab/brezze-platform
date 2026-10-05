@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Freelancer\FreelancerJobController;
 use App\Http\Controllers\Api\Freelancer\ServiceCatalogController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\ServiceBookingController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -60,7 +61,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // jobs routes
     Route::prefix('client')->group(function () {
+        Route::get('discovery', [ClientServiceCatalogController::class, 'discovery']);
         Route::get('freelancer-catalogs/{provider}', [ClientServiceCatalogController::class, 'index']);
+        Route::get('service-bookings', [ServiceBookingController::class, 'clientIndex']);
+        Route::post('service-bookings', [ServiceBookingController::class, 'store']);
 
         Route::post('new-job', [ClientJobController::class, 'createJob']);
         Route::post('my-jobs', [ClientJobController::class, 'myJobs']);
@@ -95,6 +99,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('payments', [PaymentController::class, 'providerHistory']);
         Route::get('catalogs', [ServiceCatalogController::class, 'index']);
         Route::post('catalogs', [ServiceCatalogController::class, 'store']);
+        Route::get('service-bookings', [ServiceBookingController::class, 'providerIndex']);
+        Route::post('service-bookings/{booking}/respond', [ServiceBookingController::class, 'respond']);
 
     });
 

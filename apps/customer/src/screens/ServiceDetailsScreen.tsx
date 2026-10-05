@@ -16,7 +16,11 @@ import {
   CatalogProvider,
   ServiceCatalog,
 } from '../apis/catalogs';
-import { openChatConversation } from '../apis/chat';
+import {
+  createServiceBooking,
+  getServiceBookings,
+  ServiceBooking,
+} from '../apis/bookings';
 import { BackButtom, Screen, Text } from '../components';
 import { Currency } from '../config/defaults';
 import { AppStackScreenProps } from '../navigators/AppStack';
@@ -35,7 +39,7 @@ const formatPrice = (price: string) => {
 };
 
 export const ServiceDetailsScreen: FC<Props> = ({ navigation, route }) => {
-  const { providerId, initialCatalogId, projectId } = route.params;
+  const { providerId, initialCatalogId } = route.params;
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const galleryWidth = width - spacing.md * 2;
@@ -50,7 +54,9 @@ export const ServiceDetailsScreen: FC<Props> = ({ navigation, route }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [booking, setBooking] = useState<ServiceBooking | null>(null);
   const [openingChat, setOpeningChat] = useState(false);
+  const [requestingBooking, setRequestingBooking] = useState(false);
 
   const loadCatalogs = useCallback(async () => {
     setLoading(true);
@@ -85,6 +91,41 @@ export const ServiceDetailsScreen: FC<Props> = ({ navigation, route }) => {
   const catalog = catalogs.find(item => item.id === selectedId) ?? catalogs[0];
   const imageUrls = catalog?.image_urls ?? [];
 
+  useEffect(() => {
+    let active = true;
+    if (!catalog?.id) {
+      setBooking(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    setBooking(null);
+    getServiceBookings(catalog.id)
+      .then(bookings => {
+        if (active) setBooking(bookings[0] ?? null);
+      })
+      .catch(() => {
+        if (active) setBooking(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [catalog?.id]);
+
+  useEffect(() => {
+    if (booking?.status !== 'pending' || !catalog?.id) return;
+
+    const timer = setInterval(() => {
+      getServiceBookings(catalog.id)
+        .then(bookings => setBooking(bookings[0] ?? null))
+        .catch(() => undefined);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [booking?.status, catalog?.id]);
+
   const chooseCatalog = (id: number) => {
     setSelectedId(id);
     setSlideIndex(0);
@@ -93,27 +134,43 @@ export const ServiceDetailsScreen: FC<Props> = ({ navigation, route }) => {
 
   const messageProvider = async () => {
     if (openingChat) return;
-    setOpeningChat(true);
-    try {
-      const conversation = await openChatConversation(providerId, projectId);
-      navigation.navigate('ChatDetail', {
-        conversationId: conversation.id,
-        participantName: conversation.other_user.name,
-        participantImage: conversation.other_user.profile_image,
+    if (booking?.status !== 'accepted' || !booking.conversation_id) {
+      toast.show('Chat will be available after the service request is accepted.', {
+        type: 'info',
       });
-    } catch {
-      // The shared API client displays the error. Leave the action available to retry.
-    } finally {
-      setOpeningChat(false);
+      return;
     }
+    setOpeningChat(true);
+    navigation.navigate('ChatDetail', {
+      conversationId: booking.conversation_id,
+      participantName: booking.provider.name,
+      participantImage: booking.provider.profile_image,
+    });
+    setOpeningChat(false);
   };
 
-  const requestService = () => {
-    if (!catalog) return;
-    navigation.push('JobPost', {
-      title: catalog.heading,
-      description: catalog.description,
-    });
+  const requestService = async () => {
+    if (!catalog || requestingBooking) return;
+    if (booking?.status === 'accepted') {
+      messageProvider();
+      return;
+    }
+    if (booking?.status === 'pending') {
+      toast.show('Your service request is waiting for the freelancer.', {
+        type: 'info',
+      });
+      return;
+    }
+    setRequestingBooking(true);
+    try {
+      const created = await createServiceBooking(catalog.id);
+      setBooking(created);
+      toast.show('Service request sent to the freelancer.', {type: 'success'});
+    } catch {
+      // The shared API client displays the server error. Leave the action available to retry.
+    } finally {
+      setRequestingBooking(false);
+    }
   };
 
   return (
@@ -401,6 +458,7 @@ export const ServiceDetailsScreen: FC<Props> = ({ navigation, route }) => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={requestService}
+              disabled={requestingBooking}
               style={styles.requestButton}
               accessibilityRole="button"
               accessibilityLabel="Post a job for this service"

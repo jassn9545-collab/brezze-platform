@@ -1,5 +1,6 @@
 /.repo-backups/
 /.tools/
+/.codex-temp/
 .DS_Store
 Thumbs.db
 __MACOSX/

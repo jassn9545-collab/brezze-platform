@@ -3,7 +3,7 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<input type="hidden" id="user_type" value="{{ $_GET['type'] }}">
+<input type="hidden" id="user_type" value="{{ request('type') }}">
 <div class="block-header">
                 <div class="row">
                     <div class="col-lg-6 col-md-6 col-sm-12">
@@ -38,6 +38,7 @@
                                             <th>Email</th>
                                             <th>Phone</th>
                                             <th>Status</th>
+                                            <th>Featured on Home</th>
                                             <th>Image</th>
                                             <th>Date</th>
                                             <th>Action</th>
@@ -78,7 +79,7 @@
             },
             error: function(xhr, error, thrown) { // error handling
                 $(".table-grid-error").html("");
-                $(".js-basic-example tbody").html('<tr class="table-grid-error"><th colspan="6">No data found!</th></tr>');
+                $(".js-basic-example tbody").html('<tr class="table-grid-error"><th colspan="8">No data found!</th></tr>');
                 $(".js-basic-example_processing").css("display", "none");
             },
             complete: function(data) {
@@ -126,6 +127,40 @@
                 }
         });
     });
+
+        $('body').on('change','.user-featured', function() {
+            var checkbox = $(this);
+            var featured = checkbox.is(':checked') ? 1 : 0;
+            checkbox.prop('disabled', true);
+
+            $.ajax({
+                url: '{{ url("admin/users/update_featured") }}/' + checkbox.data('id'),
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    featured: featured
+                },
+                success: function(response) {
+                    if (response.status) {
+                        toastr.success(response.message);
+                    } else {
+                        checkbox.prop('checked', !featured);
+                        toastr.error(response.message || 'Failed to update featured professional');
+                    }
+                },
+                error: function(xhr) {
+                    checkbox.prop('checked', !featured);
+                    toastr.error(
+                        xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : 'An error occurred while updating featured professional'
+                    );
+                },
+                complete: function() {
+                    checkbox.prop('disabled', false);
+                }
+            });
+        });
 });
     
 </script>

@@ -1,4 +1,5 @@
 import {
+  DrawerActions,
   NavigationState,
   createNavigationContainerRef,
 } from '@react-navigation/native';
@@ -29,6 +30,25 @@ declare global {
  * nested navigators, you'll need to use the `useNavigation` with the stack navigator's ParamList type.
  */
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+type NavigationStateWithHistory = NavigationState & {
+  history?: Array<{type: string; status?: string}>;
+};
+
+function isDrawerOpen(state: NavigationStateWithHistory): boolean {
+  const drawerHistory = state.history
+    ? [...state.history].reverse().find(entry => entry.type === 'drawer')
+    : undefined;
+
+  if (drawerHistory?.status === 'open') {
+    return true;
+  }
+
+  const activeRoute = state.routes[state.index];
+  return activeRoute?.state
+    ? isDrawerOpen(activeRoute.state as NavigationStateWithHistory)
+    : false;
+}
 
 /**
  * Gets the current screen from any navigation state.
@@ -67,8 +87,17 @@ export function useBackButtonHandler(canExit: (routeName: string) => boolean) {
         return false;
       }
 
+      const rootState = navigationRef.getRootState();
+
+      // A drawer is an overlay, so Android back should close it before the
+      // active Home route is allowed to exit the app.
+      if (isDrawerOpen(rootState as NavigationStateWithHistory)) {
+        navigationRef.dispatch(DrawerActions.closeDrawer());
+        return true;
+      }
+
       // grab the current route
-      const routeName = getActiveRouteName(navigationRef.getRootState());
+      const routeName = getActiveRouteName(rootState);
 
       // are we allowed to exit?
       if (canExitRef.current(routeName)) {
