@@ -1,7 +1,7 @@
 import {
-  GoogleAddressAutocompleteResult,
+  AddressPrediction,
   LatLng,
-  PlaceDetailResponse,
+  PlaceDetail,
   ReverseGeocodingResponse,
 } from '../components/Address.types';
 import axios, {AxiosError} from 'axios';
@@ -9,24 +9,72 @@ import axios, {AxiosError} from 'axios';
 import BaseConfig from '../config';
 import {debounce, throttle} from '../utils/util';
 
-type Response = GoogleAddressAutocompleteResult;
+type NewAutocompleteResponse = {
+  suggestions?: Array<{
+    placePrediction?: {
+      placeId?: string;
+      text?: {text?: string};
+      structuredFormat?: {
+        mainText?: {text?: string};
+        secondaryText?: {text?: string};
+      };
+    };
+  }>;
+};
+
+type NewPlaceDetailsResponse = {
+  formattedAddress?: string;
+  location?: {latitude?: number; longitude?: number};
+  addressComponents?: Array<{
+    longText?: string;
+    shortText?: string;
+    types?: string[];
+  }>;
+};
 
 export const search = async (keywords: string) => {
-  if (keywords === '') {
+  const input = keywords.trim();
+  if (input.length < 3) {
     return Promise.resolve([]);
   }
   try {
-    const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${keywords}&key=${BaseConfig.GOOGLE_API_KEY}`;
-    const response = await axios.get(endpoint, {
-      headers: {Accept: 'application/json'},
-    });
-    const data = response.data as Response;
+    const response = await axios.post(
+      'https://places.googleapis.com/v1/places:autocomplete',
+      {input},
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': BaseConfig.GOOGLE_API_KEY,
+          'X-Goog-FieldMask':
+            'suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat',
+        },
+      },
+    );
+    const data = response.data as NewAutocompleteResponse;
 
-    if (data.status === 'OK') {
-      return data.predictions;
-    } else {
-      return [];
-    }
+    return (data.suggestions ?? []).flatMap(suggestion => {
+      const prediction = suggestion.placePrediction;
+      const placeId = prediction?.placeId;
+      const description = prediction?.text?.text;
+      if (!placeId || !description) {
+        return [];
+      }
+
+      return [{
+        place_id: placeId,
+        description,
+        reference: placeId,
+        types: [],
+        matched_substrings: [],
+        terms: [],
+        structured_formatting: {
+          main_text: prediction.structuredFormat?.mainText?.text ?? description,
+          main_text_matched_substrings: [],
+          secondary_text: prediction.structuredFormat?.secondaryText?.text ?? '',
+        },
+      } as AddressPrediction];
+    });
   } catch (error: unknown) {
     const axiosError = error as AxiosError;
     throw Error(axiosError.message);
@@ -81,17 +129,32 @@ export const reverseAddress = async (address: String) => {
 
 export const getPlaceDetails = async (placeId: string) => {
   try {
-    const endpoint = `https://maps.googleapis.com/maps/api/place/details/json?fields=formatted_address,geometry&placeid=${placeId}&key=${BaseConfig.GOOGLE_API_KEY}`;
+    const endpoint = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`;
     const response = await axios.get(endpoint, {
-      headers: {Accept: 'application/json'},
+      headers: {
+        Accept: 'application/json',
+        'X-Goog-Api-Key': BaseConfig.GOOGLE_API_KEY,
+        'X-Goog-FieldMask': 'formattedAddress,location,addressComponents',
+      },
     });
-    const data = response.data as PlaceDetailResponse;
-    if (data.status === 'OK') {
-      const result = data.result;
-      return result;
-    } else {
+    const data = response.data as NewPlaceDetailsResponse;
+    const latitude = data.location?.latitude;
+    const longitude = data.location?.longitude;
+    if (!data.formattedAddress || latitude == null || longitude == null) {
       throw Error('No result(s)');
     }
+
+    return {
+      formatted_address: data.formattedAddress,
+      geometry: {
+        location: {lat: latitude, lng: longitude},
+      },
+      address_components: (data.addressComponents ?? []).map(component => ({
+        long_name: component.longText ?? '',
+        short_name: component.shortText ?? component.longText ?? '',
+        types: component.types ?? [],
+      })),
+    } as PlaceDetail;
   } catch (error: unknown) {
     const axiosError = error as AxiosError;
     console.error('Error getting location:', error);

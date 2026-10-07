@@ -1,6 +1,8 @@
 import {
+  ActivityIndicator,
   FlatList,
   Image,
+  Linking,
   ListRenderItemInfo,
   StyleSheet,
   TouchableOpacity,
@@ -13,7 +15,7 @@ import {
   TapRating,
   Text,
 } from '../components';
-import React, { FC, useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 
 import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 import { colors, images, spacing } from '../theme';
@@ -23,10 +25,15 @@ import { HITSLOP, parseSource } from '../utils/util';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
 import FastImage from '@d11/react-native-fast-image';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigators/AppStack';
 import { ProviderCatalog } from '../apis/catalogs';
+import {
+  createStripeOnboardingLink,
+  getStripeAccountStatus,
+  StripeAccountStatus,
+} from '../apis/stripe';
 
 type NavigationProps = AppBottomTabScreenProps<'Profile'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -38,6 +45,41 @@ const Profile: FC<Props> = props => {
   const [visibleMenu, setVisibleMenu] = useState<VisibleMenuType>({
     visible: false,
   });
+  const [stripeStatus, setStripeStatus] = useState<StripeAccountStatus | null>(null);
+  const [stripeLoading, setStripeLoading] = useState(true);
+  const [openingStripe, setOpeningStripe] = useState(false);
+
+  const refreshStripeStatus = useCallback(async () => {
+    setStripeLoading(true);
+    try {
+      setStripeStatus(await getStripeAccountStatus());
+    } catch {
+      // The shared API client displays the request error.
+    } finally {
+      setStripeLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshStripeStatus();
+    }, [refreshStripeStatus]),
+  );
+
+  const openStripeSetup = async () => {
+    if (openingStripe) return;
+    setOpeningStripe(true);
+    try {
+      const url = await createStripeOnboardingLink();
+      await Linking.openURL(url);
+    } catch (error: any) {
+      toast.show(error?.message ?? 'Unable to open Stripe setup.', {
+        type: 'danger',
+      });
+    } finally {
+      setOpeningStripe(false);
+    }
+  };
   const rightHeaderComponent = React.useMemo(
     () => (
       <TouchableOpacity
@@ -120,6 +162,57 @@ const Profile: FC<Props> = props => {
             />
             <Text size="xxs" weight="medium" tx="profile.jobSuccess" />
           </View>
+        </View>
+        <View
+          style={[
+            styles.stripeCard,
+            stripeStatus?.ready_for_payments && styles.stripeCardReady,
+          ]}
+        >
+          <View style={styles.stripeCopy}>
+            <Text
+              size="sm"
+              weight="semiBold"
+              text={
+                stripeStatus?.ready_for_payments
+                  ? 'Stripe payments ready'
+                  : 'Stripe setup required'
+              }
+            />
+            <Text
+              size="xxs"
+              style={styles.textDim}
+              text={
+                stripeStatus?.ready_for_payments
+                  ? 'Customers can pay you after a job is completed.'
+                  : 'Finish Stripe onboarding before customers can complete payment.'
+              }
+            />
+          </View>
+          {stripeLoading ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : stripeStatus?.ready_for_payments ? (
+            <Text size="xs" weight="semiBold" text="Ready" style={styles.greenText} />
+          ) : (
+            <TouchableOpacity
+              style={styles.stripeButton}
+              onPress={openStripeSetup}
+              disabled={openingStripe}
+              accessibilityRole="button"
+              accessibilityLabel="Complete Stripe Setup"
+            >
+              {openingStripe ? (
+                <ActivityIndicator color={colors.palette.white} />
+              ) : (
+                <Text
+                  size="xxs"
+                  weight="semiBold"
+                  text="Complete Setup"
+                  style={styles.stripeButtonText}
+                />
+              )}
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.servicesContainer}>
           <Text size="md" weight="semiBold" tx="profile.services" />
@@ -310,6 +403,32 @@ const styles = StyleSheet.create({
   userProfile: {
     alignItems: 'center',
     flexDirection: 'row',
+  },
+  stripeCard: {
+    gap: spacing.sm,
+    margin: spacing.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderRadius: spacing.sm,
+    borderColor: colors.palette.yellow,
+    backgroundColor: colors.palette.yellowLight,
+  },
+  stripeCardReady: {
+    borderColor: colors.palette.green,
+    backgroundColor: colors.palette.dimGreen,
+  },
+  stripeCopy: {
+    gap: spacing.xxs,
+  },
+  stripeButton: {
+    minHeight: 44,
+    borderRadius: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+  },
+  stripeButtonText: {
+    color: colors.palette.white,
   },
   singleProfileContent: {
     flex: 1,

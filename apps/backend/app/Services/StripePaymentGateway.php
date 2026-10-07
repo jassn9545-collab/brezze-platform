@@ -10,6 +10,13 @@ class StripePaymentGateway implements PaymentGateway
 {
     public function __construct(private readonly StripeClient $stripe) {}
 
+    public function retrieveConnectedAccount(string $connectedAccountId): object
+    {
+        return $this->stripe->v2->core->accounts->retrieve($connectedAccountId, [
+            'include' => ['configuration.merchant', 'requirements'],
+        ]);
+    }
+
     public function createPaymentIntent(
         array $parameters,
         string $idempotencyKey,

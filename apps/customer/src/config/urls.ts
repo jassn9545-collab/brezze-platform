@@ -47,6 +47,7 @@ const URLs = {
   basicDetail: '/basic-info-update',
   uploadProfile: '/profile-photo-upload',
   userVerificationID: '/id-verification',
+  profileVerificationInfo: '/profile-verification-info',
   login: '/login',
   profile: '/client/my-profile',
   updateProfile: '/client/update-profile',

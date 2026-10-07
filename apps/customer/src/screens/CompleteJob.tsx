@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Screen, Button, JobPaymentButton } from '../components';
+import { Screen, Button } from '../components';
 import { AppStackScreenProps } from '../navigators/AppStack';
 import { navigationRef } from '../navigators';
 
 type Props = AppStackScreenProps<'JobCompleted'>;
 
-export const JobCompletedScreen: React.FC<Props> = ({ navigation, route }) => {
+export const JobCompletedScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container}>
       
@@ -35,8 +35,6 @@ export const JobCompletedScreen: React.FC<Props> = ({ navigation, route }) => {
 
       {/* BUTTONS */}
       <View style={styles.buttonContainer}>
-        <JobPaymentButton jobId={route.params.jobId} style={styles.payBtn} />
-        
         {/* Review Button */}
         <Button
           text="Review Provider"
@@ -120,13 +118,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     height: 50,
     justifyContent: 'center',
-  },
-
-  payBtn: {
-    backgroundColor: '#1565C0',
-    borderRadius: 10,
-    height: 50,
-    marginBottom: 12,
   },
 
   continueText: {

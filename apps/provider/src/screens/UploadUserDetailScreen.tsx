@@ -94,17 +94,32 @@ const UploadUserDetail: FC<Props> = props => {
   );
 
   const onSelectSkill = (item: Skill) => {
-    if (skills.includes(item)) {
-      setSkills(skills.filter(i => i !== item));
-    } else {
-      if (skills.length < 5) {
-        setSkills([...skills, item]);
+    setSkills(currentSkills => {
+      const selected = currentSkills.some(skill => skill.id === item.id);
+      if (selected) {
+        return currentSkills.filter(skill => skill.id !== item.id);
       }
-    }
+      return currentSkills.length < 5
+        ? [...currentSkills, item]
+        : currentSkills;
+    });
+    setShowSkillDropdown(false);
   };
 
   const removeSkill = (item: Skill) => {
-    setSkills(skills.filter(i => i !== item));
+    setSkills(skills.filter(skill => skill.id !== item.id));
+  };
+
+  const onSelectAddress = (address: AddressParam) => {
+    setStreetAddress(address);
+    setState(address.state ?? '');
+    setZipCode(address.postalCode ?? '');
+    setError(currentError => ({
+      ...currentError,
+      street_address: undefined,
+      state: undefined,
+      pincode: undefined,
+    }));
   };
 
   const validate = () => {
@@ -323,7 +338,7 @@ const UploadUserDetail: FC<Props> = props => {
       />
       <AddressSearchModal
         showCurrent
-        onSelect={(address: AddressParam) => setStreetAddress(address)}
+        onSelect={onSelectAddress}
         isVisible={addressModal !== 'none'}
         onClose={() => setAddressModal('none')}
         title="ride.enterAddress"

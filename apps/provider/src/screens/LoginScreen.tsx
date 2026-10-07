@@ -65,13 +65,6 @@ const Login: FC<Props> = (
   const [error, setError] = useState<FieldError>({});
   //   const [firebaseToken, setFirebaseToken] = useState('');
 
-  useEffect(() => {
-    if (__DEV__) {
-      setEmail('smandeep5510+05@gmail.com');
-      setPassword('Admin@123');
-    }
-  }, []);
-
     useEffect(() => {
       if (loading === 'loaded') {
         clearLoginLoading();
@@ -155,6 +148,9 @@ const Login: FC<Props> = (
           <TextField
             value={email}
             onChangeText={setEmail}
+            autoComplete="off"
+            importantForAutofill="no"
+            textContentType="none"
             containerStyle={$userNameContainer}
             keyboardType="email-address"
             placeholderTx="login.email"
@@ -168,6 +164,9 @@ const Login: FC<Props> = (
             ref={passwordField}
             value={password}
             onChangeText={setPassword}
+            autoComplete="off"
+            importantForAutofill="no"
+            textContentType="none"
             placeholderTx="login.password"
             returnKeyType="done"
             secureTextEntry={!isAuthPasswordHidden}

@@ -41,6 +41,7 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'currency' => strtolower(env('STRIPE_CURRENCY', 'aud')),
         'onboarding_base_url' => env('STRIPE_ONBOARDING_BASE_URL', env('APP_URL')),
+        'test_platform_payments' => env('STRIPE_TEST_PLATFORM_PAYMENTS', false),
     ],
 
     'metal_price' => [

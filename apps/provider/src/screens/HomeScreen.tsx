@@ -9,6 +9,7 @@ import {
 } from '../components';
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   Image,
   ListRenderItemInfo,
@@ -19,7 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBottomTabScreenProps } from '../navigators';
@@ -39,6 +40,7 @@ import { Job } from '../slices/types';
 import { Currency } from '../config/defaults';
 import { HITSLOP } from '../utils/util';
 import { getCurrentLoaction, requestPermission } from '../utils/Location';
+import { useFocusEffect } from '@react-navigation/native';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -64,6 +66,7 @@ const Home: FC<Props> = props => {
   const [checkingLocation, setCheckingLocation] = useState(true);
   const [locationDenied, setLocationDenied] = useState(false);
   const fetching = props.loading === 'loading';
+  const getJobs = props.get;
 
   const getData = (locationParams = location, pageNumber = page) => {
     if (!locationParams) {
@@ -158,6 +161,36 @@ const Home: FC<Props> = props => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(load, []);
 
+  const refreshJobs = useCallback(() => {
+    if (!location) {
+      return;
+    }
+
+    page = 1;
+    getJobs({
+      page: 1,
+      limit: 10,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    });
+  }, [getJobs, location]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshJobs();
+    }, [refreshJobs]),
+  );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        refreshJobs();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [refreshJobs]);
+
   const onPressFilter = () => {
     props.navigation.navigate('AdvanceFilter');
   };
@@ -246,6 +279,8 @@ const Home: FC<Props> = props => {
             <FlatList
               ref={flatlist}
               data={props.data}
+              refreshing={fetching && page === 1}
+              onRefresh={refreshJobs}
               style={styles.flatlist}
               contentContainerStyle={styles.contentContainer}
               showsVerticalScrollIndicator={false}

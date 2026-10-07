@@ -1,6 +1,5 @@
 import {
   BackButtom,
-  Button,
   Loader,
   JobPaymentButton,
   ReadMore,
@@ -24,9 +23,7 @@ import { RootState } from '../store';
 import {
   getJobDetail,
   hireJob,
-  completeJob,
   HireJobParams,
-  CompleteJobParams,
 } from '../slices/job.slice';
 import FastImage from '@d11/react-native-fast-image';
 import ListEmptyComponent from '../components/ListEmptyComponent';
@@ -88,12 +85,6 @@ const JobPostDetails: FC<Props> = props => {
     }
   };
 
-  const onPressCompleteJob = () => {
-    if (props.data?.id) {
-      props.completeJob({ job_id: props.data.id });
-    }
-  };
-
   return (
     <>
       <Screen
@@ -142,13 +133,17 @@ const JobPostDetails: FC<Props> = props => {
         {props.data?.status === 'in progress' && (
           <>
             <View style={styles.flexOne} />
-            <Button
+            <JobPaymentButton
+              jobId={props.data.id}
               style={[
                 styles.button,
                 { marginBottom: insets.bottom + spacing.md },
               ]}
-              tx="jobPostDetails.completeJob"
-              onPress={onPressCompleteJob}
+              onPaid={() =>
+                props.navigation.replace('JobCompleted', {
+                  jobId: props.data!.id,
+                })
+              }
             />
           </>
         )}
@@ -169,8 +164,7 @@ const JobPostDetails: FC<Props> = props => {
       <Loader
         loading={
           props.hireJobLoading === 'loading' ||
-          props.loading === 'loading' ||
-          props.completeJobLoading === 'loading'
+          props.loading === 'loading'
         }
       />
     </>
@@ -468,14 +462,6 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: 'center',
   },
-  completeJobButton: {
-    backgroundColor: colors.primary,
-    margin: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   button: {
     borderRadius: spacing.md,
     marginHorizontal: spacing.md,
@@ -487,13 +473,11 @@ const mapStateToProps = (state: RootState) => ({
   setting: state.setting.basic,
   loading: state.job.jobDetailLoading,
   hireJobLoading: state.job.hireJobLoading,
-  completeJobLoading: state.job.completeJobLoading,
 });
 
 const mapDispatch = {
   get: getJobDetail,
   hireJob: (params: HireJobParams) => hireJob(params),
-  completeJob: (params: CompleteJobParams) => completeJob(params),
 };
 
 const connector = connect(mapStateToProps, mapDispatch);

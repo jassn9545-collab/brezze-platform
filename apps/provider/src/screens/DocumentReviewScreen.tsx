@@ -1,10 +1,13 @@
-import { Screen, Text } from '../components';
+import { Button, Screen, Text } from '../components';
 import { Image, StyleSheet, View } from 'react-native';
-import React, { FC } from 'react';
+import React, { FC, useCallback, useRef } from 'react';
 import { colors, images, spacing } from '../theme';
 import { TxKeyPath } from '../i18n';
 import { AuthStackScreenProps } from '../navigators';
 import { commonStyle } from '../theme/style';
+import { useFocusEffect } from '@react-navigation/native';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { checkVerificationStatus } from '../slices/auth.slice';
 
 interface Progress {
   id: number;
@@ -32,6 +35,31 @@ const progressList: Progress[] = [
 type NavigationProps = AuthStackScreenProps<'DocumentReview'>;
 
 const DocumentReview: FC<NavigationProps> = () => {
+  const dispatch = useAppDispatch();
+  const checkingRef = useRef(false);
+  const checking = useAppSelector(
+    state => state.auth.verificationStatusLoading === 'loading',
+  );
+
+  const refreshStatus = useCallback(async () => {
+    if (checkingRef.current) {
+      return;
+    }
+    checkingRef.current = true;
+    try {
+      await dispatch(checkVerificationStatus()).unwrap();
+    } finally {
+      checkingRef.current = false;
+    }
+  }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshStatus();
+      const timer = setInterval(refreshStatus, 5000);
+      return () => clearInterval(timer);
+    }, [refreshStatus]),
+  );
 
   return (
     <Screen
@@ -65,6 +93,12 @@ const DocumentReview: FC<NavigationProps> = () => {
             </View>
           ))}
         </View>
+        <Button
+          text={checking ? 'Checking status...' : 'Check verification status'}
+          disabled={checking}
+          onPress={refreshStatus}
+          style={styles.refreshButton}
+        />
       </View>
     </Screen>
   );
@@ -86,6 +120,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.sm,
     backgroundColor: colors.background,
+  },
+  refreshButton: {
+    marginTop: spacing.lg,
   },
   card: {
     gap: spacing.sm,

@@ -18,6 +18,7 @@ type Props = {
   onTabPress: (tab: ProviderBottomTabName) => void;
   onTabLongPress?: (tab: ProviderBottomTabName) => void;
   onAddCatalog: () => void;
+  chatUnreadCount?: number;
   accessibilityLabels?: Partial<Record<ProviderBottomTabName, string>>;
 };
 
@@ -26,6 +27,7 @@ export const ProviderBottomBar = ({
   onTabPress,
   onTabLongPress,
   onAddCatalog,
+  chatUnreadCount = 0,
   accessibilityLabels,
 }: Props) => {
   const insets = useSafeAreaInsets();
@@ -43,11 +45,23 @@ export const ProviderBottomBar = ({
       onPress={() => onTabPress(tab.name)}
       onLongPress={() => onTabLongPress?.(tab.name)}
     >
-      <Image
-        source={tab.icon}
-        style={styles.dockIcon}
-        tintColor={colors.palette.white}
-      />
+      <View style={styles.iconContainer}>
+        <Image
+          source={tab.icon}
+          style={styles.dockIcon}
+          tintColor={colors.palette.white}
+        />
+        {tab.name === 'Chat' && chatUnreadCount > 0 && (
+          <View style={styles.unreadBadge}>
+            <Text
+              size="xxs"
+              weight="bold"
+              text={chatUnreadCount > 99 ? '99+' : String(chatUnreadCount)}
+              style={styles.unreadBadgeText}
+            />
+          </View>
+        )}
+      </View>
       <Text
         tx={tab.label}
         size="xxs"
@@ -101,6 +115,27 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     resizeMode: 'contain',
+  },
+  iconContainer: {
+    position: 'relative',
+  },
+  unreadBadge: {
+    minWidth: 18,
+    height: 18,
+    top: -9,
+    right: -12,
+    borderRadius: 9,
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1,
+    borderColor: colors.palette.white,
+    backgroundColor: colors.error,
+  },
+  unreadBadgeText: {
+    color: colors.palette.white,
+    lineHeight: 14,
   },
   dockLabel: {
     color: colors.palette.white,

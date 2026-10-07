@@ -4,12 +4,13 @@ import {
   ImageBackground,
   ImageStyle,
   LayoutAnimation,
+  AppState,
   TextStyle,
   TouchableOpacity,
   View,
   ViewStyle,
 } from 'react-native';
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { ScreenWidth } from '../utils/util';
@@ -17,16 +18,56 @@ import { Text } from './Text';
 import { scale } from 'react-native-size-matters';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TxKeyPath } from '../i18n';
+import { getChatConversations } from '../apis/chat';
 
 type ImageKeys = Extract<AppImage, string>;
 
 const BottomTabs = (props: BottomTabBarProps) => {
   const { state, descriptors, navigation } = props;
   const insets = useSafeAreaInsets();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const unreadRequestInFlight = useRef(false);
   const activeRouteName = state.routes[state.index]?.name;
   const visibleRoutes = state.routes.filter(
     route => route.name !== 'Categories' && route.name !== 'FeaturedProfessionals',
   );
+
+  const refreshUnreadCount = useCallback(async () => {
+    if (unreadRequestInFlight.current) return;
+    unreadRequestInFlight.current = true;
+    try {
+      const conversations = await getChatConversations();
+      setUnreadCount(
+        conversations.reduce(
+          (total, conversation) => total + Number(conversation.unread_count || 0),
+          0,
+        ),
+      );
+    } catch {
+      // Keep the previous badge count during temporary network failures.
+    } finally {
+      unreadRequestInFlight.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshUnreadCount();
+    const timer = setInterval(() => {
+      if (AppState.currentState === 'active') {
+        refreshUnreadCount();
+      }
+    }, 5000);
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        refreshUnreadCount();
+      }
+    });
+
+    return () => {
+      clearInterval(timer);
+      subscription.remove();
+    };
+  }, [refreshUnreadCount]);
 
   return (
     <View style={{ backgroundColor: colors.background }}>
@@ -81,12 +122,24 @@ const BottomTabs = (props: BottomTabBarProps) => {
                   <Image source={images[`${key}` as ImageKeys]} />
                 </View>
               ) : (
-                <Image
-                  style={$tabBarIcon}
-                  resizeMode="contain"
-                  tintColor={colors.palette.white}
-                  source={images[`${key}` as ImageKeys]}
-                />
+                <View style={$tabIconContainer}>
+                  <Image
+                    style={$tabBarIcon}
+                    resizeMode="contain"
+                    tintColor={colors.palette.white}
+                    source={images[`${key}` as ImageKeys]}
+                  />
+                  {key === 'chat' && unreadCount > 0 && (
+                    <View style={$unreadBadge}>
+                      <Text
+                        size="xxs"
+                        weight="bold"
+                        text={unreadCount > 99 ? '99+' : String(unreadCount)}
+                        style={$unreadBadgeText}
+                      />
+                    </View>
+                  )}
+                </View>
               )}
 
               {key !== 'job' && (
@@ -128,6 +181,30 @@ const $activeTab: ViewStyle = {
 const $tabBarIcon: ImageStyle = {
   width: scale(15),
   height: scale(15),
+};
+
+const $tabIconContainer: ViewStyle = {
+  position: 'relative',
+};
+
+const $unreadBadge: ViewStyle = {
+  minWidth: 18,
+  height: 18,
+  top: -9,
+  right: -12,
+  borderRadius: 9,
+  position: 'absolute',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingHorizontal: 4,
+  borderWidth: 1,
+  borderColor: colors.palette.white,
+  backgroundColor: colors.error,
+};
+
+const $unreadBadgeText: TextStyle = {
+  color: colors.palette.white,
+  lineHeight: 14,
 };
 
 const $tabBarLabel: TextStyle = {

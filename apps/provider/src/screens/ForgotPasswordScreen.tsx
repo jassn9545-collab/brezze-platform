@@ -22,7 +22,7 @@ const ForgotPassword: FC<Props> = () => {
   const loadingState = useAppSelector(
     store => store.auth.forgotPasswordLoading,
   );
-  const [email, setEmail] = useState(__DEV__ ? 'smandeep5510@gmail.com' : '');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState<FieldError>({});
 
   useEffect(() => {
@@ -66,6 +66,9 @@ const ForgotPassword: FC<Props> = () => {
           <TextField
             value={email}
             onChangeText={setEmail}
+            autoComplete="off"
+            importantForAutofill="no"
+            textContentType="none"
             containerStyle={$inputContainer}
             keyboardType="email-address"
             placeholderTx="forgotPassword.emailPlaceholder"

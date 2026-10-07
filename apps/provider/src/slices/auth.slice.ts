@@ -26,7 +26,36 @@ export const getAuthorization = createAsyncThunk(
       const lang = await AsyncStorage.getItem('language');
       const initialUrl = await Linking.getInitialURL();
       const inviteCode = handleInviteURL(initialUrl);
-      return { authorized: isAuthorized === 'true', token, inviteCode, lang };
+      let authorized = isAuthorized === 'true';
+      let initialRouteName: keyof AuthStackParamList = 'Walkthrough';
+
+      if (token) {
+        api.defaults.headers.Authorization = `Bearer ${token}`;
+        api.defaults.headers.lang = lang ?? 'en';
+        try {
+          const response = await api.post(URLs.profileVerificationInfo);
+          const status = response.data.data;
+          authorized = Number(status.is_verification_completed) === 1;
+          if (authorized) {
+            await AsyncStorage.setItem('authorized', 'true');
+          } else if (status.basic_info && status.profile_pic && status.proof) {
+            initialRouteName = 'DocumentReview';
+          } else {
+            initialRouteName = 'MyDocuments';
+          }
+        } catch {
+          authorized = false;
+          initialRouteName = 'Login';
+        }
+      }
+
+      return {
+        authorized,
+        token,
+        inviteCode,
+        lang,
+        initialRouteName,
+      };
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }
@@ -56,6 +85,29 @@ export const userLogin = createAsyncThunk(
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user_id', data?.user?.id?.toString());
       return data;
+    } catch (error) {
+      throw thunkAPI.rejectWithValue(error);
+    }
+  },
+);
+
+export const checkVerificationStatus = createAsyncThunk(
+  'auth/check-verification-status',
+  async (_, thunkAPI) => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: URLs.profileVerificationInfo,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = response.data.data;
+      const isVerified = Number(data.is_verification_completed) === 1;
+      if (isVerified) {
+        await AsyncStorage.setItem('authorized', 'true');
+      }
+      return {...data, is_verification_completed: isVerified};
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }
@@ -463,6 +515,7 @@ export type AuthState = {
   userBasicDetailLoading: LoadStatus;
   uploadProfilePhotoLoading: LoadStatus;
   uploadUserVerificationIDLoading: LoadStatus;
+  verificationStatusLoading: LoadStatus;
 
   loading: LoadStatus;
   myProfile?: UserDetailsResponse;
@@ -496,6 +549,7 @@ const authState: AuthState = {
   userBasicDetailLoading: 'idle',
   uploadProfilePhotoLoading: 'idle',
   uploadUserVerificationIDLoading: 'idle',
+  verificationStatusLoading: 'idle',
 
   loading: 'idle',
   updateLoading: 'idle',
@@ -560,6 +614,7 @@ export const authSlice = createSlice({
     builder
       .addCase(getAuthorization.fulfilled, (state, action) => {
         state.isAuthorized = action.payload.authorized;
+        state.initialRouteName = action.payload.initialRouteName;
         if (action.payload.authorized) {
           api.defaults.headers.Authorization = `Bearer ${action.payload.token}`;
           api.defaults.headers.lang = action.payload.lang ?? 'en';
@@ -588,6 +643,24 @@ export const authSlice = createSlice({
       })
       .addCase(userLogin.rejected, (state, action) => {
         state.loading = 'failed';
+        state.error = action.payload;
+      });
+
+    builder
+      .addCase(checkVerificationStatus.pending, state => {
+        state.verificationStatusLoading = 'loading';
+      })
+      .addCase(checkVerificationStatus.fulfilled, (state, action) => {
+        state.verificationStatusLoading = 'loaded';
+        if (action.payload.is_verification_completed) {
+          state.isAuthorized = true;
+          if (state.myProfile) {
+            state.myProfile.is_verification_completed = true;
+          }
+        }
+      })
+      .addCase(checkVerificationStatus.rejected, (state, action) => {
+        state.verificationStatusLoading = 'failed';
         state.error = action.payload;
       });
 

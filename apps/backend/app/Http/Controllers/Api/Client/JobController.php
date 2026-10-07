@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Traits\ApiResponse;
 use App\Models\Project;
 use App\Models\ProjectImage;
+use App\Models\Payment;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
@@ -90,19 +91,30 @@ class JobController extends BaseClientController
             return $check;
         }
         $page = (int) $request->input('page', 1);
-        $perPage = (int) $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', $request->input('limit', 10));
 
         $query = Project::with(['bids' => function ($q) {
-    $q->select(
-        'id',
-        'project_id',
-        'user_id',
-        'freelancer_name',
-        'freelancer_image',
-        'date_time',
-        'is_hired'
-    );
-}])->where('user_id', auth()->id())->latest();
+            $q->select(
+                'id',
+                'project_id',
+                'user_id',
+                'bid_amount',
+                'freelancer_name',
+                'freelancer_image',
+                'date_time',
+                'is_hired'
+            );
+        }])->where('user_id', auth()->id());
+
+        if ($request->boolean('history')) {
+            $query
+                ->whereIn('status', ['in progress', 'completed'])
+                ->whereHas('bids', function ($q) {
+                    $q->where('is_hired', 1);
+                });
+        }
+
+        $query->latest();
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
 
         
@@ -209,8 +221,22 @@ class JobController extends BaseClientController
             return $this->error('You are not authorized to mark this job as completed.', 400);
         }
 
+        if ($job->status === 'completed') {
+            return $this->success([], 'Job is already completed.');
+        }
+
         if ($job->status != 'in progress') {
             return $this->error('Only jobs that are in progress can be marked as completed.', 400);
+        }
+
+        $paymentSucceeded = Payment::query()
+            ->where('project_id', $job->id)
+            ->where('customer_id', auth()->id())
+            ->where('status', Payment::STATUS_SUCCEEDED)
+            ->exists();
+
+        if (! $paymentSucceeded) {
+            return $this->error('Complete the card payment before marking this job as completed.', 422);
         }
 
         $job->status = 'completed';

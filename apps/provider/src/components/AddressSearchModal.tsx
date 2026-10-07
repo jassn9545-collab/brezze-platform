@@ -1,4 +1,8 @@
-import { AddressPrediction, LatLng } from './Address.types';
+import {
+  AddressComponent,
+  AddressPrediction,
+  LatLng,
+} from './Address.types';
 import {
   Alert,
   FlatList,
@@ -15,9 +19,9 @@ import React, { useEffect, useReducer, useRef, useState } from 'react';
 import { colors, images, spacing } from '../theme';
 import { currentPosition, getCurrentLoaction } from '../utils/Location';
 import {
-  debouncedSearch,
   getPlaceDetails,
   reverseGeocoding,
+  search,
 } from '../apis/googleAPIs';
 
 import { Button } from './Button';
@@ -33,7 +37,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export interface AddressParam {
   address: string;
   location: LatLng;
+  state?: string;
+  postalCode?: string;
 }
+
+const getAddressComponent = (
+  components: AddressComponent[] | undefined,
+  type: string,
+) => components?.find(component => component.types.includes(type))?.long_name ?? '';
+
+const makeAddressParam = (
+  address: string,
+  location: LatLng,
+  components?: AddressComponent[],
+): AddressParam => ({
+  address,
+  location,
+  state: getAddressComponent(components, 'administrative_area_level_1'),
+  postalCode: getAddressComponent(components, 'postal_code'),
+});
 
 export type AddressSearchModalProps = {
   showCurrent?: boolean;
@@ -62,18 +84,35 @@ export const AddressSearchModal = ({
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    if (query !== '') {
+    if (query.trim().length < 3) {
+      setResults([]);
+      return;
+    }
+
+    let active = true;
+    const timer = setTimeout(() => {
       (async () => {
         try {
-          const address = await debouncedSearch(query);
-          if (address) {
+          const address = await search(query);
+          if (active) {
             setResults(address);
           }
         } catch (error) {
-          console.log('Error is address search:', error);
+          if (active) {
+            setResults([]);
+            toast.show(
+              error instanceof Error ? error.message : 'Address search failed',
+              {type: 'danger'},
+            );
+          }
         }
       })();
-    }
+    }, 400);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [query]);
 
   const close = () => {
@@ -100,10 +139,13 @@ export const AddressSearchModal = ({
             await delay(500 - diff);
           }
           setLoading(false);
-          setSelectedAddress({
-            address: item.description ?? address.formatted_address ?? '',
-            location: address.geometry.location,
-          });
+          setSelectedAddress(
+            makeAddressParam(
+              item.description ?? address.formatted_address ?? '',
+              address.geometry.location,
+              address.address_components,
+            ),
+          );
           map.current?.animateToRegion({
             latitude: address.geometry.location.lat,
             longitude: address.geometry.location.lng,
@@ -124,10 +166,13 @@ export const AddressSearchModal = ({
         lat: region.latitude,
         lng: region.longitude,
       });
-      setSelectedAddress({
-        address: address.formatted_address ?? '',
-        location: address.geometry.location,
-      });
+      setSelectedAddress(
+        makeAddressParam(
+          address.formatted_address ?? '',
+          address.geometry.location,
+          address.address_components,
+        ),
+      );
       setQuery(address.formatted_address ?? '');
     }
   };
@@ -145,10 +190,13 @@ export const AddressSearchModal = ({
             });
 
             setQuery(address.formatted_address ?? '');
-            setSelectedAddress({
-              address: address.formatted_address ?? '',
-              location: address.geometry.location,
-            });
+            setSelectedAddress(
+              makeAddressParam(
+                address.formatted_address ?? '',
+                address.geometry.location,
+                address.address_components,
+              ),
+            );
 
             setTimeout(() => {
               map.current?.animateToRegion({

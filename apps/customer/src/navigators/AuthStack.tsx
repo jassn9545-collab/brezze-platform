@@ -48,7 +48,7 @@ type AuthStackProps = {
   initialRouteName?: keyof AuthStackParamList;
 };
 
-export const AuthStack: FC<AuthStackProps> = () => {
+export const AuthStack: FC<AuthStackProps> = props => {
   return (
     <Stack.Navigator
       id="Auth"
@@ -56,8 +56,7 @@ export const AuthStack: FC<AuthStackProps> = () => {
         headerShown: false,
         navigationBarColor: colors.background,
       }}
-      // initialRouteName={props.initialRouteName}
-      initialRouteName="Walkthrough"
+      initialRouteName={props.initialRouteName ?? 'Walkthrough'}
     >
       <Stack.Screen
         options={{

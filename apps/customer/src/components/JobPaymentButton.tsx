@@ -46,7 +46,11 @@ export const JobPaymentButton: React.FC<Props> = ({ jobId, style, onPaid }) => {
         toast.show('Payment cancelled.', { type: 'normal' });
       }
     } catch (error: any) {
-      toast.show(error?.message ?? 'Payment failed. Please try again.', {
+      const message =
+        error?.response?.data?.message ??
+        error?.message ??
+        'Payment failed. Please try again.';
+      toast.show(message, {
         type: 'danger',
       });
       await refresh();
@@ -59,14 +63,14 @@ export const JobPaymentButton: React.FC<Props> = ({ jobId, style, onPaid }) => {
   const processing = payment?.status === 'processing';
   const disabled = loading || succeeded || processing;
   const text = loading
-    ? 'Loading payment…'
+    ? 'Loading payment...'
     : succeeded
       ? 'Paid'
       : processing
         ? 'Payment Processing'
         : payment?.status === 'failed' || payment?.status === 'cancelled'
-          ? 'Retry Payment'
-          : 'Pay Now';
+          ? 'Retry Payment & Complete Job'
+          : 'Pay & Complete Job';
 
   return (
     <Button

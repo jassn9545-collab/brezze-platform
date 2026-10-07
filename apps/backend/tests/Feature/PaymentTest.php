@@ -20,6 +20,26 @@ class FakePaymentGateway implements PaymentGateway
 
     public array $intents = [];
 
+    public bool $accountReady = true;
+
+    public function retrieveConnectedAccount(string $connectedAccountId): object
+    {
+        $status = $this->accountReady ? 'active' : 'restricted';
+
+        return (object) [
+            'configuration' => (object) [
+                'merchant' => (object) [
+                    'capabilities' => (object) [
+                        'card_payments' => (object) ['status' => $status],
+                        'stripe_balance' => (object) [
+                            'payouts' => (object) ['status' => $status],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
     public function createPaymentIntent(
         array $parameters,
         string $idempotencyKey,
@@ -35,7 +55,7 @@ class FakePaymentGateway implements PaymentGateway
             'amount' => $parameters['amount'],
             'currency' => $parameters['currency'],
             'metadata' => (object) $parameters['metadata'],
-            'application_fee_amount' => $parameters['application_fee_amount'],
+            'application_fee_amount' => $parameters['application_fee_amount'] ?? null,
             'status' => 'requires_payment_method',
             'latest_charge' => null,
             'last_payment_error' => null,
@@ -126,6 +146,7 @@ beforeEach(function () {
     config()->set('services.stripe.secret', 'sk_test_fake');
     config()->set('services.stripe.key', 'pk_test_fake');
     config()->set('services.stripe.currency', 'aud');
+    config()->set('services.stripe.test_platform_payments', false);
 
     $this->gateway = new FakePaymentGateway;
     app()->instance(PaymentGateway::class, $this->gateway);
@@ -201,6 +222,7 @@ it('reuses an open intent and prevents duplicate payment records', function () {
 
 it('verifies success against the gateway and then returns already paid', function () {
     Sanctum::actingAs($this->customer);
+    $this->job->update(['status' => 'in progress']);
     $started = $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id]);
     $paymentId = $started->json('data.payment.id');
     $intentId = Payment::findOrFail($paymentId)->stripe_payment_intent_id;
@@ -212,6 +234,8 @@ it('verifies success against the gateway and then returns already paid', functio
         ->assertJsonPath('data.payment.status', 'succeeded')
         ->assertJsonPath('data.payment.transaction_id', 'ch_verified_test');
 
+    expect($this->job->fresh()->status)->toBe('completed');
+
     $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id])
         ->assertOk()
         ->assertJsonPath('data.already_paid', true);
@@ -219,9 +243,13 @@ it('verifies success against the gateway and then returns already paid', functio
     expect($this->gateway->createCount)->toBe(1);
 });
 
-it('rejects payment before completion and for a different customer', function () {
+it('accepts payment while in progress and rejects an inactive job or different customer', function () {
     Sanctum::actingAs($this->customer);
     $this->job->update(['status' => 'in progress']);
+    $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id])
+        ->assertOk();
+
+    $this->job->update(['status' => 'active']);
     $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id])
         ->assertStatus(422);
 
@@ -234,6 +262,38 @@ it('rejects payment before completion and for a different customer', function ()
     Sanctum::actingAs($otherCustomer);
     $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id])
         ->assertNotFound();
+});
+
+it('rejects payment clearly when provider Stripe onboarding is incomplete', function () {
+    Sanctum::actingAs($this->customer);
+    $this->job->update(['status' => 'in progress']);
+    $this->gateway->accountReady = false;
+
+    $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id])
+        ->assertStatus(422)
+        ->assertJsonPath(
+            'message',
+            'The provider must finish Stripe payment setup before this job can be paid.'
+        );
+
+    expect($this->gateway->createCount)->toBe(0);
+});
+
+it('allows an incomplete provider only through the explicit test-mode platform fallback', function () {
+    Sanctum::actingAs($this->customer);
+    $this->job->update(['status' => 'in progress']);
+    $this->gateway->accountReady = false;
+    config()->set('services.stripe.test_platform_payments', true);
+
+    $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id])
+        ->assertOk()
+        ->assertJsonPath('data.stripe_account_id', null)
+        ->assertJsonPath('data.already_paid', false);
+
+    expect($this->gateway->createCount)->toBe(1)
+        ->and($this->gateway->lastConnectedAccountId)->toBeNull()
+        ->and($this->gateway->lastCreateParameters)->not->toHaveKey('application_fee_amount')
+        ->and($this->gateway->lastCreateParameters['metadata']['charge_model'])->toBe('platform_test');
 });
 
 it('shows only the authenticated provider payment history and successful total', function () {

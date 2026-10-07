@@ -4,6 +4,8 @@ namespace App\Contracts;
 
 interface PaymentGateway
 {
+    public function retrieveConnectedAccount(string $connectedAccountId): object;
+
     public function createPaymentIntent(
         array $parameters,
         string $idempotencyKey,

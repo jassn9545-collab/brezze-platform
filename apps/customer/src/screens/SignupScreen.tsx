@@ -65,16 +65,6 @@ import {
     //   const [tnc, setTnc] = useState(false);
   
     useEffect(() => {
-      if (__DEV__) {
-        setName('Mandeep Singh');
-        setMobile('7814667566');
-        setEmail('smandeep5510@gmail.com');
-        setPassword('Admin@123');
-        setConfirmPassword('Admin@123');
-      }
-    }, []);
-  
-    useEffect(() => {
       // (async () => {
       //   const messaging = getMessaging();
       //   const token = await getToken(messaging);
@@ -196,6 +186,9 @@ import {
             <TextField
               value={email}
               onChangeText={setEmail}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
               ref={fields[0]}
               containerStyle={$inputContainer}
               placeholderTx="auth.emailPlaceholder"
@@ -220,6 +213,9 @@ import {
             <TextField
               value={password}
               onChangeText={setPassword}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
               ref={fields[2]}
               placeholderTx="auth.passwordPlaceholder"
               secureTextEntry={!isAuthPasswordHidden}
@@ -232,6 +228,9 @@ import {
             <TextField
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
               ref={fields[3]}
               placeholderTx="auth.confirmPasswordPlaceholder"
               secureTextEntry={!isConfirmPasswordHidden}
@@ -366,4 +365,3 @@ import {
   const connector = connect(mapStateToProps, mapDispatch);
   
   export const SignupScreen = connector(Signup);
-  

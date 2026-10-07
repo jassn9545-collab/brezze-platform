@@ -87,6 +87,18 @@ const UploadUserDetail: FC<Props> = props => {
     [oldCountryCode],
   );
 
+  const onSelectAddress = (address: AddressParam) => {
+    setStreetAddress(address);
+    setState(address.state ?? '');
+    setZipCode(address.postalCode ?? '');
+    setError(currentError => ({
+      ...currentError,
+      street_address: undefined,
+      state: undefined,
+      pincode: undefined,
+    }));
+  };
+
   const validate = () => {
     basicDetailSchema
       .validate(
@@ -224,7 +236,7 @@ const UploadUserDetail: FC<Props> = props => {
       />
       <AddressSearchModal
         showCurrent
-        onSelect={(address: AddressParam) => setStreetAddress(address)}
+        onSelect={onSelectAddress}
         isVisible={addressModal !== 'none'}
         onClose={() => setAddressModal('none')}
         title="ride.enterAddress"

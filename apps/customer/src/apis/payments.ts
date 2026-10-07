@@ -28,7 +28,7 @@ export type JobPayment = {
 type IntentResponse = {
   payment: JobPayment;
   publishable_key: string;
-  stripe_account_id: string;
+  stripe_account_id: string | null;
   client_secret: string | null;
   already_paid: boolean;
 };
@@ -48,7 +48,6 @@ export const payForJob = async (jobId: number): Promise<JobPayment> => {
   if (
     !intent.client_secret ||
     !intent.publishable_key ||
-    !intent.stripe_account_id ||
     !intent.payment.id
   ) {
     throw new Error('Payment could not be initialized.');
@@ -56,7 +55,7 @@ export const payForJob = async (jobId: number): Promise<JobPayment> => {
 
   await initStripe({
     publishableKey: intent.publishable_key,
-    stripeAccountId: intent.stripe_account_id,
+    stripeAccountId: intent.stripe_account_id ?? undefined,
   });
   const initialized = await initPaymentSheet({
     merchantDisplayName: 'Our Bezzie Provider',

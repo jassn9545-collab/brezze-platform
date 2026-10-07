@@ -64,7 +64,7 @@ export interface AddressComponent {
 export interface Geometry {
   location: LatLng;
   location_type?: string;
-  viewport: Directions;
+  viewport?: Directions;
   bounds?: Directions;
 }
 

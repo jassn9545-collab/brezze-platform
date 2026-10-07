@@ -40,6 +40,7 @@ class PaymentController extends Controller
         $intent = null;
         $alreadyPaid = false;
         $stripeAccountId = null;
+        $usePlatformTestCharge = $this->usePlatformTestCharge();
 
         try {
             $payment = DB::transaction(function () use (
@@ -48,14 +49,15 @@ class PaymentController extends Controller
                 &$gatewayError,
                 &$intent,
                 &$alreadyPaid,
-                &$stripeAccountId
+                &$stripeAccountId,
+                $usePlatformTestCharge
             ) {
                 $job = Project::query()->lockForUpdate()->find($request->integer('job_id'));
                 if (! $job || (int) $job->user_id !== (int) $request->user()->id) {
                     abort(404, 'Job not found.');
                 }
-                if ($job->status !== 'completed') {
-                    abort(422, 'Payment is available only after the job is completed.');
+                if (! in_array($job->status, ['in progress', 'completed'], true)) {
+                    abort(422, 'Payment is available only for an in-progress job.');
                 }
 
                 $hiredBid = Bid::query()
@@ -68,10 +70,29 @@ class PaymentController extends Controller
                 }
 
                 $provider = User::query()->find($hiredBid->user_id);
-                if (! $provider || ! $provider->stripe_account_id) {
-                    abort(422, 'The provider has not completed payment onboarding.');
+                if (! $provider) {
+                    abort(422, 'The hired provider is unavailable.');
                 }
-                $stripeAccountId = $provider->stripe_account_id;
+
+                if (! $usePlatformTestCharge) {
+                    if (! $provider->stripe_account_id) {
+                        abort(422, 'The provider has not completed payment onboarding.');
+                    }
+                    $stripeAccountId = $provider->stripe_account_id;
+
+                    $account = $gateway->retrieveConnectedAccount($stripeAccountId);
+                    $chargesEnabled = data_get(
+                        $account,
+                        'configuration.merchant.capabilities.card_payments.status'
+                    ) === 'active';
+                    $payoutsEnabled = data_get(
+                        $account,
+                        'configuration.merchant.capabilities.stripe_balance.payouts.status'
+                    ) === 'active';
+                    if (! $chargesEnabled || ! $payoutsEnabled) {
+                        abort(422, 'The provider must finish Stripe payment setup before this job can be paid.');
+                    }
+                }
 
                 $amountMinor = $this->moneyToMinor($hiredBid->bid_amount);
                 $commissionMinor = intdiv(
@@ -151,11 +172,10 @@ class PaymentController extends Controller
                 $payment->save();
 
                 try {
-                    $intent = $gateway->createPaymentIntent([
+                    $intentParameters = [
                         'amount' => $payment->amount_minor,
                         'currency' => $payment->currency,
                         'automatic_payment_methods' => ['enabled' => true],
-                        'application_fee_amount' => $payment->commission_minor,
                         'description' => 'Payment for job #'.$job->id,
                         'receipt_email' => $request->user()->email,
                         'metadata' => [
@@ -164,9 +184,18 @@ class PaymentController extends Controller
                             'customer_id' => (string) $request->user()->id,
                             'provider_id' => (string) $provider->id,
                             'commission_percent' => (string) Payment::COMMISSION_PERCENT,
-                            'charge_model' => 'direct',
+                            'charge_model' => $usePlatformTestCharge ? 'platform_test' : 'direct',
                         ],
-                    ], 'job-payment-'.$payment->id.'-attempt-'.$payment->attempts, $stripeAccountId);
+                    ];
+                    if (! $usePlatformTestCharge) {
+                        $intentParameters['application_fee_amount'] = $payment->commission_minor;
+                    }
+
+                    $intent = $gateway->createPaymentIntent(
+                        $intentParameters,
+                        'job-payment-'.$payment->id.'-attempt-'.$payment->attempts,
+                        $stripeAccountId
+                    );
 
                     $payment->stripe_payment_intent_id = $intent->id;
                     $this->synchronizePayment($payment, $intent, $stripeAccountId);
@@ -245,8 +274,11 @@ class PaymentController extends Controller
             return $this->error('Payment not found.', 404);
         }
 
-        $stripeAccountId = $this->providerStripeAccount($payment);
-        if (! $stripeAccountId) {
+        $usePlatformTestCharge = $this->usePlatformTestCharge();
+        $stripeAccountId = $usePlatformTestCharge
+            ? null
+            : $this->providerStripeAccount($payment);
+        if (! $usePlatformTestCharge && ! $stripeAccountId) {
             return $this->error('The provider payment account is unavailable.', 422);
         }
 
@@ -307,8 +339,11 @@ class PaymentController extends Controller
             ], 'This job is already paid.');
         }
 
-        $stripeAccountId = $this->providerStripeAccount($payment);
-        if (! $stripeAccountId) {
+        $usePlatformTestCharge = $this->usePlatformTestCharge();
+        $stripeAccountId = $usePlatformTestCharge
+            ? null
+            : $this->providerStripeAccount($payment);
+        if (! $usePlatformTestCharge && ! $stripeAccountId) {
             return $this->error('The provider payment account is unavailable.', 422);
         }
 
@@ -487,7 +522,6 @@ class PaymentController extends Controller
             'job_id' => (string) $payment->project_id,
             'customer_id' => (string) $payment->customer_id,
             'provider_id' => (string) $payment->provider_id,
-            'charge_model' => 'direct',
         ];
         foreach ($expectedMetadata as $key => $value) {
             if (($metadata[$key] ?? null) !== $value) {
@@ -495,16 +529,25 @@ class PaymentController extends Controller
             }
         }
 
-        $providerStripeAccount = $this->providerStripeAccount($payment);
-        if (
-            ! $providerStripeAccount ||
-            ! $connectedAccountId ||
-            $connectedAccountId !== $providerStripeAccount
+        $chargeModel = $metadata['charge_model'] ?? null;
+        if ($chargeModel === 'direct') {
+            $providerStripeAccount = $this->providerStripeAccount($payment);
+            if (
+                ! $providerStripeAccount ||
+                ! $connectedAccountId ||
+                $connectedAccountId !== $providerStripeAccount
+            ) {
+                abort(409, 'Payment account verification failed.');
+            }
+            if ((int) ($intent->application_fee_amount ?? -1) !== (int) $payment->commission_minor) {
+                abort(409, 'Payment commission verification failed.');
+            }
+        } elseif (
+            $chargeModel !== 'platform_test' ||
+            ! $this->usePlatformTestCharge() ||
+            $connectedAccountId !== null
         ) {
-            abort(409, 'Payment account verification failed.');
-        }
-        if ((int) ($intent->application_fee_amount ?? -1) !== (int) $payment->commission_minor) {
-            abort(409, 'Payment commission verification failed.');
+            abort(409, 'Payment charge model verification failed.');
         }
 
         $payment->stripe_payment_intent_id = $intent->id;
@@ -518,6 +561,11 @@ class PaymentController extends Controller
                 $payment->paid_at ??= now();
                 $payment->failed_at = null;
                 $payment->cancelled_at = null;
+                Project::query()
+                    ->where('id', $payment->project_id)
+                    ->where('user_id', $payment->customer_id)
+                    ->where('status', 'in progress')
+                    ->update(['status' => 'completed']);
                 break;
             case 'processing':
                 $payment->status = Payment::STATUS_PROCESSING;
@@ -577,6 +625,13 @@ class PaymentController extends Controller
             ->value('stripe_account_id');
 
         return is_string($accountId) && $accountId !== '' ? $accountId : null;
+    }
+
+    private function usePlatformTestCharge(): bool
+    {
+        return (bool) config('services.stripe.test_platform_payments')
+            && str_starts_with((string) config('services.stripe.secret'), 'sk_test_')
+            && str_starts_with((string) config('services.stripe.key'), 'pk_test_');
     }
 
     private function gatewayErrorCode(Throwable $exception): ?string

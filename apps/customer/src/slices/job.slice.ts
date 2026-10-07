@@ -31,6 +31,7 @@ export const createJob = createAsyncThunk(
 export type JobListParams = {
   page: number;
   limit: number;
+  history?: boolean;
 };
 
 export const getJobList = createAsyncThunk(
