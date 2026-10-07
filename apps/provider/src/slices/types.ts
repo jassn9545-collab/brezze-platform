@@ -1,4 +1,24 @@
 export type LoadStatus = 'idle' | 'loading' | 'loaded' | 'failed';
+
+export interface ProfileReview {
+  id: number;
+  given_by: number;
+  given_to: number;
+  job_id: number;
+  star: number;
+  review: string | null;
+  review_to: 'freelancer' | 'client';
+  created_at: string;
+  reviewer: {
+    id: number;
+    name: string;
+    profile_image: string | null;
+  } | null;
+  job: {
+    id: number;
+    title: string;
+  } | null;
+}
 export interface UserDetailsResponse {
   user: User;
   token?: string;
@@ -42,6 +62,9 @@ export interface User {
   total_earnings: number;
   total_jobs: number;
   job_success_score: number;
+  avg_rating: number;
+  review_count: number;
+  reviews: ProfileReview[];
 }
 
 export interface Job {

@@ -5,10 +5,10 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
-  ListRenderItemInfo,
   ActivityIndicator,
 } from 'react-native';
 import React, { FC } from 'react';
+import moment from 'moment';
 import { spacing, images, colors } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
 import { connect, ConnectedProps } from 'react-redux';
@@ -20,6 +20,7 @@ import { Currency } from '../config/defaults';
 import { parseSource } from '../utils/util';
 import { openChatConversation } from '../apis/chat';
 import { getFreelancerCatalogs, ServiceCatalog } from '../apis/catalogs';
+import { ProfileReview } from '../slices/types';
 
 type NavigationProps = AppStackScreenProps<'ProfessionalProfile'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
@@ -266,17 +267,21 @@ const ProfessionalProfile: FC<Props> = props => {
             <Text
               size="xxs"
               weight="semiBold"
-              tx="professionalProfile.seeAll"
-              txOptions={{
-                value: '4.9',
-              }}
+              text={
+                (props.profileData?.review_count ?? 0) > 0
+                  ? `${Number(props.profileData?.avg_rating ?? 0).toFixed(1)} (${props.profileData?.review_count})`
+                  : 'No reviews yet'
+              }
               style={styles.primaryText}
             />
           </View>
           <FlatList
-            data={[1, 1, 1]}
+            data={props.profileData?.reviews ?? []}
+            keyExtractor={item => String(item.id)}
             scrollEnabled={false}
-            renderItem={info => <Review {...info} />}
+            renderItem={({ item }) => (
+              <Review item={item} baseUrl={props.baseURl} />
+            )}
           />
         </View>
       </Screen>
@@ -330,33 +335,50 @@ export const Service = ({ catalog, onPress }: ServiceCardProps) => {
   );
 };
 
-type ReviewCardProps = ListRenderItemInfo<any>;
-const Review = ({ item }: ReviewCardProps) => {
+const Review = ({
+  item,
+  baseUrl,
+}: {
+  item: ProfileReview;
+  baseUrl?: string;
+}) => {
+  const profileImage = item.reviewer?.profile_image;
+  const imageUrl = profileImage
+    ? /^https?:\/\//i.test(profileImage)
+      ? profileImage
+      : `${(baseUrl ?? '').replace(/\/$/, '')}/${profileImage.replace(/^\//, '')}`
+    : undefined;
+
   return (
-    <View key={item.id} style={styles.reviewCard}>
+    <View style={styles.reviewCard}>
       <View style={styles.reviewHeader}>
         <Image
           resizeMode="cover"
           style={styles.reviewedImage}
-          {...parseSource('https://i.pravatar.cc/300', images.user)}
+          {...parseSource(imageUrl, images.user)}
         />
         <View style={styles.flexOne}>
-          <Text size="xs" weight="medium" text="Sarah Miller" />
-          <Text text="2 DAYS AGO" style={styles.extraSmallText} />
+          <Text
+            size="xs"
+            weight="medium"
+            text={item.reviewer?.name ?? 'Customer'}
+          />
+          <Text
+            text={item.created_at ? moment(item.created_at).fromNow() : ''}
+            style={styles.extraSmallText}
+          />
         </View>
         <TapRating
           count={5}
           isDisabled
           size={spacing.sm}
-          defaultRating={5}
+          defaultRating={Number(item.star)}
           selectedColor="orange"
         />
       </View>
-      <Text
-        size="xxs"
-        weight="light"
-        text="“Passionate about Home Appliances and house fitting issues with 10+ year Experince in residential repairs. I Specialize  installations. “"
-      />
+      {item.review ? (
+        <Text size="xxs" weight="light" text={item.review} />
+      ) : null}
     </View>
   );
 };

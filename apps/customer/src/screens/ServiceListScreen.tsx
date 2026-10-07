@@ -6,7 +6,8 @@ import {
     View,
     TouchableOpacity,
 } from 'react-native';
-import React, { FC, useEffect, useMemo, useState } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { images, spacing, colors } from '../theme';
 import { Currency } from '../config/defaults';
 import { DiscoveryService, getDiscovery } from '../apis/discovery';
@@ -22,14 +23,19 @@ const Service: FC<Props> = props => {
     const categoryName = props.route?.params?.categoryName;
     const [services, setServices] = useState<DiscoveryService[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [query, setQuery] = useState('');
 
-    useEffect(() => {
+    const loadServices = useCallback(() => {
         let active = true;
         setLoading(true);
+        setLoadError(false);
         getDiscovery({ categoryId })
             .then(data => {
-                if (active) setServices(data.services);
+                if (active) setServices(data.services ?? []);
+            })
+            .catch(() => {
+                if (active) setLoadError(true);
             })
             .finally(() => {
                 if (active) setLoading(false);
@@ -39,6 +45,8 @@ const Service: FC<Props> = props => {
             active = false;
         };
     }, [categoryId]);
+
+    useFocusEffect(loadServices);
 
     const visibleServices = useMemo(() => {
         const search = query.trim().toLowerCase();
@@ -111,6 +119,20 @@ const Service: FC<Props> = props => {
 
             {loading ? (
                 <ActivityIndicator color={colors.primary} style={styles.loading} />
+            ) : loadError ? (
+                <View style={styles.emptyState}>
+                    <Image source={images.service} style={styles.emptyIcon} />
+                    <Text
+                        text="Services could not be loaded. Please try again."
+                        size="sm"
+                        style={styles.emptyText}
+                    />
+                    <Button
+                        text="Retry"
+                        style={styles.retryButton}
+                        onPress={loadServices}
+                    />
+                </View>
             ) : visibleServices.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Image source={images.service} style={styles.emptyIcon} />
@@ -303,6 +325,7 @@ const styles = StyleSheet.create({
     emptyState: { alignItems: 'center', padding: spacing.xl },
     emptyIcon: { width: 56, height: 56, resizeMode: 'contain', tintColor: colors.primary },
     emptyText: { color: colors.textDim, textAlign: 'center', marginTop: spacing.sm },
+    retryButton: { marginTop: spacing.md, minHeight: 44, width: 120 },
 
 });
 

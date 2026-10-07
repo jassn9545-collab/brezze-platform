@@ -36,6 +36,7 @@ class User extends Authenticatable
         'profile_title',
         'profile_description',
         'stripe_account_id',
+        'stripe_customer_id',
     ];
 
     protected $hidden = [
@@ -65,5 +66,15 @@ class User extends Authenticatable
     public function serviceCatalogs()
     {
         return $this->hasMany(ServiceCatalog::class, 'provider_id');
+    }
+
+    public function appNotifications()
+    {
+        return $this->hasMany(UserNotification::class);
+    }
+
+    public function supportRequests()
+    {
+        return $this->hasMany(SupportRequest::class);
     }
 }

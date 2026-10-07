@@ -1,5 +1,6 @@
 import {
   BackButtom,
+  Button,
   Loader,
   JobPaymentButton,
   ReadMore,
@@ -150,13 +151,17 @@ const JobPostDetails: FC<Props> = props => {
         {props.data?.status === 'completed' && (
           <>
             <View style={styles.flexOne} />
-            <JobPaymentButton
-              jobId={props.data.id}
+            <Button
+              text="Review Provider"
               style={[
                 styles.button,
                 { marginBottom: insets.bottom + spacing.md },
               ]}
-              onPaid={() => get({ job_id: props.data!.id })}
+              onPress={() =>
+                props.navigation.navigate('ReviewScreen', {
+                  jobId: props.data!.id,
+                })
+              }
             />
           </>
         )}

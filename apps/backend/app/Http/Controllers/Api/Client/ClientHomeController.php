@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Cache;
 use App\Traits\ApiResponse;
 use App\Models\Project;
 use App\Models\ProjectImage;
+use App\Models\Review;
+use App\Models\Payment;
 use Illuminate\Support\Str;
 use DB;
 
@@ -51,8 +53,16 @@ class ClientHomeController extends BaseClientController
             ->where('bids.is_hired', 1)
             ->where('projects.status', 'completed')
             ->count();
-        $profile->total_earnings = 0;
-        $profile->is_top_rated = true;
+        $profile->total_earnings = number_format((float) Payment::query()
+            ->where('provider_id', $profile->id)
+            ->where('status', Payment::STATUS_SUCCEEDED)
+            ->sum('provider_earnings'), 2, '.', '');
+        $reviewSummary = Review::receivedSummary($profile->id, 'freelancer');
+        $profile->avg_rating = $reviewSummary['avg_rating'];
+        $profile->review_count = $reviewSummary['review_count'];
+        $profile->reviews = $reviewSummary['reviews'];
+        $profile->is_top_rated = $profile->review_count > 0
+            && $profile->avg_rating >= 4.5;
         $categoryIds = $profile->skills ? explode(',', $profile->skills) : [];
 
         $profile->categories = \App\Models\Category::whereIn('id', $categoryIds)
@@ -68,13 +78,15 @@ class ClientHomeController extends BaseClientController
         }
         $profile = $request->user();
         $proofs = UserProof::where('user_id', $profile->id)->first();
-        $profile->is_verified = $proofs->is_verified;
-        $profile->avg_rating = 5.0;
+        $profile->is_verified = $proofs?->is_verified ?? 0;
+        $reviewSummary = Review::receivedSummary($profile->id, 'client');
+        $profile->avg_rating = $reviewSummary['avg_rating'];
+        $profile->review_count = $reviewSummary['review_count'];
         $profile->total_jobs = DB::table('projects')
             ->where('user_id', $profile->id)
             ->count();
         $profile->last3_jobs = Project::select('id','title','created_at','status')->withCount('bids')->where('user_id', $profile->id)->orderBy('created_at', 'desc')->take(3)->get();
-        $profile->reviews = [];
+        $profile->reviews = $reviewSummary['reviews'];
         return $this->success(['profile' => $profile], 'Client profile retrieved successfully.');
     }
 
@@ -114,12 +126,14 @@ class ClientHomeController extends BaseClientController
         }
         $user->save();
         $proofs = UserProof::where('user_id', $user->id)->first();
-        $user->avg_rating = 5.0;
+        $reviewSummary = Review::receivedSummary($user->id, 'client');
+        $user->avg_rating = $reviewSummary['avg_rating'];
+        $user->review_count = $reviewSummary['review_count'];
         $user->total_jobs = DB::table('projects')
             ->where('user_id', $user->id)
             ->count();
         $user->last3_jobs = Project::select('id','title','created_at','status')->withCount('bids')->where('user_id', $user->id)->orderBy('created_at', 'desc')->take(3)->get();
-        $user->reviews = [];
+        $user->reviews = $reviewSummary['reviews'];
 
         return $this->success(['profile' => $user], 'Profile updated successfully.');
      }

@@ -60,6 +60,9 @@ const URLs = {
   referEarn: '/refer-and-earn',
   withdrawReferEarn: '/withdraw-earning',
   getUserNotifications: '/notifications',
+  privacyPolicy: '/legal/privacy-policy',
+  supportRequests: '/support-requests',
+  updateAccountPassword: '/account/update-password',
   clientProfile: '/client/freelancer-profile',
 
   // job
@@ -72,6 +75,9 @@ const URLs = {
   paymentStatus: '/client/payments/jobs',
   paymentVerify: '/client/payments',
   paymentCancel: '/client/payments',
+  paymentMethods: '/client/payment-methods',
+  paymentMethodSetup: '/client/payment-methods/setup',
+  paymentMethodSession: '/client/payment-methods/session',
 
   // Review Api 
   submitReview: '/submit-review',

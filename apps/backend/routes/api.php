@@ -8,8 +8,12 @@ use App\Http\Controllers\Api\Client\ServiceCatalogController as ClientServiceCat
 use App\Http\Controllers\Api\Freelancer\FreelancerJobController;
 use App\Http\Controllers\Api\Freelancer\ServiceCatalogController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\CustomerPaymentMethodController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\ServiceBookingController;
+use App\Http\Controllers\Api\LegalController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\SupportController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +46,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
     Route::get('/contact-us', [UserController::class, 'contactUs']);
+    Route::post('/support-requests', [SupportController::class, 'store'])->middleware('throttle:10,1');
+    Route::get('/legal/privacy-policy', [LegalController::class, 'privacyPolicy']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
 
     Route::get('/address/list', [UserController::class, 'addressList']);
     Route::post('/address/add', [UserController::class, 'addressAdd']);
@@ -75,6 +84,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('payments/jobs/{jobId}', [PaymentController::class, 'status']);
         Route::post('payments/{paymentId}/verify', [PaymentController::class, 'verify']);
         Route::post('payments/{paymentId}/cancel', [PaymentController::class, 'cancel']);
+        Route::get('payment-methods', [CustomerPaymentMethodController::class, 'index']);
+        Route::post('payment-methods/setup', [CustomerPaymentMethodController::class, 'setup']);
+        Route::post('payment-methods/session', [CustomerPaymentMethodController::class, 'session']);
+        Route::post('payment-methods/{paymentMethodId}/default', [CustomerPaymentMethodController::class, 'makeDefault']);
+        Route::delete('payment-methods/{paymentMethodId}', [CustomerPaymentMethodController::class, 'destroy']);
 
         Route::post('freelancer-profile', [ClientHomeController::class, 'freelancerProfile']);
         Route::post('my-profile', [ClientHomeController::class, 'myProfile']);
@@ -104,7 +118,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
-    Route::post('submit-review', [FreelancerJobController::class, 'submitReview']);
+Route::post('submit-review', [FreelancerJobController::class, 'submitReview']);
+Route::get('reviews/projects/{project}', \App\Http\Controllers\ReviewStatusController::class);
     Route::post('account/update-password', [HomeController::class, 'updatePassword']);
 });
 

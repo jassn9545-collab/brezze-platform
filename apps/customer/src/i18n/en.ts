@@ -293,8 +293,6 @@ const en = {
     reviews: 'Reviews',
     seeAll: 'See All {{value}}',
     hireNow: 'Hire Now',
-    sarahMiller: 'Sarah Miller',
-    reviewText: 'Passionate about Home Appliances and house fitting issues...'
   },
   profile: {
     logoutConfirmation: 'Logout Confirmation',

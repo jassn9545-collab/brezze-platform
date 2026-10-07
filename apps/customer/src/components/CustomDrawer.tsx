@@ -27,10 +27,10 @@ const CustomDrawer: FC<DrawerContentComponentProps> = (props) => {
     { title: 'Hire History', icon: images.hireHistrory, screen: 'HireHistory' },
     { title: 'Notifications', icon: images.notificationIcon, screen: 'Notifications' },
     { divider: true },
-    { title: 'Payment Methods', icon: images.paymentIcon },
-    { title: 'Privacy Policy', icon: images.privacyIcon },
+    { title: 'Payment Methods', icon: images.paymentIcon, screen: 'PaymentMethods' },
+    { title: 'Privacy Policy', icon: images.privacyIcon, screen: 'PrivacyPolicy' },
     { title: 'Help & Support', icon: images.helpIcon, screen: 'HelpSupport' },
-    { title: 'Password Manager', icon: images.passwordIcon },
+    { title: 'Password Manager', icon: images.passwordIcon, screen: 'PasswordManager' },
   ];
 
   return (

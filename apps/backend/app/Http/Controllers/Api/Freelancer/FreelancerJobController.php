@@ -13,6 +13,10 @@ use App\Traits\ApiResponse;
 use App\Models\Project;
 use App\Models\ProjectImage;
 use App\Models\Payment;
+use App\Models\Review;
+use App\Models\UserNotification;
+use App\Models\Bid;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class FreelancerJobController extends BaseFreelancerController
@@ -56,25 +60,34 @@ class FreelancerJobController extends BaseFreelancerController
         $validator = \Validator::make($request->all(), [
             'project_id' => 'required|exists:projects,id',
             'attachment' => 'nullable|file|mimes:pdf,doc,docx',
-            'bid_amount' => 'required'
+            'bid_amount' => ['required', 'numeric', 'gt:0', 'decimal:0,2', 'max:99999999.99'],
         ]);
         
         if ($validator->fails()) {
             return $this->error('Validation error.', 400,$validator->errors());
         }
         $user = auth()->user();
-        $project = Project::where('status', 'active')->find($request->project_id);
+        $project = Project::find($request->project_id);
         if (!$project) {
-            return $this->error('This job is no longer accepting applications.', 400);
+            return $this->error('Job not found.', 404);
         }
 
-        $alreadyApplied = \App\Models\Bid::where('project_id', $request->project_id)
-        ->where('user_id', $user->id)
-        ->exists();
+        $existingBid = Bid::where('project_id', $project->id)
+            ->where('user_id', $user->id)
+            ->first();
+        if ($existingBid) {
+            $project = Project::withCount('bids')->find($project->id);
+            $project->setAttribute('already_applied', true);
+            $project->setAttribute('bid_id', $existingBid->id);
+            $project->setAttribute('bid_amount', $existingBid->bid_amount);
 
-        if ($alreadyApplied) {
-            return $this->error('You have already applied for this job.', 400,null);
+            return $this->success($project, 'You have already applied for this job.');
         }
+
+        if ($project->status !== 'active') {
+            return $this->error('This job is no longer accepting applications.', 409);
+        }
+
         $filename = null;
 
         if ($request->hasFile('attachment')) {
@@ -82,20 +95,69 @@ class FreelancerJobController extends BaseFreelancerController
             $filename = time() . '_' . $file->getClientOriginalName();
             $file->move(public_path('uploads/bids'), $filename);
         }
-        $bid = \App\Models\Bid::create([
-            'project_id'       => $request->project_id,
-            'user_id'          => $user->id,
-            'bid_amount'       => $request->bid_amount,
-            'freelancer_name'  => $user->name ?? null,
-            'freelancer_image' => $user->profile_image ?? null,
-            'attachment'       => ($filename) ? 'uploads/bids/' . $filename : null,
-            'date_time'        => date('Y-m-d H:i:s'),
-            'is_hired'         => 0,
-        ]);
-            
-        $project = Project::withCount('bids')->find($request->project_id);
+        $result = DB::transaction(function () use ($project, $user, $request, $filename) {
+            $lockedProject = Project::query()->lockForUpdate()->find($project->id);
+            $existingBid = Bid::where('project_id', $lockedProject->id)
+                ->where('user_id', $user->id)
+                ->first();
 
-        return $this->success($project, 'Job application submitted successfully.');
+            if ($existingBid) {
+                return ['bid' => $existingBid, 'created' => false];
+            }
+
+            if ($lockedProject->status !== 'active') {
+                return ['error' => 'This job is no longer accepting applications.'];
+            }
+
+            return [
+                'bid' => Bid::create([
+                    'project_id' => $lockedProject->id,
+                    'user_id' => $user->id,
+                    'bid_amount' => $request->bid_amount,
+                    'freelancer_name' => $user->name ?? null,
+                    'freelancer_image' => $user->profile_image ?? null,
+                    'attachment' => $filename ? 'uploads/bids/'.$filename : null,
+                    'date_time' => now(),
+                    'is_hired' => 0,
+                ]),
+                'created' => true,
+            ];
+        });
+
+        if (isset($result['error'])) {
+            return $this->error($result['error'], 409);
+        }
+
+        $bid = $result['bid'];
+        $created = $result['created'];
+        $project = Project::withCount('bids')->find($project->id);
+        $project->setAttribute('already_applied', !$created);
+        $project->setAttribute('bid_id', $bid->id);
+        $project->setAttribute('bid_amount', $bid->bid_amount);
+
+        if ($created) {
+            try {
+                UserNotification::firstOrCreate(
+                    [
+                        'user_id' => $project->user_id,
+                        'type' => 'job_application',
+                        'action_type' => 'project',
+                        'action_id' => $project->id,
+                    ],
+                    [
+                        'title' => 'New job application',
+                        'message' => ($user->name ?: 'A provider').' applied for '.$project->title.'.',
+                    ]
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        return $this->success(
+            $project,
+            $created ? 'Job application submitted successfully.' : 'You have already applied for this job.'
+        );
     }
 
     public function jobDetail(Request $request)
@@ -415,7 +477,12 @@ class FreelancerJobController extends BaseFreelancerController
             ->where('provider_id', $user->id)
             ->where('status', Payment::STATUS_SUCCEEDED)
             ->sum('provider_earnings'), 2, '.', '');
-        $user->is_top_rated = true;
+        $reviewSummary = Review::receivedSummary($user->id, 'freelancer');
+        $user->avg_rating = $reviewSummary['avg_rating'];
+        $user->review_count = $reviewSummary['review_count'];
+        $user->reviews = $reviewSummary['reviews'];
+        $user->is_top_rated = $user->review_count > 0
+            && $user->avg_rating >= 4.5;
         $categoryIds = $user->skills ? explode(',', $user->skills) : [];
 
         $user->categories = \App\Models\Category::whereIn('id', $categoryIds)
@@ -478,7 +545,12 @@ class FreelancerJobController extends BaseFreelancerController
             ->where('provider_id', $user->id)
             ->where('status', Payment::STATUS_SUCCEEDED)
             ->sum('provider_earnings'), 2, '.', '');
-        $user->is_top_rated = true;
+        $reviewSummary = Review::receivedSummary($user->id, 'freelancer');
+        $user->avg_rating = $reviewSummary['avg_rating'];
+        $user->review_count = $reviewSummary['review_count'];
+        $user->reviews = $reviewSummary['reviews'];
+        $user->is_top_rated = $user->review_count > 0
+            && $user->avg_rating >= 4.5;
         $categoryIds = $user->skills ? explode(',', $user->skills) : [];
 
         $user->categories = \App\Models\Category::whereIn('id', $categoryIds)
@@ -538,12 +610,20 @@ class FreelancerJobController extends BaseFreelancerController
                     ->subject('Work Submitted for Your Project');
         });
 
+        UserNotification::create([
+            'user_id' => $bid->project->user_id,
+            'title' => 'Work submitted',
+            'message' => ($request->user()->name ?: 'Your provider').' submitted work for '.$bid->project->title.'.',
+            'type' => 'work_submitted',
+            'action_type' => 'project',
+            'action_id' => $bid->project->id,
+        ]);
+
         return $this->success(null, 'Work submitted successfully.');
     }
 
     public function submitReview(Request $request)
     {
-        // return $request->all();
         $validator = \Validator::make($request->all(), [
             'star' => 'required|integer|min:1|max:5',
             'review' => 'nullable|string',
@@ -551,51 +631,54 @@ class FreelancerJobController extends BaseFreelancerController
         ]);
 
         if ($validator->fails()) {
-            $this->error('Validation error.', 400, $validator->errors());
+            return $this->error('Validation error.', 400, $validator->errors());
         }
 
-        $check_project_completed = \App\Models\Bid::where('project_id', $request->project_id)
-            ->where('user_id', $request->user()->id)
-            ->where('is_hired', 1)
-            ->whereHas('project', function ($q) {
-                $q->where('status', 'completed');
-            })
-            ->exists();
-        if (!$check_project_completed) {
+        $project = \App\Models\Project::with('hiredBid')->findOrFail($request->project_id);
+        $reviewer = $request->user();
+        $customerId = (int) $project->user_id;
+        $providerId = (int) ($project->hiredBid?->user_id ?? 0);
+        $reviewerId = (int) $reviewer->id;
+
+        $isCustomer = $reviewerId === $customerId;
+        $isProvider = $providerId > 0 && $reviewerId === $providerId;
+
+        if ($project->status !== 'completed' || (! $isCustomer && ! $isProvider)) {
             return $this->error('You can only review completed projects.', 400);
         }
 
-        $client_id = \App\Models\Project::where('id', $request->project_id)->value('user_id');
-        $user_id = $request->user()->id;
-        $revirew_to = ($client_id == $user_id) ? 'freelancer' : 'client';
+        $existingReview = \App\Models\Review::where('job_id', $project->id)
+            ->where('given_by', $reviewerId)
+            ->first();
 
-        $review = new \App\Models\Review();
-        $review->given_by = $user_id;
-        $review->given_to = $client_id;
-        $review->job_id = $request->project_id;
-        $review->star = $request->star;
-        $review->review = $request->review;
-        $review->review_to = $revirew_to;
-        $review->save();
+        if ($existingReview) {
+            $existingReview->setAttribute('already_reviewed', true);
 
-        // mail to both person about review submission
-        $clientEmail = \App\Models\User::where('id', $client_id)->value('email');
-        $clientmessage = '<p>Dear ' . \App\Models\User::where('id', $client_id)->value('name') . ',</p>';
-        $clientmessage .= '<p>You have received a new review for project: ' . \App\Models\Project::where('id', $request->project_id)->value('title') . '</p>';
-        Mail::html($clientmessage, function ($message) use ($clientEmail) {
-            $message->to($clientEmail)
-                    ->subject('New Review Received');
-        });
+            return response()->json([
+                'status' => 'success',
+                'message' => 'You have already reviewed this project.',
+                'data' => $existingReview,
+            ], 200);
+        }
 
-        $freelancerEmail = \App\Models\User::where('id', $user_id)->value('email');
-        $freelancermessage = '<p>Dear ' . \App\Models\User::where('id', $user_id)->value('name') . ',</p>';
-        $freelancermessage .= '<p>You have submitted a new review for project: ' . \App\Models\Project::where('id', $request->project_id)->value('title') . '</p>';
-        Mail::html($freelancermessage, function ($message) use ($freelancerEmail) {
-            $message->to($freelancerEmail)
-                    ->subject('Review Submitted');
-        });
+        $receiverId = $isCustomer ? $providerId : $customerId;
+        $reviewTo = $isCustomer ? 'freelancer' : 'client';
 
+        $review = \App\Models\Review::create([
+            'given_by' => $reviewerId,
+            'given_to' => $receiverId,
+            'job_id' => $project->id,
+            'star' => $request->star,
+            'review' => $request->review,
+            'review_to' => $reviewTo,
+        ]);
 
-        return response()->json(['status'  => 'success','message' => 'Review submitted successfully.','data' => $review], 200);
+        $review->setAttribute('already_reviewed', false);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Review submitted successfully.',
+            'data' => $review,
+        ], 200);
     }
 }

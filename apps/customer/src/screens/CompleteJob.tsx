@@ -6,7 +6,7 @@ import { navigationRef } from '../navigators';
 
 type Props = AppStackScreenProps<'JobCompleted'>;
 
-export const JobCompletedScreen: React.FC<Props> = ({ navigation }) => {
+export const JobCompletedScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <Screen preset="fixed" contentContainerStyle={styles.container}>
       
@@ -39,7 +39,7 @@ export const JobCompletedScreen: React.FC<Props> = ({ navigation }) => {
         <Button
           text="Review Provider"
           style={styles.reviewBtn}
-          onPress={() => navigation.navigate('ReviewScreen')}
+          onPress={() => navigation.navigate('ReviewScreen', { jobId: route.params.jobId })}
         />
 
         {/* Continue Button */}

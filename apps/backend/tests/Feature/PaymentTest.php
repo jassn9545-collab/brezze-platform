@@ -1,6 +1,7 @@
 <?php
 
 use App\Contracts\PaymentGateway;
+use App\Contracts\CustomerPaymentGateway;
 use App\Models\Bid;
 use App\Models\Payment;
 use App\Models\Project;
@@ -89,6 +90,51 @@ class FakePaymentGateway implements PaymentGateway
     }
 }
 
+class FakeCustomerPaymentGateway implements CustomerPaymentGateway
+{
+    public array $paymentMethods = [];
+
+    public function createCustomer(array $parameters): object
+    {
+        return (object) ['id' => 'cus_customer_test'];
+    }
+
+    public function retrieveCustomer(string $customerId): object
+    {
+        return (object) ['invoice_settings' => (object) ['default_payment_method' => null]];
+    }
+
+    public function updateCustomer(string $customerId, array $parameters): object
+    {
+        return (object) ['id' => $customerId];
+    }
+
+    public function createCustomerSession(string $customerId): object
+    {
+        return (object) ['client_secret' => 'cuss_test_secret'];
+    }
+
+    public function createSetupIntent(string $customerId): object
+    {
+        return (object) ['client_secret' => 'seti_test_secret'];
+    }
+
+    public function listCardPaymentMethods(string $customerId): array
+    {
+        return $this->paymentMethods;
+    }
+
+    public function retrievePaymentMethod(string $paymentMethodId): object
+    {
+        return (object) ['id' => $paymentMethodId, 'customer' => 'cus_customer_test'];
+    }
+
+    public function detachPaymentMethod(string $paymentMethodId): object
+    {
+        return (object) ['id' => $paymentMethodId];
+    }
+}
+
 beforeEach(function () {
     Schema::create('users', function (Blueprint $table) {
         $table->id();
@@ -97,6 +143,7 @@ beforeEach(function () {
         $table->string('password');
         $table->string('user_type');
         $table->string('stripe_account_id')->nullable();
+        $table->string('stripe_customer_id')->nullable();
         $table->rememberToken();
         $table->timestamps();
     });
@@ -150,6 +197,8 @@ beforeEach(function () {
 
     $this->gateway = new FakePaymentGateway;
     app()->instance(PaymentGateway::class, $this->gateway);
+    $this->customerGateway = new FakeCustomerPaymentGateway;
+    app()->instance(CustomerPaymentGateway::class, $this->customerGateway);
 
     $this->customer = User::create([
         'name' => 'Customer',
@@ -288,11 +337,15 @@ it('allows an incomplete provider only through the explicit test-mode platform f
     $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id])
         ->assertOk()
         ->assertJsonPath('data.stripe_account_id', null)
+        ->assertJsonPath('data.stripe_customer_id', 'cus_customer_test')
+        ->assertJsonPath('data.customer_session_client_secret', 'cuss_test_secret')
         ->assertJsonPath('data.already_paid', false);
 
     expect($this->gateway->createCount)->toBe(1)
         ->and($this->gateway->lastConnectedAccountId)->toBeNull()
         ->and($this->gateway->lastCreateParameters)->not->toHaveKey('application_fee_amount')
+        ->and($this->gateway->lastCreateParameters['customer'])->toBe('cus_customer_test')
+        ->and($this->gateway->lastCreateParameters['setup_future_usage'])->toBe('off_session')
         ->and($this->gateway->lastCreateParameters['metadata']['charge_model'])->toBe('platform_test');
 });
 

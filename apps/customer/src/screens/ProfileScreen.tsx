@@ -8,16 +8,18 @@ import {
   Image,
 } from 'react-native';
 import React, { FC, useRef, useState } from 'react';
-import { Screen, Text, BackButtom, Button } from '../components';
+import { Screen, Text, BackButtom, Button, TapRating } from '../components';
 import { colors, spacing, images, typography } from '../theme';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
 import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 import FastImage from '@d11/react-native-fast-image';
 import { getStatusStyle } from './JobPostListScreen';
-import { Job } from '../slices/types';
+import { Job, ProfileReview } from '../slices/types';
 import moment from 'moment';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { getProfile } from '../slices/auth.slice';
 
 type NavigationProps = AppBottomTabScreenProps<'Profile'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -25,8 +27,15 @@ type Props = NavigationProps & StoreProps;
 
 const ClientProfileScreen: FC<Props> = props => {
   const insets = useSafeAreaInsets();
+  const { getProfile: refreshProfile } = props;
   const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 80 });
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshProfile();
+    }, [refreshProfile]),
+  );
   const onViewableItemsChanged = React.useMemo(
     () =>
       ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -202,43 +211,30 @@ const ClientProfileScreen: FC<Props> = props => {
           </View>
         </View> */}
 
-        {/* <View style={styles.section}>
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text text="Reviews" size="md" weight="semiBold" />
-            <TouchableOpacity>
-              <Text
-                text={`See All (${props.profileData?.avg_rating ?? 0})`}
-                size="xxs"
-                weight="semiBold"
-                style={{ color: colors.primary }}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.reviewCard}>
-            <View style={styles.reviewHeader}>
-              <FastImage source={images.profile1} style={styles.reviewImage} />
-              <View style={styles.flexOne}>
-                <Text text="Sarah Miller" size="xs" weight="medium" />
-                <Text
-                  text="2 DAYS AGO"
-                  size="xxs"
-                  style={{
-                    color: colors.textDim,
-                  }}
-                />
-              </View>
-              <Text text="⭐⭐⭐⭐⭐" size="xs" />
-            </View>
             <Text
-              text="Passionate about home appliances and repair work"
+              text={
+                (props.profileData?.review_count ?? 0) > 0
+                  ? `${Number(props.profileData?.avg_rating ?? 0).toFixed(1)} (${props.profileData?.review_count})`
+                  : 'No reviews yet'
+              }
               size="xxs"
-              style={{
-                color: colors.textDim,
-              }}
+              weight="semiBold"
+              style={styles.primaryText}
             />
           </View>
-        </View> */}
+          <FlatList
+            data={props.profileData?.reviews ?? []}
+            keyExtractor={item => String(item.id)}
+            scrollEnabled={false}
+            renderItem={({ item }) => (
+              <ClientReview review={item} baseUrl={props.baseURl} />
+            )}
+          />
+        </View>
+
       </Screen>
     </>
   );
@@ -329,6 +325,54 @@ const SingleJob = ({
           </View>
         </View>
       </View>
+    </View>
+  );
+};
+
+const ClientReview = ({
+  review,
+  baseUrl,
+}: {
+  review: ProfileReview;
+  baseUrl?: string;
+}) => {
+  const profileImage = review.reviewer?.profile_image;
+  const imageUrl = profileImage
+    ? /^https?:\/\//i.test(profileImage)
+      ? profileImage
+      : `${(baseUrl ?? '').replace(/\/$/, '')}/${profileImage.replace(/^\//, '')}`
+    : undefined;
+
+  return (
+    <View style={styles.reviewCard}>
+      <View style={styles.reviewHeader}>
+        <FastImage
+          source={imageUrl ? { uri: imageUrl } : images.user}
+          style={styles.reviewImage}
+        />
+        <View style={styles.flexOne}>
+          <Text
+            text={review.reviewer?.name ?? 'Provider'}
+            size="xs"
+            weight="medium"
+          />
+          <Text
+            text={review.created_at ? moment(review.created_at).fromNow() : ''}
+            size="xxs"
+            style={styles.addressText}
+          />
+        </View>
+        <TapRating
+          count={5}
+          isDisabled
+          size={spacing.sm}
+          defaultRating={Number(review.star)}
+          selectedColor="orange"
+        />
+      </View>
+      {review.review ? (
+        <Text text={review.review} size="xxs" style={styles.addressText} />
+      ) : null}
     </View>
   );
 };
@@ -513,6 +557,8 @@ const mapStateToProps = (state: RootState) => ({
   baseURl: state.setting.basic?.base_url,
 });
 
-const connector = connect(mapStateToProps);
+const mapDispatch = { getProfile };
+
+const connector = connect(mapStateToProps, mapDispatch);
 
 export const ProfileScreen = connector(ClientProfileScreen);

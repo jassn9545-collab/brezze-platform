@@ -29,6 +29,8 @@ type IntentResponse = {
   payment: JobPayment;
   publishable_key: string;
   stripe_account_id: string | null;
+  stripe_customer_id: string | null;
+  customer_session_client_secret: string | null;
   client_secret: string | null;
   already_paid: boolean;
 };
@@ -57,12 +59,21 @@ export const payForJob = async (jobId: number): Promise<JobPayment> => {
     publishableKey: intent.publishable_key,
     stripeAccountId: intent.stripe_account_id ?? undefined,
   });
-  const initialized = await initPaymentSheet({
-    merchantDisplayName: 'Our Bezzie Provider',
-    paymentIntentClientSecret: intent.client_secret,
-    returnURL: 'bezzie://stripe-redirect',
-    allowsDelayedPaymentMethods: false,
-  });
+  const initialized = intent.stripe_customer_id && intent.customer_session_client_secret
+    ? await initPaymentSheet({
+        merchantDisplayName: 'Our Bezzie',
+        paymentIntentClientSecret: intent.client_secret,
+        customerId: intent.stripe_customer_id,
+        customerSessionClientSecret: intent.customer_session_client_secret,
+        returnURL: 'bezzie://stripe-redirect',
+        allowsDelayedPaymentMethods: false,
+      })
+    : await initPaymentSheet({
+        merchantDisplayName: 'Our Bezzie',
+        paymentIntentClientSecret: intent.client_secret,
+        returnURL: 'bezzie://stripe-redirect',
+        allowsDelayedPaymentMethods: false,
+      });
   if (initialized.error) {
     throw new Error(initialized.error.message);
   }

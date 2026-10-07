@@ -13,6 +13,7 @@ use App\Traits\ApiResponse;
 use App\Models\Project;
 use App\Models\ProjectImage;
 use App\Models\Payment;
+use App\Models\UserNotification;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
@@ -196,6 +197,15 @@ class JobController extends BaseClientController
                     ->subject('You have been hired!');
         });
 
+        UserNotification::create([
+            'user_id' => $user->id,
+            'title' => 'You were hired',
+            'message' => 'You have been hired for '.$job->title.'.',
+            'type' => 'provider_hired',
+            'action_type' => 'project',
+            'action_id' => $job->id,
+        ]);
+
         return $this->success(['job' => $job], 'Freelancer hired successfully.');
     }
 
@@ -300,6 +310,17 @@ class JobController extends BaseClientController
 
             );
 
+        }
+
+        if ($freelancer) {
+            UserNotification::create([
+                'user_id' => $freelancer->id,
+                'title' => 'Job completed',
+                'message' => $job->title.' has been marked as completed.',
+                'type' => 'job_completed',
+                'action_type' => 'project',
+                'action_id' => $job->id,
+            ]);
         }
 
         return $this->success([], 'Job marked as completed successfully.');

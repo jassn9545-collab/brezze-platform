@@ -198,7 +198,11 @@ export const editProfile = yup.object().shape({
 export type EditProfileParams = yup.InferType<typeof editProfile>;
 
 export const jobApplySchema = yup.object().shape({
-  bidAmount: yup.string().required('validation.required'),
+  bidAmount: yup
+    .string()
+    .matches(/^\d+(\.\d{1,2})?$/, 'validation.invalidBidAmount')
+    .test('positive-bid', 'validation.invalidBidAmount', value => Number(value) > 0)
+    .required('validation.required'),
   project_id: yup.number().required('validation.required'),
 });
 

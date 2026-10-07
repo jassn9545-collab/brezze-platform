@@ -31,12 +31,15 @@ export * from './ChatScreen';
 export * from './DummyScreen';
 
 
-// export * from './NotificationScreen';
+export * from './NotificationScreen';
+export * from './PrivacyPolicyScreen';
+export * from './PasswordManagerScreen';
 export * from './ProfileScreen';
 // export * from './FAQScreen';
 export * from './EditProfileScreen';
 export * from './CompleteJob';
 export * from './ReviewScreen';
+export * from './PaymentScreen';
 // export * from './SavedAddressScreen';
 // export * from './AddAddress';
 // export * from './ReferEarnScreen';

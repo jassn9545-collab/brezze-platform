@@ -65,10 +65,13 @@ const JobDetail: FC<Props> = props => {
   const onPressJob = () => {
     if (props.route.params.from === 'ActiveJob') {
       props.navigation.navigate('SubmitWork');
-    } else {
+    } else if (!props.data?.job_applied) {
       props.navigation.navigate('JobApply');
     }
   };
+
+  const alreadyApplied =
+    props.route.params.from === 'ApplyJob' || Boolean(props.data?.job_applied);
 
   return (
     <>
@@ -187,16 +190,17 @@ const JobDetail: FC<Props> = props => {
       )}
       <Button
         tx={
-          props.route.params.from === 'ActiveJob' ||
-          props.route.params.from === 'ApplyJob'
+          props.route.params.from === 'ActiveJob'
             ? 'home.submitWork'
-            : 'home.applyJob'
+            : alreadyApplied
+              ? 'home.alreadyApplied'
+              : 'home.applyJob'
         }
         onPress={onPressJob}
-        disabled={props.route.params.from === 'ApplyJob'}
+        disabled={alreadyApplied && props.route.params.from !== 'ActiveJob'}
         style={[
           styles.buttonStyle,
-          props.route.params.from === 'ApplyJob' && {
+          alreadyApplied && props.route.params.from !== 'ActiveJob' && {
             backgroundColor: colors.primaryDimmed,
           },
           { marginBottom: insets.bottom + spacing.sm },

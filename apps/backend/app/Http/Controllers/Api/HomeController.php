@@ -55,11 +55,11 @@ class HomeController extends Controller
 
     public function updatePassword(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         $validator = \Validator::make($request->all(), [
             'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed',
+            'new_password' => 'required|string|min:6|max:50|different:current_password|confirmed',
             'new_password_confirmation' => 'required|min:6'
         ]);
 

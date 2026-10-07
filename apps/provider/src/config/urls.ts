@@ -70,6 +70,7 @@ const URLs = {
   paymentHistory: '/freelancer/payments',
   catalogs: '/freelancer/catalogs',
   chatConversations: '/chat/conversations',
+  supportRequests: '/support-requests',
 };
 
 export default URLs;

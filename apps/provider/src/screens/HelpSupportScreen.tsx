@@ -23,6 +23,8 @@ import { TextField, TextFieldAccessoryProps } from '../components/TextField';
 import { TxKeyPath } from '../i18n';
 import { DefaultCountry } from '../config/defaults';
 import Animated, { Easing, FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { useToast } from 'react-native-toast-notifications';
+import { submitSupportRequest } from '../apis/account';
 
 type NavigationProps = AppStackScreenProps<'HelpSupport'>;
 // type StoreProps = ConnectedProps<typeof connector>;
@@ -93,6 +95,7 @@ const faqData: FAQ[] = [
 ];
 
 const HelpSupport: FC<Props> = () => {
+  const toast = useToast();
   const emailField = useRef<TextInput>(null);
   const phoneField = useRef<TextInput>(null);
   const messageField = useRef<TextInput>(null);
@@ -102,6 +105,7 @@ const HelpSupport: FC<Props> = () => {
   const [country, setCountry] = useState<Country>(DefaultCountry);
   const [showCountries, setShowCountries] = useState(false);
   const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [error, setError] = useState<FieldError>({});
 
@@ -123,32 +127,43 @@ const HelpSupport: FC<Props> = () => {
     [country],
   );
 
-  const validate = () => {
-    // const params: HelpParams = {
-    //   name: props.profile?.name,
-    //   email: email,
-    //   msg: message,
-    //   mobileNumber: props.profile?.mobileNumber,
-    //   countryCode: props.profile?.countryCode,
-    // };
+  const validate = async () => {
+    if (submitting) return;
+
     const params: HelpParams = {
       name,
-      email: email,
+      email,
       msg: message,
       mobileNumber,
       country_code: country.dial_code.replace('+', ''),
     };
-    helpSchema
-      .validate(params, { abortEarly: false })
-      .then(res => {
-        console.log('res', res);
-        // props.postSupport(res);
-        setError({});
-      })
-      .catch(errors => {
-        const err = buildError<FieldError>(errors);
-        setError(err);
+
+    try {
+      const validated = await helpSchema.validate(params, { abortEarly: false });
+      setError({});
+      setSubmitting(true);
+
+      await submitSupportRequest({
+        name: validated.name,
+        email: validated.email,
+        phone: validated.mobileNumber,
+        country_code: validated.country_code,
+        message: validated.msg,
       });
+
+      setName('');
+      setEmail('');
+      setMobileNumber('');
+      setMessage('');
+      toast.show('Your support request has been submitted.', { type: 'success' });
+    } catch (errors) {
+      if (errors && typeof errors === 'object' && 'inner' in errors) {
+        const err = buildError<FieldError>(errors as never);
+        setError(err);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   //   useEffect(() => {
@@ -260,9 +275,10 @@ const HelpSupport: FC<Props> = () => {
           />
         </View>
         <Button
-          tx="helpSupport.submit"
+          text={submitting ? 'Submitting…' : 'Submit'}
           style={$buttonStyle}
           onPress={validate}
+          disabled={submitting}
         />
         <Text
           size="md"

@@ -64,7 +64,7 @@ export const jobApply = createAsyncThunk(
         data,
       });
       navigationRef.navigate('JobApplySucessModal');
-      return response.data;
+      return response.data.data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
     }
@@ -325,8 +325,23 @@ export const homeSlice = createSlice({
       .addCase(jobApply.pending, state => {
         state.jobApplyLoading = 'loading';
       })
-      .addCase(jobApply.fulfilled, state => {
+      .addCase(jobApply.fulfilled, (state, action) => {
         state.jobApplyLoading = 'loaded';
+        const projectId = action.payload?.id;
+        const jobDetail = state.jobDetail;
+        if (jobDetail && jobDetail.id === projectId) {
+          jobDetail.job_applied = true;
+        }
+        if (projectId && state.jobList) {
+          updateItemById(state.jobList, projectId, job => {
+            job.job_applied = true;
+          });
+        }
+        if (projectId && state.savedJobs) {
+          updateItemById(state.savedJobs, projectId, job => {
+            job.job_applied = true;
+          });
+        }
       })
       .addCase(jobApply.rejected, (state, action) => {
         state.jobApplyLoading = 'failed';

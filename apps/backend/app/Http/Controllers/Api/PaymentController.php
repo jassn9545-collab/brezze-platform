@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Contracts\PaymentGateway;
+use App\Contracts\CustomerPaymentGateway;
 use App\Http\Controllers\Controller;
 use App\Models\Bid;
 use App\Models\Payment;
@@ -19,7 +20,11 @@ class PaymentController extends Controller
 {
     use ApiResponse;
 
-    public function createIntent(Request $request, PaymentGateway $gateway)
+    public function createIntent(
+        Request $request,
+        PaymentGateway $gateway,
+        CustomerPaymentGateway $customerGateway
+    )
     {
         if ($response = $this->requireClient($request)) {
             return $response;
@@ -41,6 +46,21 @@ class PaymentController extends Controller
         $alreadyPaid = false;
         $stripeAccountId = null;
         $usePlatformTestCharge = $this->usePlatformTestCharge();
+        $stripeCustomerId = null;
+        $customerSessionSecret = null;
+
+        if ($usePlatformTestCharge) {
+            try {
+                $stripeCustomerId = $this->ensureStripeCustomer($request->user(), $customerGateway);
+                $customerSessionSecret = $customerGateway
+                    ->createCustomerSession($stripeCustomerId)
+                    ->client_secret;
+            } catch (Throwable $exception) {
+                report($exception);
+
+                return $this->error('Payment customer session could not be started.', 422);
+            }
+        }
 
         try {
             $payment = DB::transaction(function () use (
@@ -50,7 +70,8 @@ class PaymentController extends Controller
                 &$intent,
                 &$alreadyPaid,
                 &$stripeAccountId,
-                $usePlatformTestCharge
+                $usePlatformTestCharge,
+                $stripeCustomerId
             ) {
                 $job = Project::query()->lockForUpdate()->find($request->integer('job_id'));
                 if (! $job || (int) $job->user_id !== (int) $request->user()->id) {
@@ -189,6 +210,9 @@ class PaymentController extends Controller
                     ];
                     if (! $usePlatformTestCharge) {
                         $intentParameters['application_fee_amount'] = $payment->commission_minor;
+                    } else {
+                        $intentParameters['customer'] = $stripeCustomerId;
+                        $intentParameters['setup_future_usage'] = 'off_session';
                     }
 
                     $intent = $gateway->createPaymentIntent(
@@ -231,6 +255,8 @@ class PaymentController extends Controller
             'payment' => $this->paymentData($payment),
             'publishable_key' => config('services.stripe.key'),
             'stripe_account_id' => $stripeAccountId,
+            'stripe_customer_id' => $stripeCustomerId,
+            'customer_session_client_secret' => $customerSessionSecret,
             'client_secret' => $alreadyPaid ? null : ($intent->client_secret ?? null),
             'already_paid' => $alreadyPaid,
         ], $alreadyPaid ? 'This job is already paid.' : 'Payment is ready.');
@@ -455,6 +481,25 @@ class PaymentController extends Controller
         }
 
         return null;
+    }
+
+    private function ensureStripeCustomer(
+        User $user,
+        CustomerPaymentGateway $gateway
+    ): string {
+        if ($user->stripe_customer_id) {
+            return $user->stripe_customer_id;
+        }
+
+        $customer = $gateway->createCustomer([
+            'name' => $user->name,
+            'email' => $user->email,
+            'metadata' => ['bezzie_user_id' => (string) $user->id],
+        ]);
+        $user->stripe_customer_id = $customer->id;
+        $user->save();
+
+        return $customer->id;
     }
 
     private function moneyToMinor(mixed $amount): int

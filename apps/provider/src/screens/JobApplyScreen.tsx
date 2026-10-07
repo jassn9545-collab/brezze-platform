@@ -43,6 +43,8 @@ const JobDetail: FC<Props> = props => {
 
 
   const onPressJob = () => {
+    if (props.data?.job_applied || props.fetching === 'loading') return;
+
     let loginParams: JobApplyParams = {
       bidAmount,
       project_id: props.data?.id!,
@@ -168,8 +170,9 @@ const JobDetail: FC<Props> = props => {
         </View> */}
 
         <Button
-          tx="home.submitProposal"
+          tx={props.data?.job_applied ? 'home.alreadyApplied' : 'home.submitProposal'}
           onPress={onPressJob}
+          disabled={props.data?.job_applied || props.fetching === 'loading'}
           style={{ marginBottom: insets.bottom + spacing.sm }}
         />
       </View>

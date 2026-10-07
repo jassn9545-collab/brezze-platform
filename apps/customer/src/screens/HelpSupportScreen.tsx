@@ -23,6 +23,8 @@ import { TextField, TextFieldAccessoryProps } from '../components/TextField';
 import { TxKeyPath } from '../i18n';
 import { DefaultCountry } from '../config/defaults';
 import Animated, { Easing, FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { useToast } from 'react-native-toast-notifications';
+import { submitSupportRequest } from '../apis/account';
 
 type NavigationProps = AppStackScreenProps<'HelpSupport'>;
 // type StoreProps = ConnectedProps<typeof connector>;
@@ -48,9 +50,9 @@ const faqData: FAQ[] = [
   {
     id: 1,
     type: 'general',
-    question: 'What is Beep?',
+    question: 'What is Our Bezzie?',
     answer:
-      'Beep is a chat-based application that allows users to communicate in real time.',
+      'Our Bezzie connects customers with service professionals for jobs and bookings.',
     created_at: '2026-03-20T10:00:00Z',
     modify_at: '2026-03-20T10:00:00Z',
   },
@@ -59,7 +61,7 @@ const faqData: FAQ[] = [
     type: 'account',
     question: 'How do I create an account?',
     answer:
-      'You can create an account by signing up using your phone number or email address.',
+      'Sign up with your email and phone number, then complete the required profile verification steps.',
     created_at: '2026-03-20T10:05:00Z',
     modify_at: '2026-03-20T10:05:00Z',
   },
@@ -68,16 +70,16 @@ const faqData: FAQ[] = [
     type: 'privacy',
     question: 'Is my data secure?',
     answer:
-      'Yes, we use end-to-end encryption to keep your conversations private and secure.',
+      'We use reasonable security controls and rely on Stripe for secure card processing. Never share your password or verification code.',
     created_at: '2026-03-20T10:10:00Z',
     modify_at: '2026-03-20T10:10:00Z',
   },
   {
     id: 4,
     type: 'usage',
-    question: 'Can I use Beep on multiple devices?',
+    question: 'How can I manage my jobs?',
     answer:
-      'Yes, you can log in to your account on multiple devices and sync your chats.',
+      'Open My Job Postings or Hire History from the menu to review job and provider activity.',
     created_at: '2026-03-20T10:15:00Z',
     modify_at: '2026-03-20T10:15:00Z',
   },
@@ -86,13 +88,14 @@ const faqData: FAQ[] = [
     type: 'support',
     question: 'How can I contact support?',
     answer:
-      'You can contact support through the Help section in the app or email us at support@beep.com.',
+      'Complete the support form above. A support ticket will be created for your signed-in account.',
     created_at: '2026-03-20T10:20:00Z',
     modify_at: '2026-03-20T10:20:00Z',
   },
 ];
 
 const HelpSupport: FC<Props> = () => {
+  const toast = useToast();
   const emailField = useRef<TextInput>(null);
   const phoneField = useRef<TextInput>(null);
   const messageField = useRef<TextInput>(null);
@@ -102,6 +105,7 @@ const HelpSupport: FC<Props> = () => {
   const [country, setCountry] = useState<Country>(DefaultCountry);
   const [showCountries, setShowCountries] = useState(false);
   const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [error, setError] = useState<FieldError>({});
 
@@ -123,14 +127,8 @@ const HelpSupport: FC<Props> = () => {
     [country],
   );
 
-  const validate = () => {
-    // const params: HelpParams = {
-    //   name: props.profile?.name,
-    //   email: email,
-    //   msg: message,
-    //   mobileNumber: props.profile?.mobileNumber,
-    //   countryCode: props.profile?.countryCode,
-    // };
+  const validate = async () => {
+    if (submitting) return;
     const params: HelpParams = {
       name,
       email,
@@ -138,17 +136,30 @@ const HelpSupport: FC<Props> = () => {
       mobileNumber,
       country_code: country.dial_code.replace('+', ''),
     };
-    helpSchema
-      .validate(params, { abortEarly: false })
-      .then(res => {
-        console.log('res', res);
-        // props.postSupport(res);
-        setError({});
-      })
-      .catch(errors => {
-        const err = buildError<FieldError>(errors);
-        setError(err);
+    try {
+      const validated = await helpSchema.validate(params, { abortEarly: false });
+      setError({});
+      setSubmitting(true);
+      await submitSupportRequest({
+        name: validated.name,
+        email: validated.email,
+        phone: validated.mobileNumber,
+        country_code: validated.country_code,
+        message: validated.msg,
       });
+      setName('');
+      setEmail('');
+      setMobileNumber('');
+      setMessage('');
+      toast.show('Your support request has been submitted.', { type: 'success' });
+    } catch (errors) {
+      if (errors && typeof errors === 'object' && 'inner' in errors) {
+        const err = buildError<FieldError>(errors as never);
+        setError(err);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   //   useEffect(() => {
@@ -260,9 +271,10 @@ const HelpSupport: FC<Props> = () => {
           />
         </View>
         <Button
-          tx="helpSupport.submit"
+          text={submitting ? 'Submitting…' : 'Submit'}
           style={$buttonStyle}
           onPress={validate}
+          disabled={submitting}
         />
         <Text
           size="md"

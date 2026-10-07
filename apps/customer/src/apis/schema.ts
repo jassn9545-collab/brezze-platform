@@ -87,7 +87,7 @@ export const changePasswordSchema = yup.object().shape({
   currentPassword: yup.string().required('validation.required'),
   password: yup
     .string()
-    .min(3, 'validation.shortPassword')
+    .min(6, 'validation.shortPassword')
     .max(50, 'validation.longPassword')
     .required('validation.required'),
   confirmPassword: yup

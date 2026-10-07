@@ -123,7 +123,7 @@ export const completeJob = createAsyncThunk(
 );
 
 export type SubmitReviewParams = {
-  project_id: string;
+  project_id: number;
   star: string;
   review: string;
 };

@@ -60,7 +60,11 @@ export type AppStackParamList = {
   ChatDetail: { conversationId: number; participantName: string; participantImage: string | null };
   EditProfile: undefined;
   JobCompleted: { jobId: number };
-  ReviewScreen: undefined;
+  ReviewScreen: { jobId: number };
+  PaymentMethods: undefined;
+  Notifications: undefined;
+  PrivacyPolicy: undefined;
+  PasswordManager: undefined;
 
   //modal
   CenterModal: Screens.CenterModalParams;
@@ -140,6 +144,10 @@ export const AppStack: FC = () => {
         component={Screens.JobCompletedScreen}
       />
       <Stack.Screen name="ReviewScreen" component={Screens.ReviewScreen} />
+      <Stack.Screen name="PaymentMethods" component={Screens.PaymentMethodsScreen} />
+      <Stack.Screen name="Notifications" component={Screens.NotificationScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={Screens.PrivacyPolicyScreen} />
+      <Stack.Screen name="PasswordManager" component={Screens.PasswordManagerScreen} />
       <Stack.Group
         screenOptions={{
           presentation: 'transparentModal',
