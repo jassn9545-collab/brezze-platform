@@ -296,7 +296,7 @@ class ChatController extends Controller
             : $conversation->client;
         $profileImage = $other?->profile_image;
         if ($profileImage && !filter_var($profileImage, FILTER_VALIDATE_URL)) {
-            $profileImage = $request->root().'/'
+            $profileImage = rtrim((string) config('app.asset_url'), '/').'/'
                 .ltrim(preg_replace('#^/?public/#', '', $profileImage), '/');
         }
 

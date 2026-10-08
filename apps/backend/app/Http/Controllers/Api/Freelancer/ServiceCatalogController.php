@@ -87,7 +87,7 @@ class ServiceCatalogController extends BaseFreelancerController
     private function catalogData(ServiceCatalog $catalog, Request $request): array
     {
         $images = $catalog->images ?? [];
-        $origin = $request->root();
+        $origin = rtrim((string) config('app.asset_url'), '/');
 
         return [
             'id' => $catalog->id,

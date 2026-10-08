@@ -10,10 +10,9 @@ import {
 import {useFocusEffect} from '@react-navigation/native';
 import moment from 'moment';
 import {AppBottomTabScreenProps} from '../navigators';
-import {BackButtom, Screen, Text} from '../components';
+import {BackButtom, SafeRemoteImage, Screen, Text} from '../components';
 import {Conversation, getConversations} from '../apis/chat';
 import {colors, images, spacing} from '../theme';
-import {parseSource} from '../utils/util';
 import {useAppSelector, useIsForeground} from '../store/hooks';
 import {subscribeToUser} from '../utils/realtime';
 
@@ -145,10 +144,11 @@ const ChatCard = ({
       accessibilityRole="button"
       accessibilityLabel={'Chat with ' + conversation.other_user.name}
     >
-      <Image
+      <SafeRemoteImage
+        uri={conversation.other_user.profile_image}
+        fallback={images.user}
         resizeMode="cover"
         style={styles.userImage}
-        {...parseSource(conversation.other_user.profile_image ?? undefined, images.user)}
       />
       <View style={styles.cardBody}>
         <View style={styles.cardHeading}>

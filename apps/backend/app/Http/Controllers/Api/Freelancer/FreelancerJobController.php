@@ -172,7 +172,7 @@ class FreelancerJobController extends BaseFreelancerController
         if (!$project) {
             return $this->error('Project not found.', 400);
         }
-        $project->base_url = url('/');
+        $project->base_url = rtrim((string) config('app.asset_url'), '/');
 
         return $this->success($project, 'Job details retrieved successfully.');
     }

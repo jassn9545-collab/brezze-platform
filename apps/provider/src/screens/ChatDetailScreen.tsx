@@ -13,7 +13,7 @@ import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import moment from 'moment';
 import {AppStackScreenProps} from '../navigators';
-import {Screen, Text} from '../components';
+import {SafeRemoteImage, Screen, Text} from '../components';
 import {
   ChatMessage,
   Conversation,
@@ -24,7 +24,6 @@ import {
 import {useAppSelector, useIsForeground} from '../store/hooks';
 import {colors, images, spacing} from '../theme';
 import {translate} from '../i18n';
-import {parseSource} from '../utils/util';
 import {subscribeToConversation} from '../utils/realtime';
 
 type Props = AppStackScreenProps<'ChatDetail'>;
@@ -185,8 +184,9 @@ const ChatDetail: FC<Props> = props => {
           <Image source={images.leftArrow} />
         </TouchableOpacity>
         <View style={styles.userName}>
-          <Image
-            {...parseSource(conversation?.other_user.profile_image ?? undefined, images.user)}
+          <SafeRemoteImage
+            uri={conversation?.other_user.profile_image}
+            fallback={images.user}
             style={styles.profileImage}
           />
           <View style={styles.headerText}>

@@ -115,7 +115,7 @@ android {
             initWith release
             signingConfig signingConfigs.debug
             manifestPlaceholders = [usesCleartextTraffic: 'true']
-            buildConfigField "String", "LOCAL_API_BASE_URL", '"http://192.168.1.10:8000/api"'
+            buildConfigField "String", "LOCAL_API_BASE_URL", '"https://hirephpdeveloperindia.com/bezzie/api"'
             matchingFallbacks = ['release']
         }
     }

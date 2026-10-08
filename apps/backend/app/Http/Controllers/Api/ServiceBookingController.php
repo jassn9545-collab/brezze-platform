@@ -276,6 +276,6 @@ class ServiceBookingController extends BaseClientController
             return $path;
         }
 
-        return $request->root().'/'.ltrim(preg_replace('#^/?public/#', '', $path), '/');
+        return rtrim((string) config('app.asset_url'), '/').'/'.ltrim(preg_replace('#^/?public/#', '', $path), '/');
     }
 }

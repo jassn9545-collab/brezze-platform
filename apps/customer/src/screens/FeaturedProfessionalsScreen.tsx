@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { DiscoveryProfessional, getDiscovery } from '../apis/discovery';
-import { BackButtom, Screen, Text, TextField } from '../components';
+import { BackButtom, SafeRemoteImage, Screen, Text, TextField } from '../components';
 import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 import { colors, images } from '../theme';
 
@@ -127,8 +127,9 @@ const FeaturedProfessionalCard: FC<FeaturedProfessionalCardProps> = ({
     <View style={styles.card}>
       <TouchableOpacity style={styles.profileRow} onPress={onPress} accessibilityRole="button">
         <View style={styles.imageWrap}>
-          <Image
-            source={professional.profile_image ? { uri: professional.profile_image } : images.user}
+          <SafeRemoteImage
+            uri={professional.profile_image}
+            fallback={images.user}
             style={styles.profileImage}
           />
           <View style={styles.onlineDot} />

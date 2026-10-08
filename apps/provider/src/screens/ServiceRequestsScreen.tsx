@@ -11,7 +11,7 @@ import {
 import {useFocusEffect} from '@react-navigation/native';
 import moment from 'moment';
 
-import {BackButtom, Screen, Text} from '../components';
+import {BackButtom, SafeRemoteImage, Screen, Text} from '../components';
 import {
   getServiceBookings,
   respondToServiceBooking,
@@ -162,8 +162,9 @@ const BookingCard: FC<CardProps> = ({
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         {booking.client.profile_image ? (
-          <Image
-            source={{uri: booking.client.profile_image}}
+          <SafeRemoteImage
+            uri={booking.client.profile_image}
+            fallback={require('../assets/images/user.png')}
             style={styles.avatar}
           />
         ) : (
@@ -202,7 +203,11 @@ const BookingCard: FC<CardProps> = ({
 
       <View style={styles.serviceRow}>
         {booking.service_image ? (
-          <Image source={{uri: booking.service_image}} style={styles.serviceImage} />
+          <SafeRemoteImage
+            uri={booking.service_image}
+            fallback={require('../assets/images/dummy/plug.png')}
+            style={styles.serviceImage}
+          />
         ) : null}
         <View style={styles.serviceInfo}>
           <Text

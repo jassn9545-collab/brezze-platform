@@ -9,7 +9,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Project;
+use App\Models\Category;
+use App\Models\Review;
 use Illuminate\Support\Str;
+use Throwable;
 
 
 class JobController extends Controller
@@ -17,7 +20,33 @@ class JobController extends Controller
 
     public function index()
     {
-        return view('admin.job.index');
+        return $this->renderIndex('all');
+    }
+
+    public function openJobs()
+    {
+        return $this->renderIndex('open');
+    }
+
+    public function closedJobs()
+    {
+        return $this->renderIndex('closed');
+    }
+
+    private function renderIndex(string $scope)
+    {
+        return view('admin.job.index', [
+            'scope' => $scope,
+            'pageTitle' => match ($scope) {
+                'open' => 'Open Jobs',
+                'closed' => 'Closed Jobs',
+                default => 'All Jobs',
+            },
+            'allCount' => Project::query()->count(),
+            'openCount' => Project::query()->where('status', 'active')->count(),
+            'inProgressCount' => Project::query()->where('status', 'in progress')->count(),
+            'closedCount' => Project::query()->whereIn('status', ['completed', 'deleted'])->count(),
+        ]);
     }
 
     public function create()
@@ -75,52 +104,192 @@ class JobController extends Controller
         ]);
     }
 
-    public function job_list(Request $request){
-        $search  = $request->input('search.value');
-        $start   = $request->input('start', 0);
-        $length  = $request->input('length', 10);
-        $draw    = $request->input('draw');
+    public function job_list(Request $request)
+    {
+        $scope = in_array($request->string('scope')->toString(), ['all', 'open', 'closed'], true)
+            ? $request->string('scope')->toString()
+            : 'all';
+        $search = trim((string) $request->input('search.value', ''));
+        $start = max((int) $request->input('start', 0), 0);
+        $length = min(max((int) $request->input('length', 10), 1), 100);
+        $draw = (int) $request->input('draw', 0);
 
-        $query = Project::with('client')->select('id', 'title', 'slug', 'budget', 'created_at','status','user_id');
+        $query = Project::query();
+        $this->applyScope($query, $scope);
+        $recordsTotal = (clone $query)->count();
 
-        if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                ->orWhere('slug', 'like', "%{$search}%");
+        if ($scope === 'all') {
+            $requestedStatus = $request->string('status')->toString();
+            if (in_array($requestedStatus, ['draft', 'active', 'pause', 'in progress', 'completed', 'deleted'], true)) {
+                $query->where('status', $requestedStatus);
+            }
+        }
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder
+                    ->where('title', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhere('budget', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhereHas('client', function ($client) use ($search) {
+                        $client->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('bids.user', function ($provider) use ($search) {
+                        $provider->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
-        $totalrows = $query->count();
+        $recordsFiltered = (clone $query)->count();
+        $orderableColumns = [
+            0 => 'id',
+            1 => 'title',
+            2 => 'budget',
+            3 => 'status',
+            8 => 'created_at',
+        ];
+        $orderColumn = $orderableColumns[(int) $request->input('order.0.column', 0)] ?? 'id';
+        $orderDirection = strtolower((string) $request->input('order.0.dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $data = $query
-            ->orderBy('id', 'desc')
+        $jobs = $query
+            ->select(['id', 'title', 'slug', 'budget', 'created_at', 'status', 'user_id'])
+            ->with([
+                'client:id,name,email',
+                'hiredBid.user:id,name,email',
+                'payment:id,project_id,status,amount',
+            ])
+            ->withCount('bids')
+            ->orderBy($orderColumn, $orderDirection)
             ->offset($start)
             ->limit($length)
             ->get();
 
-        $final = [];
-        
-        foreach ($data as $row) {
-            $final[] = [
-                "DT_RowId" => $row->id,
-                $row->title,
-                $row->budget,
-                $row->status,
-                '<a href="'.route('admin.users.show', $row->client->id).'" target="_blank">'.$row->client->name.'</a>',
-                date('M d, Y', strtotime($row->created_at)),
-                '<div class="btn-group">
-                    <a href="'.url("admin/project/view/".$row->id).'" class="btn btn-warning"><i class="fa fa-eye"></i></a>
-                    <a href="'.url("admin/project/delete/".$row->id).'" class="btn btn-danger"><i class="fa fa-trash"></i></a>
-                </div>'
+        $data = $jobs->map(function (Project $job) {
+            $client = $job->client
+                ? '<a href="'.route('admin.users.show', $job->client->id).'">'.e($job->client->name).'</a><br><small>'.e($job->client->email).'</small>'
+                : '<span class="text-muted">Deleted client</span>';
+
+            $provider = $job->hiredBid?->user;
+            $providerName = $provider?->name ?: $job->hiredBid?->freelancer_name;
+            $providerHtml = $provider
+                ? '<a href="'.route('admin.users.show', $provider->id).'">'.e($providerName).'</a><br><small>'.e($provider->email).'</small>'
+                : ($providerName ? e($providerName) : '<span class="text-muted">Not assigned</span>');
+
+            $paymentHtml = $job->payment
+                ? $this->paymentBadge($job->payment->status).'<br><small>AUD '.number_format((float) $job->payment->amount, 2).'</small>'
+                : '<span class="badge badge-light">Not paid</span>';
+
+            return [
+                'DT_RowId' => 'job-'.$job->id,
+                '#'.$job->id,
+                '<strong>'.e($job->title ?: 'Untitled job').'</strong>',
+                'AUD '.number_format((float) $job->budget, 2),
+                $this->statusBadge($job->status),
+                $client,
+                $providerHtml,
+                (string) $job->bids_count,
+                $paymentHtml,
+                $this->formatDate($job->created_at),
+                '<a href="'.route('admin.jobs.project_view', $job->id).'" class="btn btn-sm btn-primary" title="View job details"><i class="fa fa-eye"></i> View</a>',
             ];
-        }
+        })->values();
 
         return response()->json([
-            "draw"            => intval($draw),
-            "recordsTotal"    => $totalrows,
-            "recordsFiltered" => $totalrows,
-            "data"            => $final
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
         ]);
+    }
+
+    public function project_view(int $id)
+    {
+        $project = Project::query()
+            ->with([
+                'client:id,name,email,phone,profile_image,street_address,city,state,country,pincode,is_verified,created_at',
+                'images',
+                'bids' => fn ($query) => $query
+                    ->with('user:id,name,email,phone,profile_image,is_verified')
+                    ->orderByDesc('is_hired')
+                    ->orderByDesc('id'),
+                'hiredBid.user:id,name,email,phone,profile_image,is_verified,skills,experience,street_address,city,state,country,pincode',
+                'payment.customer:id,name,email',
+                'payment.provider:id,name,email',
+            ])
+            ->withCount('bids')
+            ->findOrFail($id);
+
+        $categoryIds = collect(explode(',', (string) $project->category))
+            ->map(fn ($id) => trim($id))
+            ->filter(fn ($id) => ctype_digit($id))
+            ->values();
+        $categories = $categoryIds->isEmpty()
+            ? collect()
+            : Category::query()->whereIn('id', $categoryIds)->orderBy('name')->get(['id', 'name']);
+
+        $reviews = Review::query()
+            ->with([
+                'reviewer:id,name,email',
+                'receiver:id,name,email',
+            ])
+            ->where('job_id', $project->id)
+            ->latest('id')
+            ->get();
+
+        return view('admin.job.show', compact('project', 'categories', 'reviews'));
+    }
+
+    private function applyScope($query, string $scope): void
+    {
+        if ($scope === 'open') {
+            $query->where('status', 'active');
+        } elseif ($scope === 'closed') {
+            $query->whereIn('status', ['completed', 'deleted']);
+        }
+    }
+
+    private function statusBadge(?string $status): string
+    {
+        $status = strtolower(trim((string) $status));
+        $class = match ($status) {
+            'active' => 'success',
+            'in progress' => 'primary',
+            'completed' => 'info',
+            'pause' => 'warning',
+            'deleted' => 'danger',
+            default => 'secondary',
+        };
+
+        return '<span class="badge badge-'.$class.'">'.e(ucwords($status ?: 'unknown')).'</span>';
+    }
+
+    private function paymentBadge(?string $status): string
+    {
+        $status = strtolower(trim((string) $status));
+        $class = match ($status) {
+            'succeeded' => 'success',
+            'failed' => 'danger',
+            'cancelled' => 'secondary',
+            default => 'warning',
+        };
+
+        return '<span class="badge badge-'.$class.'">'.e(ucfirst($status ?: 'unknown')).'</span>';
+    }
+
+    private function formatDate($value): string
+    {
+        if (!$value) {
+            return '<span class="text-muted">&mdash;</span>';
+        }
+
+        try {
+            return e(\Carbon\Carbon::parse($value)->format('d M Y, h:i A'));
+        } catch (Throwable) {
+            return e((string) $value);
+        }
     }
 
     public function edit($id)

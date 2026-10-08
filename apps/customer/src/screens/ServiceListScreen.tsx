@@ -1,4 +1,4 @@
-import { BackButtom, Button, Screen, Text, TextField } from '../components';
+import { BackButtom, Button, SafeRemoteImage, Screen, Text, TextField } from '../components';
 import {
     ActivityIndicator,
     Image,
@@ -185,8 +185,9 @@ const Service: FC<Props> = props => {
 
                     </View>
 
-                    <Image
-                        source={item.image_urls[0] ? { uri: item.image_urls[0] } : images.service}
+                    <SafeRemoteImage
+                        uri={item.image_urls[0]}
+                        fallback={images.service}
                         style={styles.serviceImage}
                         resizeMode="cover"
                     />

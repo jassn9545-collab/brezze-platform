@@ -8,6 +8,7 @@ import {
   Button,
   CustomImagePicker,
   Loader,
+  SafeRemoteImage,
   Screen,
   Text,
   TextField,
@@ -31,7 +32,6 @@ import { RootState } from '../store';
 import { Skill } from '../slices/setting.slice';
 import { authActions, updateProfile } from '../slices/auth.slice';
 import { ImagePickerResponse } from 'react-native-image-picker';
-import FastImage from '@d11/react-native-fast-image';
 import { AddressType } from '../slices/address.types';
 
 type NavigationProps = AppStackScreenProps<'EditProfile'>;
@@ -191,10 +191,11 @@ const EditProfile: FC<Props> = props => {
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <View>
-            <FastImage
+            <SafeRemoteImage
               resizeMode="cover"
               style={styles.userImage}
-              source={{ uri: imageURI }}
+              uri={imageURI}
+              fallback={images.user}
             />
             <TouchableOpacity
               style={styles.editImageIcon}

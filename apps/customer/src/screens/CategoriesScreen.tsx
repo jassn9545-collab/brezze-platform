@@ -1,9 +1,8 @@
-import { BackButtom, Screen, Text, } from '../components';
+import { BackButtom, SafeRemoteImage, Screen, Text, } from '../components';
 import {
   ActivityIndicator,
   FlatList,
   // Dimensions,
-  Image,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
@@ -12,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme';
 import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 import { DiscoveryCategory, getDiscovery } from '../apis/discovery';
+import { categoryImage } from '../utils/categoryImage';
 
 type NavigationProps = AppBottomTabScreenProps<'Categories'>;
 // type StoreProps = ConnectedProps<typeof connector>;
@@ -89,7 +89,11 @@ const Categories: FC<Props> = props => {
                 })
               }
             >
-              <Image source={{ uri: item.image_url }} style={styles.categoryImage} />
+              <SafeRemoteImage
+                uri={item.image_url}
+                fallback={categoryImage(item.slug, item.name)}
+                style={styles.categoryImage}
+              />
               <Text
                 text={item.name}
                 weight="regular"

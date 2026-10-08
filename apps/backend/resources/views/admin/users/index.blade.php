@@ -1,29 +1,40 @@
 @extends('admin.layouts.admin')
 
-@section('title', 'Dashboard')
+@section('title', $pageTitle)
 
 @section('content')
-<input type="hidden" id="user_type" value="{{ request('type') }}">
+<input type="hidden" id="user_type" value="{{ $userType }}">
 <div class="block-header">
                 <div class="row">
                     <div class="col-lg-6 col-md-6 col-sm-12">
-                        <h2 class="user-name">Users</h2>
+                        <h2 class="user-name">{{ $pageTitle }}</h2>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}"><i class="fa fa-dashboard"></i></a></li>                            
-                            <li class="breadcrumb-item active">Users</li>
+                            <li class="breadcrumb-item active">{{ $pageTitle }}</li>
                         </ul>
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12">
-                        <div class="d-flex flex-row-reverse">
-                            <div class="page_action">
-                                <a class="btn btn-create" href="{{ route('admin.users.create') }}"><i class="fa fa-plus"></i> Create User</a>
-                            </div>
-                            <div class="p-2 d-flex">
-                                
+                    <div class="col-lg-6 col-md-6 col-sm-12 text-right text-muted pt-2">
+                        Select <strong>View</strong> to see jobs, payments, reviews and account activity.
+                    </div>
+                </div>
+            </div>
+
+            <div class="row clearfix">
+                @foreach([
+                    ['Clients', $counts['clients'], 'fa-user', 'primary'],
+                    ['Professionals', $counts['freelancers'], 'fa-briefcase', 'info'],
+                    ['Verified', $counts['verified'], 'fa-check-circle', 'success'],
+                    ['Pending', $counts['pending'], 'fa-clock-o', 'warning'],
+                ] as [$label, $value, $icon, $colour])
+                    <div class="col-lg-3 col-md-6 col-sm-6">
+                        <div class="card">
+                            <div class="body d-flex align-items-center justify-content-between">
+                                <div><small class="text-muted">{{ $label }}</small><h4 class="mb-0">{{ number_format($value) }}</h4></div>
+                                <i class="fa {{ $icon }} text-{{ $colour }} fa-2x"></i>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endforeach
             </div>
             
             <div class="row clearfix">
@@ -37,7 +48,7 @@
                                             <th>Name</th>
                                             <th>Email</th>
                                             <th>Phone</th>
-                                            <th>Status</th>
+                                            <th>Verification</th>
                                             <th>Featured on Home</th>
                                             <th>Image</th>
                                             <th>Date</th>
@@ -95,14 +106,6 @@
         // account status
         $('#status').on('change', function() {
             table.draw();
-        });
-        $('body').on('click','.btn-danger', function(e) {
-            e.preventDefault();
-            var link = $(this).attr('href');
-            if(!confirm("Are you sure to delete this user?")) {
-                return false;
-            }
-            window.location.href = link;
         });
         $('body').on('change','.user-status', function(e) {
             e.preventDefault();

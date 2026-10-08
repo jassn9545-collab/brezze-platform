@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import URLs from '../config/urls';
+import URLs, { normalizeAssetPayload } from '../config/urls';
 import { authActions } from '../slices/auth.slice';
 import axios from 'axios';
 import { store } from '../store';
@@ -37,6 +37,7 @@ api.interceptors.request.use(async request => {
 });
 api.interceptors.response.use(
     response => {
+        response.data = normalizeAssetPayload(response.data);
         if (response.config.url?.endsWith('/broadcasting/auth')) {
             return response;
         }

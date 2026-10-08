@@ -46,6 +46,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'is_featured' => 'boolean',
+        'is_verified' => 'integer',
     ];
 
     public function proof()
@@ -81,5 +82,40 @@ class User extends Authenticatable
     public function supportRequests()
     {
         return $this->hasMany(SupportRequest::class);
+    }
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class, 'user_id');
+    }
+
+    public function bids()
+    {
+        return $this->hasMany(Bid::class, 'user_id');
+    }
+
+    public function reviewsGiven()
+    {
+        return $this->hasMany(Review::class, 'given_by');
+    }
+
+    public function reviewsReceived()
+    {
+        return $this->hasMany(Review::class, 'given_to');
+    }
+
+    public function withdrawalRequests()
+    {
+        return $this->hasMany(WithdrawalRequest::class, 'provider_id');
+    }
+
+    public function disputesOpened()
+    {
+        return $this->hasMany(Dispute::class, 'opened_by');
+    }
+
+    public function disputesAgainst()
+    {
+        return $this->hasMany(Dispute::class, 'against_user_id');
     }
 }

@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'api_url' => env('API_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/api'),
+
+    'asset_url' => env('ASSET_URL', env('APP_URL', 'http://localhost')),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

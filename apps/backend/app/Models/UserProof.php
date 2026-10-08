@@ -15,4 +15,9 @@ class UserProof extends Model
         'back_image',
         'is_verified'
     ];
+
+    protected $casts = [
+        'is_verified' => 'integer',
+        'expiry_date' => 'date',
+    ];
 }

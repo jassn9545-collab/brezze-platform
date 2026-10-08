@@ -1,6 +1,7 @@
 import {
   Button,
   ProfessionalCard,
+  SafeRemoteImage,
   Screen,
   Text,
   TextField,
@@ -28,6 +29,7 @@ import {
 import { getNotificationFeed } from '../apis/account';
 import { useAppSelector } from '../store/hooks';
 import { subscribeToUser } from '../utils/realtime';
+import { categoryImage } from '../utils/categoryImage';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 // type StoreProps = ConnectedProps<typeof connector>;
@@ -199,7 +201,11 @@ const Home: FC<Props> = (props) => {
                 })
               }
             >
-              <Image source={{ uri: item.image_url }} style={styles.categoryImage} />
+              <SafeRemoteImage
+                uri={item.image_url}
+                fallback={categoryImage(item.slug, item.name)}
+                style={styles.categoryImage}
+              />
               <Text
                 text={item.name}
                 weight="regular"

@@ -11,6 +11,7 @@ import {
 import {
   BackButtom,
   ContextMenu,
+  SafeRemoteImage,
   Screen,
   TapRating,
   Text,
@@ -117,10 +118,11 @@ const Profile: FC<Props> = props => {
       />
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.header}>
-          <FastImage
+          <SafeRemoteImage
             resizeMode="cover"
             style={styles.userImage}
-            source={{ uri: props.baseURl + '/' + props.profileData?.profile_image }}
+            uri={props.profileData?.profile_image ? props.baseURl + '/' + props.profileData.profile_image : null}
+            fallback={images.user}
           />
           <View style={styles.userDetail}>
             <Text size="md" weight="semiBold" text={props.profileData?.name} />

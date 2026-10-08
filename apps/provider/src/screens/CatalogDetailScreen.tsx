@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BackButtom, Screen, Text } from '../components';
+import { BackButtom, SafeRemoteImage, Screen, Text } from '../components';
 import { Currency } from '../config/defaults';
 import { AppStackScreenProps } from '../navigators';
 import { colors, spacing } from '../theme';
@@ -89,8 +89,9 @@ export const CatalogDetailScreen: FC<Props> = ({ navigation, route }) => {
                   }
                   onPress={() => openImageViewer(index)}
                 >
-                  <Image
-                    source={{ uri }}
+                  <SafeRemoteImage
+                    uri={uri}
+                    fallback={require('../assets/images/dummy/plug.png')}
                     resizeMode="cover"
                     style={{ width: galleryWidth, height: galleryHeight }}
                   />

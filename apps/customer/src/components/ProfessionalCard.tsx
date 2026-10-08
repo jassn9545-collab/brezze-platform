@@ -1,10 +1,11 @@
 import React, { FC } from 'react';
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { DiscoveryProfessional } from '../apis/discovery';
 import { Currency } from '../config/defaults';
 import { colors, images, spacing } from '../theme';
 import { commonStyle } from '../theme/style';
 import { Text } from './Text';
+import { SafeRemoteImage } from './SafeRemoteImage';
 
 type ProfessionalCardProps = {
   professional: DiscoveryProfessional;
@@ -37,8 +38,9 @@ export const ProfessionalCard: FC<ProfessionalCardProps> = ({ professional, onPr
       accessibilityRole="button"
     >
       <View style={styles.cardContent}>
-        <Image
-          source={professional.profile_image ? { uri: professional.profile_image } : images.user}
+        <SafeRemoteImage
+          uri={professional.profile_image}
+          fallback={images.user}
           style={styles.profileImage}
         />
 

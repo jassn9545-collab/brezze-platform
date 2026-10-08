@@ -1,4 +1,4 @@
-import { BackButtom, ReadMore, Screen, TapRating, Text } from '../components';
+import { BackButtom, ReadMore, SafeRemoteImage, Screen, TapRating, Text } from '../components';
 import {
   StyleSheet,
   View,
@@ -105,12 +105,11 @@ const ProfessionalProfile: FC<Props> = props => {
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <View>
-            <FastImage
+            <SafeRemoteImage
               resizeMode="cover"
               style={styles.userImage}
-              source={{
-                uri: props.baseURl + '/' + props.profileData?.profile_image,
-              }}
+              uri={props.profileData?.profile_image ? props.baseURl + '/' + props.profileData.profile_image : null}
+              fallback={images.user}
             />
             <View style={styles.verifiedBadge}>
               <Text

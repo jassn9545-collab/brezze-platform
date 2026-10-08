@@ -2,6 +2,8 @@
 
 import {NativeModules} from 'react-native';
 
+const ASSET_BASE_URL = 'https://hirephpdeveloperindia.com/bezzie/public';
+
 const getDevelopmentApiHost = (): string => {
   try {
     const sourceCode = NativeModules.SourceCode;
@@ -25,9 +27,8 @@ const getDevelopmentApiHost = (): string => {
 };
 
 const URLs = {
-  base: __DEV__
-    ? `http://${getDevelopmentApiHost()}:8000/api`
-    : 'https://hirephpdeveloperindia.com/bezzie/api',
+  base: 'https://hirephpdeveloperindia.com/bezzie/api',
+  assets: ASSET_BASE_URL,
 
   realtime: {
     host: __DEV__ ? getDevelopmentApiHost() : 'hirephpdeveloperindia.com',
@@ -78,6 +79,33 @@ const URLs = {
   chatConversations: '/chat/conversations',
   getUserNotifications: '/notifications',
   supportRequests: '/support-requests',
+};
+
+const legacyAssetPattern = /^https?:\/\/hirephpdeveloperindia\.com\/bezzie\/(?!public\/)(?=(?:uploads|assets)\/)/i;
+
+export const normalizeAssetPayload = <T>(value: T, key = ''): T => {
+  if (typeof value === 'string') {
+    if (key === 'base_url' || key === 'image_base_url') {
+      return ASSET_BASE_URL as T;
+    }
+
+    return value.replace(legacyAssetPattern, `${ASSET_BASE_URL}/`) as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(item => normalizeAssetPayload(item)) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([entryKey, entryValue]) => [
+        entryKey,
+        normalizeAssetPayload(entryValue, entryKey),
+      ]),
+    ) as T;
+  }
+
+  return value;
 };
 
 export default URLs;

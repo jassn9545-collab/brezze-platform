@@ -75,10 +75,20 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
 
     Route::get('jobs', [\App\Http\Controllers\Admin\JobController::class, 'index'])->name('admin.jobs.index');
+    Route::get('jobs-open', [\App\Http\Controllers\Admin\JobController::class, 'openJobs'])->name('admin.jobs.open');
+    Route::get('jobs-closed', [\App\Http\Controllers\Admin\JobController::class, 'closedJobs'])->name('admin.jobs.closed');
     Route::post('job-get-ajax', [\App\Http\Controllers\Admin\JobController::class, 'job_list'])->name('admin.jobs.job_list');
     Route::get('project/view/{id}', [\App\Http\Controllers\Admin\JobController::class, 'project_view'])->name('admin.jobs.project_view');
 
     Route::get('/payments', [PaymentController::class, 'index'])->name('admin.payments.index');
+
+    Route::get('/disputes', [\App\Http\Controllers\Admin\DisputeController::class, 'index'])->name('admin.disputes.index');
+    Route::get('/disputes/{dispute}', [\App\Http\Controllers\Admin\DisputeController::class, 'show'])->name('admin.disputes.show');
+    Route::patch('/disputes/{dispute}/status', [\App\Http\Controllers\Admin\DisputeController::class, 'updateStatus'])->name('admin.disputes.update_status');
+
+    Route::get('/withdrawal-requests', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'index'])->name('admin.withdrawals.index');
+    Route::get('/withdrawal-requests/{withdrawal}', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'show'])->name('admin.withdrawals.show');
+    Route::patch('/withdrawal-requests/{withdrawal}/status', [\App\Http\Controllers\Admin\WithdrawalRequestController::class, 'updateStatus'])->name('admin.withdrawals.update_status');
 
 
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('admin.settings');

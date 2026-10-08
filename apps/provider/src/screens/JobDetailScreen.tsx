@@ -1,4 +1,4 @@
-import { BackButtom, Button, Loader, Screen, Text } from '../components';
+import { BackButtom, Button, Loader, SafeRemoteImage, Screen, Text } from '../components';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import React, { FC, useEffect } from 'react';
 import { AppStackScreenProps } from '../navigators';
@@ -9,7 +9,6 @@ import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
 import { getJobDetail } from '../slices/home.slice';
 import { Currency } from '../config/defaults';
-import FastImage from '@d11/react-native-fast-image';
 
 type NavigationProps = AppStackScreenProps<'JobDetail'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -85,13 +84,13 @@ const JobDetail: FC<Props> = props => {
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.main}>
           <TouchableOpacity style={styles.jobLogo} onPress={onPressLogo}>
-            <FastImage
+            <SafeRemoteImage
               resizeMode="cover"
               style={styles.jobLogoStyle}
-              source={{
-                uri:
-                  props.data?.base_url! + '/' + props.data?.images?.[0]?.image,
-              }}
+              uri={props.data?.images?.[0]?.image
+                ? props.data?.base_url! + '/' + props.data.images[0].image
+                : null}
+              fallback={require('../assets/images/dummy/jobLogo.png')}
             />
           </TouchableOpacity>
           <Text

@@ -9,16 +9,16 @@
                             <li>
                                 <a href="#App" class="has-arrow"><i class="fa fa-tasks"></i><span>Jobs</span></a>
                                 <ul aria-expanded="false" class="collapse">
-                                    <li><a href="{{url('admin/jobs')}}">All Jobs</a></li>
-                                    <li><a href="{{url('admin/jobs-open')}}">Open Jobs</a></li>
-                                    <li><a href="{{url('admin/jobs-closed')}}">Closed Jobs</a></li>
+                                    <li><a href="{{ route('admin.jobs.index') }}">All Jobs</a></li>
+                                    <li><a href="{{ route('admin.jobs.open') }}">Open Jobs</a></li>
+                                    <li><a href="{{ route('admin.jobs.closed') }}">Closed Jobs</a></li>
                                 </ul>
                             </li>
                             <li>
-                                <a href="{{ url('admin/coming-soon') }}" class=""><i class="fa fa-gavel"></i><span>Disputes</span></a>
+                                <a href="{{ route('admin.disputes.index') }}" class=""><i class="fa fa-gavel"></i><span>Disputes</span></a>
                             </li>
                             <li>
-                                <a href="{{ url('admin/coming-soon') }}" class=""><i class="fa fa-money"></i><span>Withdrawal Requests</span></a>
+                                <a href="{{ route('admin.withdrawals.index') }}" class=""><i class="fa fa-money"></i><span>Withdrawal Requests</span></a>
                             </li>
                             
                             <li>

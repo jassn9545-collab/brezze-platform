@@ -8,7 +8,7 @@ import {
   Image,
 } from 'react-native';
 import React, { FC, useRef, useState } from 'react';
-import { Screen, Text, BackButtom, Button, TapRating } from '../components';
+import { Screen, Text, BackButtom, Button, TapRating, SafeRemoteImage } from '../components';
 import { colors, spacing, images, typography } from '../theme';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
@@ -66,10 +66,9 @@ const ClientProfileScreen: FC<Props> = props => {
       <Screen preset="auto" contentContainerStyle={styles.container}>
         <View style={styles.profileSection}>
           <View style={styles.avatarWrapper}>
-            <FastImage
-              source={{
-                uri: props.baseURl + '/' + props.profileData?.profile_image,
-              }}
+            <SafeRemoteImage
+              uri={props.profileData?.profile_image ? props.baseURl + '/' + props.profileData.profile_image : null}
+              fallback={images.user}
               style={styles.avatar}
             />
             <View style={styles.tick}>

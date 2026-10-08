@@ -11,7 +11,7 @@ import {
 import React, { FC, useCallback, useRef } from 'react';
 import { colors, images, spacing } from '../theme';
 import { BookingScreenProps } from '../navigators';
-import { Loader, Text } from '../components';
+import { Loader, SafeRemoteImage, Text } from '../components';
 import { Currency } from '../config/defaults';
 import { RootState } from '../store';
 import { connect, ConnectedProps } from 'react-redux';
@@ -21,7 +21,6 @@ import ListEmptyComponent from '../components/ListEmptyComponent';
 import { Job } from '../slices/types';
 import { getStatusStyle } from '../utils/util';
 import moment from 'moment';
-import FastImage from '@d11/react-native-fast-image';
 import { useAppSelector } from '../store/hooks';
 import { subscribeToUser } from '../utils/realtime';
 
@@ -159,7 +158,7 @@ export const TripCell: FC<TripCellProps> = ({
       <Text size="sm" weight="medium" text={item.title} />
       <View style={$rowWrapper}>
         {item?.client_profile_pic || item?.client?.profile_image ? (
-          <FastImage
+          <SafeRemoteImage
             resizeMode="cover"
             style={{
               width: spacing.xl,
@@ -167,12 +166,12 @@ export const TripCell: FC<TripCellProps> = ({
               borderRadius: spacing.md,
               backgroundColor: colors.primaryDimmed,
             }}
-            source={{
-              uri:
-                baseURl +
-                '/' +
-                (item?.client_profile_pic ?? item?.client?.profile_image),
-            }}
+            uri={
+              baseURl +
+              '/' +
+              (item?.client_profile_pic ?? item?.client?.profile_image)
+            }
+            fallback={images.user}
           />
         ) : (
           <View style={$imageName}>

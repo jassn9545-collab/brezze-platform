@@ -20,3 +20,4 @@ export * from './AddressSearchModal';
 export * from './ListEmptyComponent';
 export * from './ReadMore';
 export * from './ImageViewer';
+export * from './SafeRemoteImage';

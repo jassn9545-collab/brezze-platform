@@ -24,12 +24,12 @@ const getDevelopmentApiHost = () => {
   return DEVELOPMENT_FALLBACK_HOST;
 };
 
-const API_BASE_URL = __DEV__
-  ? `http://${getDevelopmentApiHost()}:8000/api`
-  : 'https://hirephpdeveloperindia.com/bezzie/api';
+const API_BASE_URL = 'https://hirephpdeveloperindia.com/bezzie/api';
+const ASSET_BASE_URL = 'https://hirephpdeveloperindia.com/bezzie/public';
 
 const URLs = {
   base: API_BASE_URL,
+  assets: ASSET_BASE_URL,
   realtime: {
     host: __DEV__ ? getDevelopmentApiHost() : 'hirephpdeveloperindia.com',
     port: __DEV__ ? 8083 : 443,
@@ -85,6 +85,33 @@ const URLs = {
 
   // Review Api 
   submitReview: '/submit-review',
+};
+
+const legacyAssetPattern = /^https?:\/\/hirephpdeveloperindia\.com\/bezzie\/(?!public\/)(?=(?:uploads|assets)\/)/i;
+
+export const normalizeAssetPayload = <T>(value: T, key = ''): T => {
+  if (typeof value === 'string') {
+    if (key === 'base_url' || key === 'image_base_url') {
+      return ASSET_BASE_URL as T;
+    }
+
+    return value.replace(legacyAssetPattern, `${ASSET_BASE_URL}/`) as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(item => normalizeAssetPayload(item)) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([entryKey, entryValue]) => [
+        entryKey,
+        normalizeAssetPayload(entryValue, entryKey),
+      ]),
+    ) as T;
+  }
+
+  return value;
 };
 
 export default URLs;
