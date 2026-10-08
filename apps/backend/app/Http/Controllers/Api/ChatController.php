@@ -9,10 +9,13 @@ use App\Models\ChatMessage;
 use App\Models\Project;
 use App\Models\ServiceBooking;
 use App\Models\User;
+use App\Events\ChatMessageSent;
+use App\Services\RealtimeNotifier;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 class ChatController extends Controller
 {
@@ -249,6 +252,26 @@ class ChatController extends Controller
 
             return $message;
         });
+
+        $recipientId = (int) $conversation->client_id === (int) $request->user()->id
+            ? (int) $conversation->provider_id
+            : (int) $conversation->client_id;
+
+        try {
+            ChatMessageSent::dispatch($message, $recipientId);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+        app(RealtimeNotifier::class)->notify(
+            $recipientId,
+            $request->user()->name ?: 'New message',
+            mb_strimwidth($body, 0, 140, '…'),
+            'chat_message',
+            'conversation',
+            $conversation->id,
+            ['conversation_id' => $conversation->id],
+            'You have a new message.',
+        );
 
         return $this->success(['message' => $this->messageData($message)], 'Message sent.', 201);
     }

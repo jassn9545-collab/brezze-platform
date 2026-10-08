@@ -14,7 +14,7 @@ use App\Models\Project;
 use App\Models\ProjectImage;
 use App\Models\Payment;
 use App\Models\Review;
-use App\Models\UserNotification;
+use App\Services\RealtimeNotifier;
 use App\Models\Bid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -136,22 +136,15 @@ class FreelancerJobController extends BaseFreelancerController
         $project->setAttribute('bid_amount', $bid->bid_amount);
 
         if ($created) {
-            try {
-                UserNotification::firstOrCreate(
-                    [
-                        'user_id' => $project->user_id,
-                        'type' => 'job_application',
-                        'action_type' => 'project',
-                        'action_id' => $project->id,
-                    ],
-                    [
-                        'title' => 'New job application',
-                        'message' => ($user->name ?: 'A provider').' applied for '.$project->title.'.',
-                    ]
-                );
-            } catch (\Throwable $exception) {
-                report($exception);
-            }
+            app(RealtimeNotifier::class)->notify(
+                $project->user_id,
+                'New job application',
+                ($user->name ?: 'A provider').' applied for '.$project->title.'.',
+                'job_application',
+                'project',
+                $project->id,
+                ['bid_id' => $bid->id]
+            );
         }
 
         return $this->success(
@@ -610,14 +603,15 @@ class FreelancerJobController extends BaseFreelancerController
                     ->subject('Work Submitted for Your Project');
         });
 
-        UserNotification::create([
-            'user_id' => $bid->project->user_id,
-            'title' => 'Work submitted',
-            'message' => ($request->user()->name ?: 'Your provider').' submitted work for '.$bid->project->title.'.',
-            'type' => 'work_submitted',
-            'action_type' => 'project',
-            'action_id' => $bid->project->id,
-        ]);
+        app(RealtimeNotifier::class)->notify(
+            $bid->project->user_id,
+            'Work submitted',
+            ($request->user()->name ?: 'Your provider').' submitted work for '.$bid->project->title.'.',
+            'work_submitted',
+            'project',
+            $bid->project->id,
+            ['status' => 'in progress'],
+        );
 
         return $this->success(null, 'Work submitted successfully.');
     }
@@ -672,6 +666,16 @@ class FreelancerJobController extends BaseFreelancerController
             'review' => $request->review,
             'review_to' => $reviewTo,
         ]);
+
+        app(RealtimeNotifier::class)->notify(
+            $receiverId,
+            'New review received',
+            ($reviewer->name ?: 'A user').' left a '.$request->star.'-star review for '.$project->title.'.',
+            'review_received',
+            'project',
+            $project->id,
+            ['review_id' => $review->id, 'rating' => (int) $request->star],
+        );
 
         $review->setAttribute('already_reviewed', false);
 

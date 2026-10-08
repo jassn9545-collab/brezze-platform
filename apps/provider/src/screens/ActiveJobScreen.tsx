@@ -22,6 +22,8 @@ import { Job } from '../slices/types';
 import { getStatusStyle } from '../utils/util';
 import moment from 'moment';
 import FastImage from '@d11/react-native-fast-image';
+import { useAppSelector } from '../store/hooks';
+import { subscribeToUser } from '../utils/realtime';
 
 type ScreenProps = BookingScreenProps<'ActiveJob'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -30,6 +32,21 @@ type Props = ScreenProps & StoreProps;
 let page = 1;
 const ActiveJob: FC<Props> = props => {
   const flatlist = useRef<FlatList>(null);
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
+  const { get } = props;
+
+  const getData = useCallback(() => {
+    get({
+      page: page,
+      limit: 10,
+    });
+  }, [get]);
+
+  const load = useCallback(() => {
+    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
+    page = 1;
+    getData();
+  }, [getData]);
 
   const loadMore = () => {
     if (
@@ -42,21 +59,14 @@ const ActiveJob: FC<Props> = props => {
     }
   };
 
-  const load = () => {
-    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
-    page = 1;
-    getData();
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useFocusEffect(useCallback(load, []));
-
-  const getData = () => {
-    props.get({
-      page: page,
-      limit: 10,
-    });
-  };
+  useFocusEffect(useCallback(() => {
+    load();
+    return ownUserId
+      ? subscribeToUser(Number(ownUserId), () => undefined, event => {
+          if (event.kind === 'job_in_progress' || event.kind === 'job_completed') load();
+        })
+      : undefined;
+  }, [load, ownUserId]));
 
   const loading = props.fetching === 'loading';
 
@@ -111,6 +121,7 @@ type TripCellProps = {
   baseURl: string;
   viewDetail?: () => void;
   onChat?: () => void;
+  onReview?: () => void;
   cancelAction?: () => void;
 };
 
@@ -121,6 +132,7 @@ export const TripCell: FC<TripCellProps> = ({
   baseURl,
   viewDetail,
   onChat,
+  onReview,
 }) => {
   const status = getStatusStyle(item?.status);
   return (
@@ -249,6 +261,16 @@ export const TripCell: FC<TripCellProps> = ({
           <Text tx="chat.messageClient" size="xs" weight="semiBold" style={$chatText} />
         </TouchableOpacity>
       )}
+      {onReview && (
+        <TouchableOpacity
+          onPress={onReview}
+          style={$reviewButton}
+          accessibilityRole="button"
+          accessibilityLabel="Review customer"
+        >
+          <Text text="Review Customer" size="xs" weight="semiBold" style={$reviewText} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -347,6 +369,16 @@ const $chatButton: ViewStyle = {
 
 const $chatIcon: ImageStyle = { width: spacing.md, height: spacing.md, resizeMode: 'contain' };
 const $chatText: TextStyle = { color: colors.primary };
+
+const $reviewButton: ViewStyle = {
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: spacing.xs,
+  backgroundColor: colors.primary,
+  borderRadius: spacing.xs,
+};
+
+const $reviewText: TextStyle = { color: colors.palette.white };
 
 const $arrow: ImageStyle = {
   transform: [{ rotate: '180deg' }],

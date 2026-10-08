@@ -41,6 +41,9 @@ import { Currency } from '../config/defaults';
 import { HITSLOP } from '../utils/util';
 import { getCurrentLoaction, requestPermission } from '../utils/Location';
 import { useFocusEffect } from '@react-navigation/native';
+import { getNotificationFeed } from '../apis/account';
+import { subscribeToUser } from '../utils/realtime';
+import { useAppSelector } from '../store/hooks';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -65,6 +68,8 @@ const Home: FC<Props> = props => {
   } | null>(null);
   const [checkingLocation, setCheckingLocation] = useState(true);
   const [locationDenied, setLocationDenied] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
   const fetching = props.loading === 'loading';
   const getJobs = props.get;
 
@@ -181,6 +186,31 @@ const Home: FC<Props> = props => {
     }, [refreshJobs]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const refreshUnreadCount = () => {
+        getNotificationFeed()
+          .then(feed => {
+            if (active) setUnreadNotifications(feed.unread_count);
+          })
+          .catch(() => undefined);
+      };
+
+      refreshUnreadCount();
+      const unsubscribe = ownUserId
+        ? subscribeToUser(Number(ownUserId), () => undefined, event => {
+            if (event.notification) refreshUnreadCount();
+          })
+        : undefined;
+
+      return () => {
+        active = false;
+        unsubscribe?.();
+      };
+    }, [ownUserId]),
+  );
+
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
@@ -222,9 +252,20 @@ const Home: FC<Props> = props => {
         </TouchableOpacity>
         <Text weight="medium" size="lg" tx="home.jobs" />
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Open notifications"
           onPress={() => props.navigation.navigate('Notification')}
+          style={styles.notificationButton}
         >
           <Image source={images.notification} />
+          {unreadNotifications > 0 ? (
+            <View style={styles.notificationBadge}>
+              <Text
+                text={unreadNotifications > 99 ? '99+' : String(unreadNotifications)}
+                style={styles.notificationBadgeText}
+              />
+            </View>
+          ) : null}
         </TouchableOpacity>
       </View>
       <Screen preset="fixed" contentContainerStyle={styles.container}>
@@ -406,6 +447,29 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxs,
     marginHorizontal: spacing.md,
     justifyContent: 'space-between',
+  },
+  notificationButton: {
+    position: 'relative',
+    padding: 2,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.error,
+    borderWidth: 1,
+    borderColor: colors.palette.white,
+  },
+  notificationBadgeText: {
+    color: colors.palette.white,
+    fontSize: 10,
+    lineHeight: 12,
   },
   wrapHeaderSearch: {
     gap: spacing.xs,

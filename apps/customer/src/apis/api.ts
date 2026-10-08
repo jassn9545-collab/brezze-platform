@@ -37,6 +37,9 @@ api.interceptors.request.use(async request => {
 });
 api.interceptors.response.use(
     response => {
+        if (response.config.url?.endsWith('/broadcasting/auth')) {
+            return response;
+        }
         if (response.data != null && response.data.status === 'success') {
             // const {
             //   data,

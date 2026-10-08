@@ -1,4 +1,4 @@
-import React, {FC, useCallback, useRef, useState} from 'react';
+import React, {FC, useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -25,6 +25,7 @@ import {useAppSelector, useIsForeground} from '../store/hooks';
 import {colors, images, spacing} from '../theme';
 import {translate} from '../i18n';
 import {parseSource} from '../utils/util';
+import {subscribeToConversation} from '../utils/realtime';
 
 type Props = AppStackScreenProps<'ChatDetail'>;
 
@@ -38,6 +39,9 @@ const ChatDetail: FC<Props> = props => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [sending, setSending] = useState(false);
+  const [realtimeConversationId, setRealtimeConversationId] = useState<number | null>(
+    props.route.params.conversationId ?? null,
+  );
   const conversationIdRef = useRef<number | null>(
     props.route.params.conversationId ?? null,
   );
@@ -89,6 +93,7 @@ const ChatDetail: FC<Props> = props => {
       if (!conversationIdRef.current && props.route.params.projectId) {
         const created = await getOrCreateConversation(props.route.params.projectId);
         conversationIdRef.current = created.id;
+        setRealtimeConversationId(created.id);
         if (activeRef.current) {
           setConversation(created);
         }
@@ -108,12 +113,27 @@ const ChatDetail: FC<Props> = props => {
     }
   }, [loadMessages, props.route.params.projectId]);
 
+  useEffect(() => {
+    if (!isForeground || !realtimeConversationId) return;
+    return subscribeToConversation(realtimeConversationId, incoming => {
+      if (!activeRef.current) return;
+      latestMessageIdRef.current = Math.max(latestMessageIdRef.current, incoming.id);
+      setMessages(current => {
+        const merged = new Map(current.map(item => [item.id, item]));
+        merged.set(incoming.id, incoming);
+        return [...merged.values()].sort(
+          (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.id - b.id,
+        );
+      });
+    });
+  }, [isForeground, realtimeConversationId]);
+
   useFocusEffect(
     useCallback(() => {
       if (!isForeground) return;
       activeRef.current = true;
       initialize();
-      const timer = setInterval(() => loadMessages(false), 5000);
+      const timer = setInterval(() => loadMessages(false), 30000);
       return () => {
         activeRef.current = false;
         clearInterval(timer);
@@ -152,7 +172,6 @@ const ChatDetail: FC<Props> = props => {
       preset="fixed"
       style={styles.screen}
       safeAreaEdges={['top']}
-      keyboardOffset={-insets.bottom}
       keyboardAvoidingViewProps={Platform.OS === 'android' ? {behavior: undefined} : undefined}
       contentContainerStyle={styles.container}
     >
@@ -295,7 +314,7 @@ const styles = StyleSheet.create({
   sentText: {color: colors.palette.white},
   receivedText: {color: colors.text},
   timeText: {marginTop: spacing.xxxs, color: colors.textDim},
-  bottomView: {minHeight: 56, maxHeight: 120, borderWidth: 1, alignItems: 'center', flexDirection: 'row', paddingLeft: spacing.sm, borderRadius: spacing.xl, marginHorizontal: spacing.md, borderColor: colors.palette.light, backgroundColor: colors.palette.white},
+  bottomView: {minHeight: 56, maxHeight: 120, borderWidth: 1, alignItems: 'center', flexDirection: 'row', paddingLeft: spacing.sm, borderRadius: spacing.xl, marginHorizontal: spacing.md, marginBottom: spacing.xs, borderColor: colors.palette.light, backgroundColor: colors.palette.white},
   messageInput: {flex: 1, minWidth: 0, minHeight: 52, maxHeight: 118, fontSize: 16, color: colors.text, paddingHorizontal: spacing.md, paddingVertical: spacing.xs},
   sendBtn: {width: 48, height: 48, marginLeft: spacing.xs, marginRight: spacing.sm, alignItems: 'center', justifyContent: 'center'},
   sendIcon: {width: 44, height: 44, resizeMode: 'contain'},

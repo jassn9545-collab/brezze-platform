@@ -18,6 +18,9 @@
 		93426CB70E5BD4C2F9415850 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		D65570B5AA2444548BEF8662 /* Montserrat-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 050FFC51DF07463DA9FE076C /* Montserrat-ExtraBold.ttf */; };
 		E9668AC28EDF480A95A7B296 /* Montserrat-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA3B8942AFC649089812D506 /* Montserrat-Medium.ttf */; };
+		3ACE495F802F46A2ACA94CE2 /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6D7B955AFF314FFE94C7C8ED /* BootSplash.storyboard */; };
+		7D32DA9C7E36499A905158D5 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF7E8114C5F04CA2890DC93F /* Colors.xcassets */; };
+		A1F2B3C4D5E60718293A4B5C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B2F3C4D5E60718293A4B5C6D /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +40,9 @@
 		8B86D050E3F44E34A17FEEC0 /* Montserrat-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Montserrat-Light.ttf"; path = "../src/assets/fonts/Montserrat-Light.ttf"; sourceTree = "<group>"; };
 		AA3B8942AFC649089812D506 /* Montserrat-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Montserrat-Medium.ttf"; path = "../src/assets/fonts/Montserrat-Medium.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		6D7B955AFF314FFE94C7C8ED /* BootSplash.storyboard */ = {isa = PBXFileReference; name = "BootSplash.storyboard"; path = "Bezzie/BootSplash.storyboard"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		BF7E8114C5F04CA2890DC93F /* Colors.xcassets */ = {isa = PBXFileReference; name = "Colors.xcassets"; path = "Bezzie/Colors.xcassets"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = folder.assetcatalog; explicitFileType = undefined; includeInIndex = 0; };
+		B2F3C4D5E60718293A4B5C6D /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Bezzie/GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +65,9 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
+				6D7B955AFF314FFE94C7C8ED /* BootSplash.storyboard */,
+				BF7E8114C5F04CA2890DC93F /* Colors.xcassets */,
+				B2F3C4D5E60718293A4B5C6D /* GoogleService-Info.plist */,
 			);
 			name = Bezzie;
 			sourceTree = "<group>";
@@ -159,6 +168,14 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1120;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -194,6 +211,9 @@
 				581D62B1FA2344519A0F0CDA /* Montserrat-SemiBold.ttf in Resources */,
 				D65570B5AA2444548BEF8662 /* Montserrat-ExtraBold.ttf in Resources */,
 				28502E5822104470903AFE8F /* Montserrat-Regular.ttf in Resources */,
+				3ACE495F802F46A2ACA94CE2 /* BootSplash.storyboard in Resources */,
+				7D32DA9C7E36499A905158D5 /* Colors.xcassets in Resources */,
+				A1F2B3C4D5E60718293A4B5C /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,8 +310,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-Bezzie.debug.xcconfig */;
 			buildSettings = {
+				APS_ENVIRONMENT = development;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Bezzie/Bezzie.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Bezzie/Info.plist;
@@ -306,7 +328,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bezzie;
 				PRODUCT_NAME = Bezzie;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -318,8 +340,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-Bezzie.release.xcconfig */;
 			buildSettings = {
+				APS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Bezzie/Bezzie.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = Bezzie/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -333,7 +357,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bezzie;
 				PRODUCT_NAME = Bezzie;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";

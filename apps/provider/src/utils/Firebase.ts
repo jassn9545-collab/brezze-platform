@@ -1,3 +1,60 @@
+import {getApp} from '@react-native-firebase/app';
+import {
+  AuthorizationStatus,
+  getMessaging,
+  getToken,
+  onMessage,
+  onTokenRefresh,
+  registerDeviceForRemoteMessages,
+  requestPermission,
+} from '@react-native-firebase/messaging';
+import {PermissionsAndroid, Platform} from 'react-native';
+import api from '../apis/api';
+
+const registerToken = async (token: string) => {
+  await api.post('/devices', {token, platform: Platform.OS, app_type: 'provider'});
+};
+
+export const startFirebaseNotifications = async () => {
+  try {
+    const messaging = getMessaging(getApp());
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+    }
+    await registerDeviceForRemoteMessages(messaging);
+    const permission = await requestPermission(messaging);
+    const allowed = permission === AuthorizationStatus.AUTHORIZED
+      || permission === AuthorizationStatus.PROVISIONAL;
+    if (!allowed && Platform.OS === 'ios') return () => undefined;
+
+    await registerToken(await getToken(messaging));
+    const unsubscribeRefresh = onTokenRefresh(messaging, token => {
+      registerToken(token).catch(() => undefined);
+    });
+    const unsubscribeMessage = onMessage(messaging, message => {
+      const title = message.notification?.title ?? 'Our Bezzie';
+      const body = message.notification?.body;
+      toast.show(body ? `${title}: ${body}` : title, {type: 'normal'});
+    });
+
+    return () => {
+      unsubscribeRefresh();
+      unsubscribeMessage();
+    };
+  } catch {
+    return () => undefined;
+  }
+};
+
+export const unregisterFirebaseDevice = async () => {
+  try {
+    const token = await getToken(getMessaging(getApp()));
+    await api.delete('/devices', {data: {token}});
+  } catch {
+    // Logout must still succeed when Firebase has not been configured.
+  }
+};
+
 // import notifee, {
 //   AndroidImportance,
 //   AndroidStyle,

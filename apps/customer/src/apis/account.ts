@@ -12,6 +12,11 @@ export type AppNotification = {
   created_at: string;
 };
 
+export type NotificationFeed = {
+  notifications: AppNotification[];
+  unread_count: number;
+};
+
 export type PrivacyPolicy = {
   updated_at: string;
   title: string;
@@ -29,10 +34,16 @@ export type SupportRequestParams = {
   message: string;
 };
 
-export const getNotifications = async (): Promise<AppNotification[]> => {
+export const getNotificationFeed = async (): Promise<NotificationFeed> => {
   const response = await api.get(URLs.getUserNotifications);
-  return response.data.data.notifications ?? [];
+  return {
+    notifications: response.data.data.notifications ?? [],
+    unread_count: Number(response.data.data.unread_count ?? 0),
+  };
 };
+
+export const getNotifications = async (): Promise<AppNotification[]> =>
+  (await getNotificationFeed()).notifications;
 
 export const markNotificationRead = async (notificationId: number) => {
   await api.post(`${URLs.getUserNotifications}/${notificationId}/read`);

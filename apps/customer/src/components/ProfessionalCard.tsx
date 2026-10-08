@@ -11,57 +11,72 @@ type ProfessionalCardProps = {
   onPress: () => void;
 };
 
-export const ProfessionalCard: FC<ProfessionalCardProps> = ({ professional, onPress }) => (
-  <TouchableOpacity
-    style={[styles.card, commonStyle.customShadow]}
-    onPress={onPress}
-    accessibilityRole="button"
-  >
-    <View style={styles.cardContent}>
-      <Image
-        source={professional.profile_image ? { uri: professional.profile_image } : images.user}
-        style={styles.profileImage}
-      />
+export const ProfessionalCard: FC<ProfessionalCardProps> = ({ professional, onPress }) => {
+  const categories = professional.categories.filter(
+    (category, index, items) =>
+      items.findIndex(
+        item =>
+          item.id === category.id ||
+          item.name.trim().toLowerCase() === category.name.trim().toLowerCase(),
+      ) === index,
+  );
+  const profileTitle = professional.profile_title?.trim();
+  const title =
+    profileTitle || categories.map(category => category.name).join(' · ') || 'Service professional';
+  const normalizedTitle = title.toLowerCase();
+  const visibleCategories = profileTitle
+    ? categories
+        .filter(category => !normalizedTitle.includes(category.name.trim().toLowerCase()))
+        .slice(0, 2)
+    : [];
 
-      <View style={styles.details}>
-        <Text text={professional.name} weight="semiBold" />
+  return (
+    <TouchableOpacity
+      style={[styles.card, commonStyle.customShadow]}
+      onPress={onPress}
+      accessibilityRole="button"
+    >
+      <View style={styles.cardContent}>
+        <Image
+          source={professional.profile_image ? { uri: professional.profile_image } : images.user}
+          style={styles.profileImage}
+        />
+
+        <View style={styles.details}>
+          <Text text={professional.name} weight="semiBold" />
+          <Text text={title} size="xs" />
+
+          {visibleCategories.length > 0 ? (
+            <View style={styles.tagContainer}>
+              {visibleCategories.map(category => (
+                <View key={category.id} style={styles.tag}>
+                  <Text text={category.name} size="xxs" />
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+
+        <Text text={`⭐ ${professional.rating || 'New'}`} />
+      </View>
+
+      <View style={styles.cardBottom}>
         <Text
           text={
-            professional.profile_title ||
-            professional.categories.map(category => category.name).join(' · ') ||
-            'Service professional'
+            professional.starting_price
+              ? `From ${Currency.code} ${Currency.sign}${professional.starting_price}`
+              : `${professional.catalog_count} service${professional.catalog_count === 1 ? '' : 's'}`
           }
           size="xs"
         />
 
-        <View style={styles.tagContainer}>
-          {professional.categories.slice(0, 2).map(category => (
-            <View key={category.id} style={styles.tag}>
-              <Text text={category.name} size="xxs" />
-            </View>
-          ))}
-        </View>
+        <TouchableOpacity style={styles.profileBtn} onPress={onPress} accessibilityRole="button">
+          <Text tx="home.viewProfile" size="xxs" weight="bold" style={styles.viewProfileText} />
+        </TouchableOpacity>
       </View>
-
-      <Text text={`⭐ ${professional.rating || 'New'}`} />
-    </View>
-
-    <View style={styles.cardBottom}>
-      <Text
-        text={
-          professional.starting_price
-            ? `From ${Currency.code} ${Currency.sign}${professional.starting_price}`
-            : `${professional.catalog_count} service${professional.catalog_count === 1 ? '' : 's'}`
-        }
-        size="xs"
-      />
-
-      <TouchableOpacity style={styles.profileBtn} onPress={onPress} accessibilityRole="button">
-        <Text tx="home.viewProfile" size="xxs" weight="bold" style={styles.viewProfileText} />
-      </TouchableOpacity>
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   card: {

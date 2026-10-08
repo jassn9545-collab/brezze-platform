@@ -3,6 +3,7 @@
 use App\Models\Bid;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -101,6 +102,12 @@ it('accepts a positive bid below the customer budget', function () {
         ->assertJsonPath('data.already_applied', false);
 
     expect(Bid::query()->count())->toBe(1);
+    expect(UserNotification::query()
+        ->where('user_id', $this->client->id)
+        ->where('type', 'job_application')
+        ->where('action_type', 'project')
+        ->where('action_id', $this->project->id)
+        ->count())->toBe(1);
 });
 
 it('treats a repeated application as an idempotent success', function () {
@@ -117,6 +124,7 @@ it('treats a repeated application as an idempotent success', function () {
         ->assertJsonPath('data.bid_amount', '31');
 
     expect(Bid::query()->count())->toBe(1);
+    expect(UserNotification::query()->where('user_id', $this->client->id)->count())->toBe(1);
 });
 
 it('rejects invalid bid amounts before creating a bid', function (string $amount) {

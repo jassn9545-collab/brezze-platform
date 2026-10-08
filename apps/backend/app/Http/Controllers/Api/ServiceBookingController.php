@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use App\Services\RealtimeNotifier;
 
 class ServiceBookingController extends BaseClientController
 {
@@ -95,6 +96,16 @@ class ServiceBookingController extends BaseClientController
             'status' => 'pending',
         ]);
         $booking->load(['catalog', 'client:id,name,profile_image', 'provider:id,name,profile_image']);
+
+        app(RealtimeNotifier::class)->notify(
+            $booking->provider_id,
+            'New service request',
+            ($request->user()->name ?: 'A customer').' requested '.$catalog->heading.'.',
+            'service_booking_created',
+            'booking',
+            $booking->id,
+            ['status' => 'pending', 'booking_id' => $booking->id],
+        );
 
         return $this->success(
             ['booking' => $this->bookingData($booking, $request)],
@@ -203,6 +214,28 @@ class ServiceBookingController extends BaseClientController
         $message = $booking->status === 'accepted'
             ? 'Service request accepted. The job and chat are now active.'
             : 'Service request rejected.';
+
+        if ($booking->status === 'accepted') {
+            app(RealtimeNotifier::class)->notify(
+                $booking->client_id,
+                'Service request accepted',
+                ($booking->catalog?->heading ?: 'Your job').' is now in progress.',
+                'job_in_progress',
+                'project',
+                $booking->project_id,
+                ['status' => 'in progress', 'booking_id' => $booking->id],
+            );
+        } else {
+            app(RealtimeNotifier::class)->notify(
+                $booking->client_id,
+                'Service request declined',
+                ($booking->catalog?->heading ?: 'Your service request').' was declined.',
+                'service_booking_rejected',
+                'booking',
+                $booking->id,
+                ['status' => 'rejected', 'booking_id' => $booking->id],
+            );
+        }
 
         return $this->success(['booking' => $this->bookingData($booking, $request)], $message);
     }

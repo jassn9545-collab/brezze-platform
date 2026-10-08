@@ -16,11 +16,14 @@ import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 import { colors, images, spacing } from '../theme';
 import { parseSource } from '../utils/util';
 import { useIsForeground } from '../store/hooks';
+import { useAppSelector } from '../store/hooks';
+import { subscribeToUser } from '../utils/realtime';
 
 type Props = AppBottomTabScreenProps<'Chat'>;
 
 const Chat: FC<Props> = ({ navigation }) => {
   const isForeground = useIsForeground();
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,14 +64,18 @@ const Chat: FC<Props> = ({ navigation }) => {
     focused.current = true;
     autoRefreshEnabled.current = true;
     loadConversations('initial');
+    const unsubscribe = ownUserId
+      ? subscribeToUser(Number(ownUserId), () => loadConversations('silent'))
+      : undefined;
     const interval = setInterval(() => {
       if (autoRefreshEnabled.current) loadConversations('silent');
-    }, 5000);
+    }, 30000);
     return () => {
       focused.current = false;
+      unsubscribe?.();
       clearInterval(interval);
     };
-  }, [loadConversations, isForeground]));
+  }, [loadConversations, isForeground, ownUserId]));
 
   const goBackToHome = () => {
     navigation.navigate('Home');

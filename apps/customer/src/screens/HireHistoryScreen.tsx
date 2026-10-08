@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { getJobList } from '../slices/job.slice';
 import { Bid, Job } from '../slices/types';
 import ListEmptyComponent from '../components/ListEmptyComponent';
+import { subscribeToUser } from '../utils/realtime';
 
 type Props = AppStackScreenProps<'HireHistory'>;
 
@@ -27,6 +28,7 @@ const HireHistory: FC<Props> = props => {
   const total = useAppSelector(state => state.job.totalCountJobs);
   const loading = useAppSelector(state => state.job.jobListLoading === 'loading');
   const baseUrl = useAppSelector(state => state.setting.basic?.base_url ?? '');
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
 
   const loadHistory = useCallback(
     (nextPage: number) => {
@@ -39,7 +41,15 @@ const HireHistory: FC<Props> = props => {
     useCallback(() => {
       page = 1;
       loadHistory(1);
-    }, [loadHistory]),
+      return ownUserId
+        ? subscribeToUser(Number(ownUserId), () => undefined, event => {
+            if (event.kind === 'job_in_progress' || event.kind === 'job_completed') {
+              page = 1;
+              loadHistory(1);
+            }
+          })
+        : undefined;
+    }, [loadHistory, ownUserId]),
   );
 
   const refresh = () => {

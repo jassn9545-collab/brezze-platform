@@ -33,4 +33,5 @@ export * from './ProfileScreen';
 export * from './EditProfileScreen';
 export * from './AddCatalogModal';
 export * from './HelpSupportScreen';
+export * from './ReviewScreen';
 export * from './CenterModal';

@@ -50,6 +50,7 @@ export type AppStackParamList = {
   Notification: undefined;
   EditProfile: undefined;
   HelpSupport: undefined;
+  ReviewScreen: { jobId: number };
 
   //modal
   JobApplySucessModal: undefined;
@@ -148,6 +149,7 @@ export const AppStack: FC = () => {
       />
       <Stack.Screen name="EditProfile" component={Screens.EditProfileScreen} />
       <Stack.Screen name="HelpSupport" component={Screens.HelpSupportScreen} />
+      <Stack.Screen name="ReviewScreen" component={Screens.ReviewScreen} />
 
       <Stack.Group
         screenOptions={{

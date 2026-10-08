@@ -30,8 +30,12 @@ const API_BASE_URL = __DEV__
 
 const URLs = {
   base: API_BASE_URL,
-
-  socketUrl: '',
+  realtime: {
+    host: __DEV__ ? getDevelopmentApiHost() : 'hirephpdeveloperindia.com',
+    port: __DEV__ ? 8083 : 443,
+    key: 'bezzie-local-key',
+    secure: !__DEV__,
+  },
 
   SHARE_URL: 'https://hirephpdeveloperindia.com/referral',
   inviteUrls: [

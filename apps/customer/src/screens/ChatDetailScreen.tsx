@@ -21,6 +21,7 @@ import { colors, images, spacing } from '../theme';
 import { translate } from '../i18n';
 import { parseSource } from '../utils/util';
 import { useAppSelector, useIsForeground } from '../store/hooks';
+import { subscribeToConversation } from '../utils/realtime';
 
 type Props = AppStackScreenProps<'ChatDetail'>;
 
@@ -85,11 +86,17 @@ const ChatDetail: FC<Props> = ({ navigation, route }) => {
     focused.current = true;
     autoRefreshEnabled.current = true;
     loadMessages('initial');
+    const unsubscribe = subscribeToConversation(conversationId, incoming => {
+      if (!focused.current) return;
+      newestMessageId.current = Math.max(newestMessageId.current ?? 0, incoming.id);
+      setMessages(previous => [incoming, ...previous.filter(item => item.id !== incoming.id)]);
+    });
     const interval = setInterval(() => {
       if (autoRefreshEnabled.current) loadMessages('silent');
-    }, 5000);
+    }, 30000);
     return () => {
       focused.current = false;
+      unsubscribe();
       clearInterval(interval);
     };
   }, [loadMessages, isForeground]));
@@ -126,7 +133,6 @@ const ChatDetail: FC<Props> = ({ navigation, route }) => {
       preset="fixed"
       style={$screenStyle}
       safeAreaEdges={['top']}
-      keyboardOffset={-insets.bottom}
       keyboardAvoidingViewProps={Platform.OS === 'android' ? { behavior: undefined } : undefined}
       contentContainerStyle={$containerStyle}
     >
@@ -251,6 +257,7 @@ const $bottomView: ViewStyle = {
   paddingRight: 4,
   borderRadius: spacing.xl,
   marginHorizontal: spacing.md,
+  marginBottom: spacing.xs,
   borderColor: colors.palette.light,
   backgroundColor: colors.palette.white,
 };

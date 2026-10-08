@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
 use App\Traits\ApiResponse;
+use App\Services\RealtimeNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -551,6 +552,7 @@ class PaymentController extends Controller
         ?string $connectedAccountId
     ): void
     {
+        $previousStatus = $payment->status;
         if ($payment->stripe_payment_intent_id && $payment->stripe_payment_intent_id !== $intent->id) {
             abort(409, 'Payment intent mismatch.');
         }
@@ -606,11 +608,32 @@ class PaymentController extends Controller
                 $payment->paid_at ??= now();
                 $payment->failed_at = null;
                 $payment->cancelled_at = null;
-                Project::query()
+                $projectCompleted = Project::query()
                     ->where('id', $payment->project_id)
                     ->where('user_id', $payment->customer_id)
                     ->where('status', 'in progress')
                     ->update(['status' => 'completed']);
+                if ($projectCompleted === 1) {
+                    $project = Project::query()->find($payment->project_id);
+                    $projectTitle = $project?->title ?: 'Your job';
+                    $projectId = (int) $payment->project_id;
+                    $customerId = (int) $payment->customer_id;
+                    $providerId = (int) $payment->provider_id;
+
+                    DB::afterCommit(function () use ($projectTitle, $projectId, $customerId, $providerId) {
+                        foreach ([$customerId, $providerId] as $userId) {
+                            app(RealtimeNotifier::class)->notify(
+                                $userId,
+                                'Job completed',
+                                $projectTitle.' has been marked as completed.',
+                                'job_completed',
+                                'project',
+                                $projectId,
+                                ['status' => 'completed'],
+                            );
+                        }
+                    });
+                }
                 break;
             case 'processing':
                 $payment->status = Payment::STATUS_PROCESSING;
@@ -636,6 +659,62 @@ class PaymentController extends Controller
         }
 
         $payment->save();
+
+        if ($previousStatus !== $payment->status) {
+            $this->notifyProviderPaymentStatus($payment);
+        }
+    }
+
+    private function notifyProviderPaymentStatus(Payment $payment): void
+    {
+        $details = match ($payment->status) {
+            Payment::STATUS_SUCCEEDED => [
+                'Payment received',
+                'Payment of AUD '.$payment->provider_earnings.' is available for your work.',
+                'payment_succeeded',
+            ],
+            Payment::STATUS_PROCESSING => [
+                'Payment processing',
+                'The customer payment is processing.',
+                'payment_processing',
+            ],
+            Payment::STATUS_FAILED => [
+                'Payment unsuccessful',
+                'The customer payment was unsuccessful and can be retried.',
+                'payment_failed',
+            ],
+            Payment::STATUS_CANCELLED => [
+                'Payment cancelled',
+                'The customer payment was cancelled.',
+                'payment_cancelled',
+            ],
+            default => null,
+        };
+
+        if ($details === null) {
+            return;
+        }
+
+        $projectTitle = Project::query()->whereKey($payment->project_id)->value('title') ?: 'your job';
+        $providerId = (int) $payment->provider_id;
+        $projectId = (int) $payment->project_id;
+        $paymentId = (int) $payment->id;
+        [$title, $message, $type] = $details;
+
+        DB::afterCommit(function () use ($providerId, $projectId, $paymentId, $title, $message, $type, $projectTitle, $payment) {
+            app(RealtimeNotifier::class)->notify(
+                $providerId,
+                $title,
+                $projectTitle.': '.$message,
+                $type,
+                'project',
+                $projectId,
+                [
+                    'payment_id' => $paymentId,
+                    'payment_status' => $payment->status,
+                ],
+            );
+        });
     }
 
     private function stripeObjectToArray(mixed $value): array

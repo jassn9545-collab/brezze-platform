@@ -10,21 +10,29 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import moment from 'moment';
-import { AppNotification, getNotifications, markAllNotificationsRead, markNotificationRead } from '../apis/account';
+import { AppNotification, getNotificationFeed, markAllNotificationsRead, markNotificationRead } from '../apis/account';
 import { BackButtom, Button, Screen, Text } from '../components';
 import { colors, spacing } from '../theme';
+import { useAppSelector } from '../store/hooks';
+import { subscribeToUser } from '../utils/realtime';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../navigators/AppStack';
 
 export const NotificationScreen: FC = () => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
     setLoadError(false);
     try {
-      setNotifications(await getNotifications());
+      const feed = await getNotificationFeed();
+      setNotifications(feed.notifications);
     } catch {
       setLoadError(true);
     } finally {
@@ -36,7 +44,17 @@ export const NotificationScreen: FC = () => {
   useFocusEffect(
     useCallback(() => {
       load().catch(() => undefined);
-    }, [load]),
+      const unsubscribe = ownUserId
+        ? subscribeToUser(Number(ownUserId), () => undefined, event => {
+            if (!event.notification) return;
+            setNotifications(current => [
+              event.notification!,
+              ...current.filter(item => item.id !== event.notification!.id),
+            ]);
+          })
+        : undefined;
+      return unsubscribe;
+    }, [load, ownUserId]),
   );
 
   const markRead = async (notification: AppNotification) => {
@@ -50,6 +68,13 @@ export const NotificationScreen: FC = () => {
       setNotifications(current => current.map(item => (
         item.id === notification.id ? { ...item, is_read: false } : item
       )));
+    }
+  };
+
+  const openNotification = async (notification: AppNotification) => {
+    await markRead(notification);
+    if (notification.action_type === 'project' && notification.action_id) {
+      navigation.navigate('jobPostDetails', { id: notification.action_id });
     }
   };
 
@@ -111,7 +136,7 @@ export const NotificationScreen: FC = () => {
           renderItem={({ item }) => (
             <TouchableOpacity
               activeOpacity={item.is_read ? 1 : 0.8}
-              onPress={() => markRead(item)}
+              onPress={() => openNotification(item)}
               style={[styles.card, !item.is_read && styles.unreadCard]}
             >
               <View style={styles.titleRow}>

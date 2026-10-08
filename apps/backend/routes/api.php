@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\LegalController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SupportController;
+use App\Http\Controllers\Api\DeviceController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/devices', [DeviceController::class, 'store']);
+    Route::delete('/devices', [DeviceController::class, 'destroy']);
 
     Route::get('/address/list', [UserController::class, 'addressList']);
     Route::post('/address/add', [UserController::class, 'addressAdd']);

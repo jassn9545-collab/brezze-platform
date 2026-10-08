@@ -14,6 +14,8 @@ import { toastProps } from './utils/toast';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import api from './apis/api';
+import BootSplash from 'react-native-bootsplash';
+import { PushNotificationBridge } from './components/PushNotificationBridge';
 // import {UpdateView} from './screens/UpdateView';
 // import {AnimatedBootSplash, AnimatedBootSplashRef} from './components';
 // import BootSplash from 'react-native-bootsplash';
@@ -71,11 +73,7 @@ function App({ apiBaseUrl }: AppProps): React.JSX.Element {
   // }, []);
 
   const hideSplash = async () => {
-    // onReady();
-    // await BootSplash.hide();
-    // setTimeout(() => {
-    //   BootSplash.hide();
-    // }, 2000);
+    await BootSplash.hide({ fade: true });
   };
 
   return (
@@ -83,6 +81,7 @@ function App({ apiBaseUrl }: AppProps): React.JSX.Element {
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <Provider store={store}>
           <ToastProvider {...toastProps}>
+            <PushNotificationBridge />
             <AppNavigator
               // onReady={() => animatedBootSplash.current?.hide()}
               onReady={hideSplash}

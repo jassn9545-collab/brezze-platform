@@ -7,6 +7,7 @@ import { TxKeyPath } from '../i18n';
 import { useAppDispatch } from '../store/hooks';
 import { authActions } from '../slices/auth.slice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { unregisterFirebaseDevice } from '../utils/Firebase';
 
 type Props = AppStackScreenProps<'CenterModal'>;
 
@@ -25,9 +26,10 @@ export const CenterModal: FC<Props> = props => {
     props.navigation.goBack();
   };
 
-  const onConfirm = () => {
+  const onConfirm = async () => {
+    await unregisterFirebaseDevice();
     dispatch(authActions.setAuthroized(false));
-    AsyncStorage.setItem('authorized', 'false');
+    await AsyncStorage.setItem('authorized', 'false');
 
     // if (props.route.params.modalType === 'logout') {
     //   dispatch(userLogout())

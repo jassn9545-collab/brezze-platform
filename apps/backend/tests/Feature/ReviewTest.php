@@ -4,6 +4,7 @@ use App\Models\Bid;
 use App\Models\Project;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -61,6 +62,18 @@ beforeEach(function () {
         $table->timestamps();
     });
 
+    Schema::create('user_notifications', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('user_id')->index();
+        $table->string('title');
+        $table->text('message');
+        $table->string('type')->index();
+        $table->string('action_type')->nullable();
+        $table->unsignedBigInteger('action_id')->nullable();
+        $table->timestamp('read_at')->nullable();
+        $table->timestamps();
+    });
+
     Schema::create('payments', function (Blueprint $table) {
         $table->id();
         $table->unsignedBigInteger('provider_id');
@@ -97,6 +110,7 @@ beforeEach(function () {
 
 afterEach(function () {
     Schema::dropIfExists('payments');
+    Schema::dropIfExists('user_notifications');
     Schema::dropIfExists('reviews');
     Schema::dropIfExists('bids');
     Schema::dropIfExists('projects');
@@ -119,6 +133,11 @@ it('allows a customer to review the hired provider after completion', function (
         ->assertJsonPath('data.review_to', 'freelancer');
 
     expect(Review::query()->count())->toBe(1);
+    expect(UserNotification::query()
+        ->where('user_id', $this->provider->id)
+        ->where('type', 'review_received')
+        ->where('action_id', $this->job->id)
+        ->exists())->toBeTrue();
 });
 
 it('returns the current users review status and submitted review', function () {
@@ -173,14 +192,30 @@ it('returns the existing review when submission is retried', function () {
 it('allows the hired provider to review the customer after completion', function () {
     Sanctum::actingAs($this->provider);
 
-    $this->postJson('/api/submit-review', [
+    $reviewId = $this->postJson('/api/submit-review', [
         'project_id' => $this->job->id,
         'star' => 4,
         'review' => 'Clear requirements.',
     ])->assertOk()
         ->assertJsonPath('data.given_by', $this->provider->id)
         ->assertJsonPath('data.given_to', $this->customer->id)
-        ->assertJsonPath('data.review_to', 'client');
+        ->assertJsonPath('data.review_to', 'client')
+        ->json('data.id');
+
+    expect(UserNotification::query()
+        ->where('user_id', $this->customer->id)
+        ->where('type', 'review_received')
+        ->where('action_id', $this->job->id)
+        ->exists())->toBeTrue();
+
+    Sanctum::actingAs($this->customer);
+    $this->postJson('/api/client/my-profile')
+        ->assertOk()
+        ->assertJsonPath('data.profile.avg_rating', 4)
+        ->assertJsonPath('data.profile.review_count', 1)
+        ->assertJsonPath('data.profile.reviews.0.id', $reviewId)
+        ->assertJsonPath('data.profile.reviews.0.reviewer.name', 'Provider')
+        ->assertJsonPath('data.profile.reviews.0.review', 'Clear requirements.');
 });
 
 it('rejects a review while the project is not completed', function () {

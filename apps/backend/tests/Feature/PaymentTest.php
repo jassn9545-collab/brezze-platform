@@ -6,6 +6,7 @@ use App\Models\Bid;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -190,6 +191,18 @@ beforeEach(function () {
         $table->timestamps();
     });
 
+    Schema::create('user_notifications', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('user_id')->index();
+        $table->string('title');
+        $table->text('message');
+        $table->string('type')->index();
+        $table->string('action_type')->nullable();
+        $table->unsignedBigInteger('action_id')->nullable();
+        $table->timestamp('read_at')->nullable();
+        $table->timestamps();
+    });
+
     config()->set('services.stripe.secret', 'sk_test_fake');
     config()->set('services.stripe.key', 'pk_test_fake');
     config()->set('services.stripe.currency', 'aud');
@@ -229,6 +242,7 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    Schema::dropIfExists('user_notifications');
     Schema::dropIfExists('payments');
     Schema::dropIfExists('bids');
     Schema::dropIfExists('projects');
@@ -284,6 +298,12 @@ it('verifies success against the gateway and then returns already paid', functio
         ->assertJsonPath('data.payment.transaction_id', 'ch_verified_test');
 
     expect($this->job->fresh()->status)->toBe('completed');
+    expect(UserNotification::query()
+        ->where('user_id', $this->provider->id)
+        ->where('type', 'payment_succeeded')
+        ->where('action_type', 'project')
+        ->where('action_id', $this->job->id)
+        ->exists())->toBeTrue();
 
     $this->postJson('/api/client/payments/intent', ['job_id' => $this->job->id])
         ->assertOk()

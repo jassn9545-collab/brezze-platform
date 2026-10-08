@@ -29,7 +29,12 @@ const URLs = {
     ? `http://${getDevelopmentApiHost()}:8000/api`
     : 'https://hirephpdeveloperindia.com/bezzie/api',
 
-  socketUrl: '',
+  realtime: {
+    host: __DEV__ ? getDevelopmentApiHost() : 'hirephpdeveloperindia.com',
+    port: __DEV__ ? 8083 : 443,
+    key: 'bezzie-local-key',
+    secure: !__DEV__,
+  },
 
   SHARE_URL: 'https://hirephpdeveloperindia.com/referral',
   inviteUrls: [
@@ -67,9 +72,11 @@ const URLs = {
   activeJobs: '/freelancer/active-jobs',
   completeJobs: '/freelancer/completed-jobs',
   submitJob: '/freelancer/submit-work',
+  submitReview: '/submit-review',
   paymentHistory: '/freelancer/payments',
   catalogs: '/freelancer/catalogs',
   chatConversations: '/chat/conversations',
+  getUserNotifications: '/notifications',
   supportRequests: '/support-requests',
 };
 

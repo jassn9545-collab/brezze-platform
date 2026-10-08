@@ -25,6 +25,9 @@ import {
   DiscoveryProfessional,
   getDiscovery,
 } from '../apis/discovery';
+import { getNotificationFeed } from '../apis/account';
+import { useAppSelector } from '../store/hooks';
+import { subscribeToUser } from '../utils/realtime';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 // type StoreProps = ConnectedProps<typeof connector>;
@@ -36,6 +39,8 @@ const Home: FC<Props> = (props) => {
   const [categories, setCategories] = useState<DiscoveryCategory[]>([]);
   const [professionals, setProfessionals] = useState<DiscoveryProfessional[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -60,6 +65,29 @@ const Home: FC<Props> = (props) => {
       active = false;
     };
   }, []));
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    const refreshUnreadCount = () => {
+      getNotificationFeed()
+        .then(feed => {
+          if (active) setUnreadNotifications(feed.unread_count);
+        })
+        .catch(() => undefined);
+    };
+
+    refreshUnreadCount();
+    const unsubscribe = ownUserId
+      ? subscribeToUser(Number(ownUserId), () => undefined, event => {
+          if (event.notification) refreshUnreadCount();
+        })
+      : undefined;
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [ownUserId]));
 
   return (
     <>
@@ -92,7 +120,22 @@ const Home: FC<Props> = (props) => {
             weight="medium"
             size="xl"
           />
-          <Image source={images.bellIcon} />
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Open notifications"
+            onPress={() => props.navigation.navigate('Notifications')}
+            style={styles.notificationButton}
+          >
+            <Image source={images.bellIcon} />
+            {unreadNotifications > 0 ? (
+              <View style={styles.notificationBadge}>
+                <Text
+                  text={unreadNotifications > 99 ? '99+' : String(unreadNotifications)}
+                  style={styles.notificationBadgeText}
+                />
+              </View>
+            ) : null}
+          </TouchableOpacity>
         </View>
 
         {/* SEARCH */}
@@ -256,6 +299,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 10,
+  },
+  notificationButton: {
+    position: 'relative',
+    padding: 2,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -7,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.error,
+    borderWidth: 1,
+    borderColor: colors.palette.white,
+  },
+  notificationBadgeText: {
+    color: colors.palette.white,
+    fontSize: 10,
+    lineHeight: 12,
   },
   inputAccessoryStyle: {
     marginVertical: spacing.sm,

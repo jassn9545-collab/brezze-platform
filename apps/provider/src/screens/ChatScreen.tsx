@@ -14,12 +14,14 @@ import {BackButtom, Screen, Text} from '../components';
 import {Conversation, getConversations} from '../apis/chat';
 import {colors, images, spacing} from '../theme';
 import {parseSource} from '../utils/util';
-import {useIsForeground} from '../store/hooks';
+import {useAppSelector, useIsForeground} from '../store/hooks';
+import {subscribeToUser} from '../utils/realtime';
 
 type Props = AppBottomTabScreenProps<'Chat'>;
 
 const Chat: FC<Props> = props => {
   const isForeground = useIsForeground();
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,12 +63,16 @@ const Chat: FC<Props> = props => {
       if (!isForeground) return;
       activeRef.current = true;
       loadConversations('initial');
-      const timer = setInterval(() => loadConversations('poll'), 8000);
+      const unsubscribe = ownUserId
+        ? subscribeToUser(Number(ownUserId), () => loadConversations('poll'))
+        : undefined;
+      const timer = setInterval(() => loadConversations('poll'), 30000);
       return () => {
         activeRef.current = false;
+        unsubscribe?.();
         clearInterval(timer);
       };
-    }, [loadConversations, isForeground]),
+    }, [loadConversations, isForeground, ownUserId]),
   );
 
   const openConversation = (conversation: Conversation) => {

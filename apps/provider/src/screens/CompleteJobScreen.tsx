@@ -9,6 +9,8 @@ import { connect, ConnectedProps } from 'react-redux';
 import { Loader } from '../components';
 import ListEmptyComponent from '../components/ListEmptyComponent';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAppSelector } from '../store/hooks';
+import { subscribeToUser } from '../utils/realtime';
 
 type ScreenProps = BookingScreenProps<'CompleteJob'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -17,6 +19,21 @@ type Props = ScreenProps & StoreProps;
 let page = 1;
 const CompleteJob: FC<Props> = (props) => {
   const flatlist = useRef<FlatList>(null);
+  const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
+  const { get } = props;
+
+  const getData = useCallback(() => {
+    get({
+      page: page,
+      limit: 10,
+    });
+  }, [get]);
+
+  const load = useCallback(() => {
+    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
+    page = 1;
+    getData();
+  }, [getData]);
 
   const loadMore = () => {
     if (props.totalPage > page && !loading && (props.completeJobs.length ?? 0) > 0) {
@@ -25,21 +42,14 @@ const CompleteJob: FC<Props> = (props) => {
     }
   };
 
-  const load = () => {
-    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
-    page = 1;
-    getData();
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useFocusEffect(useCallback(load, []));
-
-  const getData = () => {
-    props.get({
-      page: page,
-      limit: 10,
-    });
-  };
+  useFocusEffect(useCallback(() => {
+    load();
+    return ownUserId
+      ? subscribeToUser(Number(ownUserId), () => undefined, event => {
+          if (event.kind === 'job_completed') load();
+        })
+      : undefined;
+  }, [load, ownUserId]));
 
   const loading = props.fetching === 'loading';
   return (
@@ -47,7 +57,7 @@ const CompleteJob: FC<Props> = (props) => {
       ref={flatlist}
       data={props.completeJobs}
       contentContainerStyle={$container}
-      keyExtractor={item => item._id}
+      keyExtractor={item => item.id.toString()}
       onEndReached={loadMore}
       refreshing={loading && page === 1 && props.completeJobs.length > 0}
       onRefresh={load}
@@ -57,11 +67,15 @@ const CompleteJob: FC<Props> = (props) => {
           item={item}
           index={index}
           baseURl={props.baseURl!}
-        // onPress={() =>
-        //   props.navigation.navigate('PastTripDetails', {
-        //     tripId: item._id,
-        //   })
-        // }
+          viewDetail={() =>
+            props.navigation.navigate('JobDetail', {
+              from: 'CompleteJob',
+              id: item.id,
+            })
+          }
+          onReview={() =>
+            props.navigation.navigate('ReviewScreen', { jobId: item.id })
+          }
         />
       )}
       ListEmptyComponent={

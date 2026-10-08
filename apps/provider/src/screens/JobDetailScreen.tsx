@@ -22,7 +22,7 @@ interface JobQuichPointType {
 
 export type JobDetailParams = {
   id: number;
-  from: 'ActiveJob' | 'Home' | 'SavedJob' | 'ApplyJob';
+  from: 'ActiveJob' | 'CompleteJob' | 'Home' | 'SavedJob' | 'ApplyJob';
 };
 
 const JobDetail: FC<Props> = props => {
