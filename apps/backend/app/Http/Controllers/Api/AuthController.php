@@ -110,7 +110,7 @@ class AuthController extends Controller
         }
 
         try {
-            $user = DB::transaction(function () use ($request, $stripeCountry, $stripe, $needsStripeAccount) {
+            $user = DB::transaction(function () use ($request, $stripeCountry) {
                 $user = User::create([
                     'name'      => $request->name,
                     'email'     => $request->email,
@@ -126,20 +126,13 @@ class AuthController extends Controller
                     'longitude' => $request->longitude,
                 ]);
 
-                $stripeAccount = $needsStripeAccount
-                    ? $this->createStripeConnectedAccount($user, $stripeCountry, $stripe)
-                    : null;
-
                 // Generate referral code
                 $referral_code = strtoupper(substr($user->name, 0, 3)) . $user->id;
                 $user->refral_code = $referral_code;
-                $user->stripe_account_id = $stripeAccount?->id;
                 $user->save();
 
                 return $user;
             });
-        } catch (ApiErrorException $e) {
-            return $this->error('Unable to create Stripe account: '.$e->getMessage(), 400);
         } catch (Throwable $e) {
             report($e);
 
@@ -153,8 +146,20 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         $accountLink = null;
+        $stripeSetupPending = false;
         if ($needsStripeAccount) {
             try {
+                $this->ensureStripeCustomer($user, $stripe);
+            } catch (Throwable $e) {
+                report($e);
+                $stripeSetupPending = true;
+            }
+
+            try {
+                $stripeAccount = $this->createStripeConnectedAccount($user, $stripeCountry, $stripe);
+                $user->stripe_account_id = $stripeAccount->id;
+                $user->save();
+
                 $accountLink = $this->createStripeOnboardingLink(
                     $user,
                     $returnUrl,
@@ -163,6 +168,7 @@ class AuthController extends Controller
                 );
             } catch (Throwable $e) {
                 report($e);
+                $stripeSetupPending = true;
             }
         }
 
@@ -184,9 +190,9 @@ class AuthController extends Controller
             'token' => $token,
             'onboarding_url' => $accountLink?->url,
             'onboarding_link_expires_at' => $accountLink?->expires_at,
-        ], !$needsStripeAccount || $accountLink
-            ? 'OTP verified. Registration complete.'
-            : 'OTP verified. Registration complete. Request a new Stripe onboarding link to continue.');
+        ], $stripeSetupPending
+            ? 'OTP verified. Registration complete. Complete Stripe setup from your profile.'
+            : 'OTP verified. Registration complete.');
     }
 
     private function normalizeStripeCountry(?string $country): ?string
@@ -201,28 +207,41 @@ class AuthController extends Controller
         };
     }
 
+    private function ensureStripeCustomer(User $user, StripeClient $stripe): void
+    {
+        if ($user->stripe_customer_id) {
+            return;
+        }
+
+        $customer = $stripe->customers->create([
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'metadata' => [
+                'user_id' => (string) $user->id,
+                'user_type' => (string) $user->user_type,
+            ],
+        ], [
+            'idempotency_key' => 'user_'.$user->id.'_stripe_customer',
+        ]);
+
+        $user->stripe_customer_id = $customer->id;
+        $user->save();
+    }
+
     private function createStripeConnectedAccount(User $user, string $country, StripeClient $stripe)
     {
-        return $stripe->v2->core->accounts->create([
-            'contact_email' => $user->email,
-            'display_name' => $user->name,
-            'identity' => [
-                'country' => $country,
-                'entity_type' => 'individual',
+        return $stripe->accounts->create([
+            'type' => 'express',
+            'country' => $country,
+            'email' => $user->email,
+            'business_type' => 'individual',
+            'capabilities' => [
+                'card_payments' => ['requested' => true],
+                'transfers' => ['requested' => true],
             ],
-            'dashboard' => 'express',
-            'configuration' => [
-                'merchant' => [
-                    'capabilities' => [
-                        'card_payments' => ['requested' => true],
-                    ],
-                ],
-            ],
-            'defaults' => [
-                'responsibilities' => [
-                    'fees_collector' => 'application',
-                    'losses_collector' => 'application',
-                ],
+            'business_profile' => [
+                'product_description' => 'Professional services provided through Our Bezzie.',
             ],
             'metadata' => [
                 'user_id' => (string) $user->id,
@@ -233,19 +252,14 @@ class AuthController extends Controller
 
     private function createStripeOnboardingLink(User $user, string $returnUrl, string $refreshUrl, StripeClient $stripe)
     {
-        return $stripe->v2->core->accountLinks->create([
+        return $stripe->accountLinks->create([
             'account' => $user->stripe_account_id,
-            'use_case' => [
-                'type' => 'account_onboarding',
-                'account_onboarding' => [
-                    'configurations' => ['merchant'],
-                    'refresh_url' => $refreshUrl,
-                    'return_url' => $returnUrl,
-                    'collection_options' => [
-                        'fields' => 'eventually_due',
-                        'future_requirements' => 'include',
-                    ],
-                ],
+            'refresh_url' => $refreshUrl,
+            'return_url' => $returnUrl,
+            'type' => 'account_onboarding',
+            'collection_options' => [
+                'fields' => 'eventually_due',
+                'future_requirements' => 'include',
             ],
         ]);
     }
@@ -286,6 +300,16 @@ class AuthController extends Controller
 
         if ($user->user_type !== 'freelancer') {
             return $this->error('Stripe onboarding is only available to freelancers.', 403);
+        }
+
+        try {
+            $this->ensureStripeCustomer($user, $stripe);
+        } catch (ApiErrorException $e) {
+            return $this->error('Unable to create Stripe customer: '.$e->getMessage(), 400);
+        } catch (Throwable $e) {
+            report($e);
+
+            return $this->error('Unable to create Stripe customer. Please try again.', 500);
         }
 
         if (!$user->stripe_account_id) {
@@ -351,9 +375,7 @@ class AuthController extends Controller
         }
 
         try {
-            $account = $stripe->v2->core->accounts->retrieve($accountId, [
-                'include' => ['configuration.merchant', 'requirements'],
-            ]);
+            $account = $stripe->accounts->retrieve($accountId, []);
         } catch (ApiErrorException $e) {
             return $this->error('Unable to retrieve Stripe account: '.$e->getMessage(), 400);
         } catch (Throwable $e) {
@@ -362,32 +384,31 @@ class AuthController extends Controller
             return $this->error('Unable to retrieve Stripe account. Please try again.', 500);
         }
 
-        $currentlyDue = [];
-        $eventuallyDue = [];
-        foreach (data_get($account, 'requirements.entries', []) ?? [] as $entry) {
-            $deadlineStatus = data_get($entry, 'minimum_deadline.status');
-            if (in_array($deadlineStatus, ['currently_due', 'past_due'], true)) {
-                $currentlyDue[] = $entry->description;
-            } elseif ($deadlineStatus === 'eventually_due') {
-                $eventuallyDue[] = $entry->description;
-            }
-        }
+        $currentlyDue = array_values(array_unique(array_filter(
+            data_get($account, 'requirements.currently_due', []) ?? []
+        )));
+        $eventuallyDue = array_values(array_unique(array_filter(array_merge(
+            data_get($account, 'requirements.eventually_due', []) ?? [],
+            data_get($account, 'future_requirements.currently_due', []) ?? [],
+            data_get($account, 'future_requirements.eventually_due', []) ?? []
+        ))));
 
-        $chargesEnabled = data_get($account, 'configuration.merchant.capabilities.card_payments.status') === 'active';
-        $payoutsEnabled = data_get($account, 'configuration.merchant.capabilities.stripe_balance.payouts.status') === 'active';
+        $chargesEnabled = (bool) data_get($account, 'charges_enabled', false);
+        $payoutsEnabled = (bool) data_get($account, 'payouts_enabled', false);
+        $detailsSubmitted = (bool) data_get($account, 'details_submitted', false);
 
         return $this->success([
             'connected' => true,
             'stripe_account_id' => $accountId,
-            'details_submitted' => $currentlyDue === [] && $eventuallyDue === [],
+            'details_submitted' => $detailsSubmitted,
             'charges_enabled' => $chargesEnabled,
             'payouts_enabled' => $payoutsEnabled,
             'ready_for_payments' => $chargesEnabled && $payoutsEnabled,
-            'onboarding_required' => $currentlyDue !== [] || $eventuallyDue !== [],
+            'onboarding_required' => !$detailsSubmitted || $currentlyDue !== [] || $eventuallyDue !== [],
             'requirements' => [
                 'currently_due' => $currentlyDue,
                 'eventually_due' => $eventuallyDue,
-                'disabled_reason' => data_get($account, 'configuration.merchant.capabilities.card_payments.status_details.0.code'),
+                'disabled_reason' => data_get($account, 'requirements.disabled_reason'),
             ],
         ], 'Stripe account status retrieved successfully.');
     }

@@ -29,16 +29,8 @@ class FakePaymentGateway implements PaymentGateway
         $status = $this->accountReady ? 'active' : 'restricted';
 
         return (object) [
-            'configuration' => (object) [
-                'merchant' => (object) [
-                    'capabilities' => (object) [
-                        'card_payments' => (object) ['status' => $status],
-                        'stripe_balance' => (object) [
-                            'payouts' => (object) ['status' => $status],
-                        ],
-                    ],
-                ],
-            ],
+            'charges_enabled' => $status === 'active',
+            'payouts_enabled' => $status === 'active',
         ];
     }
 

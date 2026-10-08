@@ -103,14 +103,8 @@ class PaymentController extends Controller
                     $stripeAccountId = $provider->stripe_account_id;
 
                     $account = $gateway->retrieveConnectedAccount($stripeAccountId);
-                    $chargesEnabled = data_get(
-                        $account,
-                        'configuration.merchant.capabilities.card_payments.status'
-                    ) === 'active';
-                    $payoutsEnabled = data_get(
-                        $account,
-                        'configuration.merchant.capabilities.stripe_balance.payouts.status'
-                    ) === 'active';
+                    $chargesEnabled = (bool) data_get($account, 'charges_enabled', false);
+                    $payoutsEnabled = (bool) data_get($account, 'payouts_enabled', false);
                     if (! $chargesEnabled || ! $payoutsEnabled) {
                         abort(422, 'The provider must finish Stripe payment setup before this job can be paid.');
                     }

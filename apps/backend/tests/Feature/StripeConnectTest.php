@@ -3,11 +3,11 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
-use Stripe\Service\V2\Core\AccountLinkService;
-use Stripe\Service\V2\Core\AccountService;
+use Stripe\Account;
+use Stripe\AccountLink;
+use Stripe\Service\AccountLinkService;
+use Stripe\Service\AccountService;
 use Stripe\StripeClient;
-use Stripe\V2\Core\Account;
-use Stripe\V2\Core\AccountLink;
 
 beforeEach(function () {
     config()->set('services.stripe.secret', 'sk_test_not_a_real_key');
@@ -23,31 +23,29 @@ function connectedUser(?string $accountId = 'acct_test_123'): User
     ]);
     $user->id = 42;
     $user->stripe_account_id = $accountId;
+    $user->stripe_customer_id = 'cus_test_123';
 
     return $user;
 }
 
-function mockStripeCoreService(string $name, object $service): StripeClient
+function mockStripeService(string $name, object $service): StripeClient
 {
     $stripe = Mockery::mock(StripeClient::class);
-    $stripe->shouldReceive('getService')->with('v2')->andReturn((object) [
-        'core' => (object) [$name => $service],
-    ]);
+    $stripe->shouldReceive('getService')->with($name)->andReturn($service);
 
     return $stripe;
 }
 
-test('account creation uses v2 merchant configuration for an Express account', function () {
+test('account creation uses the stable Connect API for an Express account', function () {
     $accounts = Mockery::mock(AccountService::class);
-    $stripe = mockStripeCoreService('accounts', $accounts);
+    $stripe = mockStripeService('accounts', $accounts);
     $accounts->shouldReceive('create')->once()->with(Mockery::on(function ($params) {
-        return $params['dashboard'] === 'express'
-            && $params['identity']['country'] === 'AU'
-            && $params['identity']['entity_type'] === 'individual'
-            && $params['contact_email'] === 'freelancer@example.com'
-            && $params['configuration']['merchant']['capabilities']['card_payments']['requested'] === true
-            && $params['defaults']['responsibilities']['fees_collector'] === 'application'
-            && $params['defaults']['responsibilities']['losses_collector'] === 'application'
+        return $params['type'] === 'express'
+            && $params['country'] === 'AU'
+            && $params['business_type'] === 'individual'
+            && $params['email'] === 'freelancer@example.com'
+            && $params['capabilities']['card_payments']['requested'] === true
+            && $params['capabilities']['transfers']['requested'] === true
             && $params['metadata']['user_id'] === '42';
     }))->andReturn(Account::constructFrom(['id' => 'acct_test_123']));
 
@@ -57,12 +55,13 @@ test('account creation uses v2 merchant configuration for an Express account', f
     expect($account->id)->toBe('acct_test_123');
 });
 
-test('the installed Stripe SDK dispatches connected account creation to Accounts v2', function () {
+test('the installed Stripe SDK dispatches connected account creation to Accounts v1', function () {
     $stripe = Mockery::mock(StripeClient::class, ['sk_test_not_a_real_key'])->makePartial();
     $stripe->shouldReceive('request')->once()->withArgs(function ($method, $path, $params) {
         return $method === 'post'
-            && $path === '/v2/core/accounts'
-            && $params['configuration']['merchant']['capabilities']['card_payments']['requested'] === true;
+            && $path === '/v1/accounts'
+            && $params['type'] === 'express'
+            && $params['capabilities']['card_payments']['requested'] === true;
     })->andReturn(Account::constructFrom(['id' => 'acct_test_123']));
 
     $method = new ReflectionMethod(AuthController::class, 'createStripeConnectedAccount');
@@ -73,17 +72,14 @@ test('the installed Stripe SDK dispatches connected account creation to Accounts
 
 test('signup onboarding link uses the saved connected account and mobile callback URLs', function () {
     $links = Mockery::mock(AccountLinkService::class);
-    $stripe = mockStripeCoreService('accountLinks', $links);
+    $stripe = mockStripeService('accountLinks', $links);
     $links->shouldReceive('create')->once()->with(Mockery::on(function ($params) {
-        $onboarding = $params['use_case']['account_onboarding'];
-
         return $params['account'] === 'acct_test_123'
-            && $params['use_case']['type'] === 'account_onboarding'
-            && $onboarding['configurations'] === ['merchant']
-            && $onboarding['return_url'] === 'https://example.com/stripe/return'
-            && $onboarding['refresh_url'] === 'https://example.com/stripe/refresh'
-            && $onboarding['collection_options']['fields'] === 'eventually_due'
-            && $onboarding['collection_options']['future_requirements'] === 'include';
+            && $params['type'] === 'account_onboarding'
+            && $params['return_url'] === 'https://example.com/stripe/return'
+            && $params['refresh_url'] === 'https://example.com/stripe/refresh'
+            && $params['collection_options']['fields'] === 'eventually_due'
+            && $params['collection_options']['future_requirements'] === 'include';
     }))->andReturn(AccountLink::constructFrom([
         'url' => 'https://connect.stripe.com/signup-link',
         'expires_at' => 1800000000,
@@ -116,15 +112,13 @@ test('onboarding defaults to the server callback routes', function () {
     config()->set('services.stripe.onboarding_base_url', 'https://api.example.com/bezzie');
     $links = Mockery::mock(AccountLinkService::class);
     $links->shouldReceive('create')->once()->with(Mockery::on(function ($params) {
-        $onboarding = $params['use_case']['account_onboarding'];
-
-        return $onboarding['return_url'] === 'https://api.example.com/bezzie/stripe/onboarding/return'
-            && $onboarding['refresh_url'] === 'https://api.example.com/bezzie/stripe/onboarding/refresh';
+        return $params['return_url'] === 'https://api.example.com/bezzie/stripe/onboarding/return'
+            && $params['refresh_url'] === 'https://api.example.com/bezzie/stripe/onboarding/refresh';
     }))->andReturn(AccountLink::constructFrom([
         'url' => 'https://connect.stripe.com/default-link',
         'expires_at' => 1800000000,
     ]));
-    app()->instance(StripeClient::class, mockStripeCoreService('accountLinks', $links));
+    app()->instance(StripeClient::class, mockStripeService('accountLinks', $links));
 
     $this->postJson('/api/stripe/onboarding-link', [])
         ->assertOk()
@@ -139,13 +133,12 @@ test('Stripe callback pages direct mobile users back to the app', function () {
 test('an authenticated user can receive a Stripe onboarding link', function () {
     Sanctum::actingAs(connectedUser());
     $links = Mockery::mock(AccountLinkService::class);
-    $stripe = mockStripeCoreService('accountLinks', $links);
+    $stripe = mockStripeService('accountLinks', $links);
     $links->shouldReceive('create')->once()->with(Mockery::on(function ($params) {
         return $params['account'] === 'acct_test_123'
-            && $params['use_case']['account_onboarding']['return_url'] === 'http://localhost:8000/stripe/return'
-            && $params['use_case']['account_onboarding']['refresh_url'] === 'http://localhost:8000/stripe/refresh'
-            && $params['use_case']['account_onboarding']['configurations'] === ['merchant']
-            && $params['use_case']['type'] === 'account_onboarding';
+            && $params['return_url'] === 'http://localhost:8000/stripe/return'
+            && $params['refresh_url'] === 'http://localhost:8000/stripe/refresh'
+            && $params['type'] === 'account_onboarding';
     }))->andReturn(AccountLink::constructFrom([
         'url' => 'https://connect.stripe.com/test-link',
         'expires_at' => 1800000000,
@@ -174,28 +167,19 @@ test('live-mode onboarding links require HTTPS callback URLs', function () {
 test('account status reports whether the connected account can charge and pay out', function () {
     Sanctum::actingAs(connectedUser());
     $accounts = Mockery::mock(AccountService::class);
-    $stripe = mockStripeCoreService('accounts', $accounts);
-    $accounts->shouldReceive('retrieve')->once()->with('acct_test_123', [
-        'include' => ['configuration.merchant', 'requirements'],
-    ])
+    $stripe = mockStripeService('accounts', $accounts);
+    $accounts->shouldReceive('retrieve')->once()->with('acct_test_123', [])
         ->andReturn(Account::constructFrom([
             'id' => 'acct_test_123',
-            'configuration' => [
-                'merchant' => [
-                    'capabilities' => [
-                        'card_payments' => ['status' => 'active'],
-                        'stripe_balance' => ['payouts' => ['status' => 'restricted']],
-                    ],
-                ],
-            ],
+            'charges_enabled' => true,
+            'payouts_enabled' => false,
+            'details_submitted' => false,
             'requirements' => [
-                'entries' => [
-                    [
-                        'description' => 'Add a payout bank account',
-                        'minimum_deadline' => ['status' => 'currently_due'],
-                    ],
-                ],
+                'currently_due' => ['external_account'],
+                'eventually_due' => [],
+                'disabled_reason' => 'requirements.past_due',
             ],
+            'future_requirements' => ['currently_due' => [], 'eventually_due' => []],
         ]));
     app()->instance(StripeClient::class, $stripe);
 
@@ -205,51 +189,38 @@ test('account status reports whether the connected account can charge and pay ou
         ->assertJsonPath('data.ready_for_payments', false)
         ->assertJsonPath('data.charges_enabled', true)
         ->assertJsonPath('data.payouts_enabled', false)
-        ->assertJsonPath('data.requirements.currently_due.0', 'Add a payout bank account');
+        ->assertJsonPath('data.requirements.currently_due.0', 'external_account');
 });
 
 test('future requirements keep onboarding available before the account is ready', function () {
     Sanctum::actingAs(connectedUser());
     $accounts = Mockery::mock(AccountService::class);
     $accounts->shouldReceive('retrieve')->once()->andReturn(Account::constructFrom([
-        'configuration' => [
-            'merchant' => [
-                'capabilities' => [
-                    'card_payments' => ['status' => 'pending'],
-                    'stripe_balance' => ['payouts' => ['status' => 'pending']],
-                ],
-            ],
-        ],
-        'requirements' => [
-            'entries' => [[
-                'description' => 'Verify identity',
-                'minimum_deadline' => ['status' => 'eventually_due'],
-            ]],
-        ],
+        'charges_enabled' => false,
+        'payouts_enabled' => false,
+        'details_submitted' => false,
+        'requirements' => ['currently_due' => [], 'eventually_due' => ['individual.verification.document']],
+        'future_requirements' => ['currently_due' => [], 'eventually_due' => []],
     ]));
-    app()->instance(StripeClient::class, mockStripeCoreService('accounts', $accounts));
+    app()->instance(StripeClient::class, mockStripeService('accounts', $accounts));
 
     $this->getJson('/api/stripe/account-status')->assertOk()
         ->assertJsonPath('data.onboarding_required', true)
         ->assertJsonPath('data.details_submitted', false)
-        ->assertJsonPath('data.requirements.eventually_due.0', 'Verify identity');
+        ->assertJsonPath('data.requirements.eventually_due.0', 'individual.verification.document');
 });
 
 test('an account under review is not marked ready but needs no more onboarding', function () {
     Sanctum::actingAs(connectedUser());
     $accounts = Mockery::mock(AccountService::class);
     $accounts->shouldReceive('retrieve')->once()->andReturn(Account::constructFrom([
-        'configuration' => [
-            'merchant' => [
-                'capabilities' => [
-                    'card_payments' => ['status' => 'pending'],
-                    'stripe_balance' => ['payouts' => ['status' => 'pending']],
-                ],
-            ],
-        ],
-        'requirements' => ['entries' => []],
+        'charges_enabled' => false,
+        'payouts_enabled' => false,
+        'details_submitted' => true,
+        'requirements' => ['currently_due' => [], 'eventually_due' => []],
+        'future_requirements' => ['currently_due' => [], 'eventually_due' => []],
     ]));
-    app()->instance(StripeClient::class, mockStripeCoreService('accounts', $accounts));
+    app()->instance(StripeClient::class, mockStripeService('accounts', $accounts));
 
     $this->getJson('/api/stripe/account-status')->assertOk()
         ->assertJsonPath('data.onboarding_required', false)
