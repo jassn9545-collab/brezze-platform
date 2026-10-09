@@ -1,4 +1,11 @@
-import { ActivityIndicator, FlatList, View, ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  AppState,
+  DeviceEventEmitter,
+  FlatList,
+  View,
+  ViewStyle,
+} from 'react-native';
 import React, { FC, useCallback, useRef } from 'react';
 import { BookingScreenProps } from '../navigators';
 import { TripCell } from './ActiveJobScreen';
@@ -11,6 +18,7 @@ import ListEmptyComponent from '../components/ListEmptyComponent';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppSelector } from '../store/hooks';
 import { subscribeToUser } from '../utils/realtime';
+import {AppPushEvent, PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
 
 type ScreenProps = BookingScreenProps<'CompleteJob'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -44,11 +52,26 @@ const CompleteJob: FC<Props> = (props) => {
 
   useFocusEffect(useCallback(() => {
     load();
-    return ownUserId
+    const unsubscribeRealtime = ownUserId
       ? subscribeToUser(Number(ownUserId), () => undefined, event => {
           if (event.kind === 'job_completed') load();
         })
       : undefined;
+    const pushSubscription = DeviceEventEmitter.addListener(
+      PUSH_NOTIFICATION_EVENT,
+      (event: AppPushEvent) => {
+        if (event.kind === 'job_completed') load();
+      },
+    );
+    const appStateSubscription = AppState.addEventListener('change', state => {
+      if (state === 'active') load();
+    });
+
+    return () => {
+      unsubscribeRealtime?.();
+      pushSubscription.remove();
+      appStateSubscription.remove();
+    };
   }, [load, ownUserId]));
 
   const loading = props.fetching === 'loading';
@@ -73,8 +96,10 @@ const CompleteJob: FC<Props> = (props) => {
               id: item.id,
             })
           }
-          onReview={() =>
-            props.navigation.navigate('ReviewScreen', { jobId: item.id })
+          onReview={
+            (item.can_review ?? !item.has_reviewed)
+              ? () => props.navigation.navigate('ReviewScreen', { jobId: item.id })
+              : undefined
           }
         />
       )}
@@ -137,7 +162,7 @@ const $extaFetch: ViewStyle = {
 
 const mapStateToProps = (state: RootState) => ({
   fetching: state.home.completeJobsLoading,
-  completeJobs: state.home.completeJobs,
+  completeJobs: state.home.completeJobs ?? [],
   totalPage: state.home.totalCompletePage,
   baseURl: state.setting.basic?.base_url
 });

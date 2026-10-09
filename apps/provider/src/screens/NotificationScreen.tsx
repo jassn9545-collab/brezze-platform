@@ -2,6 +2,8 @@ import { BackButtom, Button, Screen, Text } from '../components';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
+  DeviceEventEmitter,
   FlatList,
   Image,
   ListRenderItemInfo,
@@ -30,6 +32,8 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '../apis/account';
+import {PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
+import {openNotificationDestination} from '../utils/notificationNavigation';
 
 type NavigationProps = AppStackScreenProps<'Notification'>;
 export const LegacyServiceBookingNotification: FC<NavigationProps> = ({ navigation }) => {
@@ -55,7 +59,18 @@ export const LegacyServiceBookingNotification: FC<NavigationProps> = ({ navigati
             if (event.kind.startsWith('service_booking')) load();
           })
         : undefined;
-      return unsubscribe;
+      const pushSubscription = DeviceEventEmitter.addListener(
+        PUSH_NOTIFICATION_EVENT,
+        () => load(),
+      );
+      const appStateSubscription = AppState.addEventListener('change', state => {
+        if (state === 'active') load();
+      });
+      return () => {
+        unsubscribe?.();
+        pushSubscription.remove();
+        appStateSubscription.remove();
+      };
     }, [load, ownUserId]),
   );
 
@@ -164,7 +179,18 @@ const GeneralNotification: FC<NavigationProps> = ({ navigation }) => {
             ]);
           })
         : undefined;
-      return unsubscribe;
+      const pushSubscription = DeviceEventEmitter.addListener(
+        PUSH_NOTIFICATION_EVENT,
+        () => load(),
+      );
+      const appStateSubscription = AppState.addEventListener('change', state => {
+        if (state === 'active') load(true);
+      });
+      return () => {
+        unsubscribe?.();
+        pushSubscription.remove();
+        appStateSubscription.remove();
+      };
     }, [load, ownUserId]),
   );
 
@@ -210,9 +236,9 @@ const GeneralNotification: FC<NavigationProps> = ({ navigation }) => {
     await markRead(notification);
     if (!notification.action_id) return;
     if (notification.action_type === 'project') {
-      navigation.navigate('JobDetail', { id: notification.action_id, from: 'ActiveJob' });
+      openNotificationDestination(notification);
     } else if (notification.action_type === 'conversation') {
-      navigation.navigate('ChatDetail', { conversationId: notification.action_id });
+      openNotificationDestination(notification);
     } else if (notification.action_type === 'booking') {
       await openBookingNotification(notification.action_id);
     }

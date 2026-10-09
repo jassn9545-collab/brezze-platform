@@ -26,7 +26,10 @@ api.interceptors.request.use(async request => {
             api.defaults.headers.Authorization = `Bearer ${token}`;
         }
     }
-    if (!request.url?.startsWith('/chat/')) {
+    if (
+        !request.url?.startsWith('/chat/') &&
+        request.url !== '/devices'
+    ) {
         console.log(
             request.url,
             'request ==>',

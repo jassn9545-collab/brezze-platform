@@ -54,6 +54,7 @@ class RealtimeNotifier
         }
 
         $this->firebase->sendToUser($userId, $title, $pushMessage ?? $message, [
+            ...$data,
             'type' => $type,
             'action_type' => $actionType ?? '',
             'action_id' => $actionId ?? '',

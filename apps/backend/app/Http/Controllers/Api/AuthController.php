@@ -147,14 +147,17 @@ class AuthController extends Controller
 
         $accountLink = null;
         $stripeSetupPending = false;
-        if ($needsStripeAccount) {
-            try {
-                $this->ensureStripeCustomer($user, $stripe);
-            } catch (Throwable $e) {
-                report($e);
-                $stripeSetupPending = true;
-            }
+        try {
+            // Both clients and freelancers need a Stripe Customer record. For
+            // clients it is used by saved cards and PaymentSheet; freelancers
+            // additionally receive a separate Connect account below.
+            $this->ensureStripeCustomer($user, $stripe);
+        } catch (Throwable $e) {
+            report($e);
+            $stripeSetupPending = true;
+        }
 
+        if ($needsStripeAccount) {
             try {
                 $stripeAccount = $this->createStripeConnectedAccount($user, $stripeCountry, $stripe);
                 $user->stripe_account_id = $stripeAccount->id;
@@ -191,7 +194,9 @@ class AuthController extends Controller
             'onboarding_url' => $accountLink?->url,
             'onboarding_link_expires_at' => $accountLink?->expires_at,
         ], $stripeSetupPending
-            ? 'OTP verified. Registration complete. Complete Stripe setup from your profile.'
+            ? ($needsStripeAccount
+                ? 'OTP verified. Registration complete. Complete Stripe setup from your profile.'
+                : 'OTP verified. Registration complete. Stripe payment setup will be retried automatically.')
             : 'OTP verified. Registration complete.');
     }
 

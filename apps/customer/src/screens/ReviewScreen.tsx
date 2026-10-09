@@ -42,6 +42,10 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
   
   const submitReviewLoading = useSelector((state: RootState) => state.job.submitReviewLoading);
 
+  const openCompletedJob = useCallback(() => {
+    navigation.replace('jobPostDetails', {id: route.params.jobId});
+  }, [navigation, route.params.jobId]);
+
   const loadReviewStatus = useCallback(async () => {
     setStatusLoading(true);
     setStatusError(false);
@@ -65,10 +69,13 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
   // ⭐ Render Stars
   const renderStars = () => {
     return [1, 2, 3, 4, 5].map((item) => (
-      <TouchableOpacity key={item} onPress={() => setRating(item)}>
-        <Text style={item <= rating ? styles.activeStar : styles.star}>
-          ★
-        </Text>
+      <TouchableOpacity
+        key={item}
+        onPress={() => setRating(item)}
+        style={styles.starButton}
+        accessibilityRole="button"
+        accessibilityLabel={`${item} star rating`}>
+        <Text text={'\u2605'} style={item <= rating ? styles.activeStar : styles.star} />
       </TouchableOpacity>
     ));
   };
@@ -87,14 +94,8 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
     };
 
     try {
-      const submittedReview = await dispatch(submitReview(params)).unwrap();
-      setStatus({
-        project_id: route.params.jobId,
-        project_status: 'completed',
-        can_review: false,
-        has_reviewed: true,
-        review: submittedReview as SubmittedReview,
-      });
+      await dispatch(submitReview(params)).unwrap();
+      openCompletedJob();
     } catch {
       // API errors are displayed by the shared request handler.
     }
@@ -126,15 +127,17 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
       <Screen preset="fixed" contentContainerStyle={[styles.container, styles.centered]}>
         <View style={styles.successIcon}>
-          <Text style={styles.checkmark}>✓</Text>
+          <Text text={'\u2713'} style={styles.checkmark} />
         </View>
         <Text style={styles.title}>Review Submitted</Text>
         <Text style={styles.statusMessage}>Your feedback has already been received.</Text>
         <View style={styles.starContainer}>
           {[1, 2, 3, 4, 5].map(item => (
-            <Text key={item} style={item <= submittedRating ? styles.activeStar : styles.star}>
-              ★
-            </Text>
+            <Text
+              key={item}
+              text={'\u2605'}
+              style={item <= submittedRating ? styles.activeStar : styles.star}
+            />
           ))}
         </View>
         {!!status.review.review && (
@@ -142,7 +145,7 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text style={styles.submittedReviewText}>{status.review.review}</Text>
           </View>
         )}
-        <Button text="Done" style={styles.button} onPress={navigation.goBack} />
+        <Button text="Done" style={styles.button} onPress={openCompletedJob} />
       </Screen>
     );
   }
@@ -158,7 +161,7 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
   }
 
   return (
-    <Screen preset="fixed" contentContainerStyle={styles.container}>
+    <Screen preset="auto" safeAreaEdges={['top', 'bottom']} contentContainerStyle={styles.container}>
       
       {/* TITLE */}
       <Text style={styles.title}>Rate Your Experience</Text>
@@ -242,16 +245,27 @@ const styles = StyleSheet.create({
     marginVertical: 30,
   },
 
+  starButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    minWidth: 48,
+  },
+
   star: {
     fontSize: 35,
+    lineHeight: 44,
     color: '#ccc',
     marginHorizontal: 5,
+    paddingBottom: 2,
   },
 
   activeStar: {
     fontSize: 35,
+    lineHeight: 44,
     color: '#FFD700',
     marginHorizontal: 5,
+    paddingBottom: 2,
   },
 
   label: {

@@ -9,6 +9,8 @@ import {
 } from '../components';
 import {
   ActivityIndicator,
+  AppState,
+  DeviceEventEmitter,
   Dimensions,
   FlatList,
   Image,
@@ -30,6 +32,7 @@ import { getNotificationFeed } from '../apis/account';
 import { useAppSelector } from '../store/hooks';
 import { subscribeToUser } from '../utils/realtime';
 import { categoryImage } from '../utils/categoryImage';
+import {PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 // type StoreProps = ConnectedProps<typeof connector>;
@@ -84,10 +87,19 @@ const Home: FC<Props> = (props) => {
           if (event.notification) refreshUnreadCount();
         })
       : undefined;
+    const pushSubscription = DeviceEventEmitter.addListener(
+      PUSH_NOTIFICATION_EVENT,
+      refreshUnreadCount,
+    );
+    const appStateSubscription = AppState.addEventListener('change', state => {
+      if (state === 'active') refreshUnreadCount();
+    });
 
     return () => {
       active = false;
       unsubscribe?.();
+      pushSubscription.remove();
+      appStateSubscription.remove();
     };
   }, [ownUserId]));
 

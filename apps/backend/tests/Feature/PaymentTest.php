@@ -340,9 +340,10 @@ it('rejects payment clearly when provider Stripe onboarding is incomplete', func
     expect($this->gateway->createCount)->toBe(0);
 });
 
-it('allows an incomplete provider only through the explicit test-mode platform fallback', function () {
+it('allows a provider without completed onboarding through the test-mode platform fallback', function () {
     Sanctum::actingAs($this->customer);
     $this->job->update(['status' => 'in progress']);
+    $this->provider->update(['stripe_account_id' => null]);
     $this->gateway->accountReady = false;
     config()->set('services.stripe.test_platform_payments', true);
 
@@ -384,5 +385,7 @@ it('shows only the authenticated provider payment history and successful total',
         ->assertOk()
         ->assertJsonCount(1, 'data.payments')
         ->assertJsonPath('data.total_earnings', '111.10')
+        ->assertJsonPath('data.payments.0.job_title', 'Completed plumbing job')
+        ->assertJsonPath('data.payments.0.client_name', 'Customer')
         ->assertJsonPath('data.payments.0.transaction_id', 'ch_history_test');
 });

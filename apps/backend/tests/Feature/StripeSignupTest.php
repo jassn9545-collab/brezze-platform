@@ -91,3 +91,44 @@ test('provider OTP signup stores its Stripe customer ID even when Connect onboar
         'stripe_account_id' => null,
     ]);
 });
+
+test('client OTP signup creates and stores its Stripe customer ID', function () {
+    Cache::put('user_otp_customer@example.test', 654321, now()->addMinutes(5));
+
+    $customers = Mockery::mock(CustomerService::class);
+    $customers->shouldReceive('create')->once()->with(
+        Mockery::on(fn (array $params) => $params['email'] === 'customer@example.test'
+            && $params['metadata']['user_type'] === 'client'),
+        Mockery::on(fn (array $options) => str_starts_with(
+            $options['idempotency_key'],
+            'user_'
+        ))
+    )->andReturn(Customer::constructFrom(['id' => 'cus_customer_signup_test']));
+
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->shouldReceive('getService')->with('customers')->andReturn($customers);
+    app()->instance(StripeClient::class, $stripe);
+
+    $this->postJson('/api/verify-otp', [
+        'otp' => '654321',
+        'email' => 'customer@example.test',
+        'phone' => '0400000011',
+        'name' => 'Test Customer',
+        'password' => 'password',
+        'confirm_password' => 'password',
+        'user_type' => 'client',
+        'country' => 'AU',
+    ])->assertOk()
+        ->assertJsonPath('data.user.email', 'customer@example.test')
+        ->assertJsonPath('data.user.stripe_customer_id', 'cus_customer_signup_test')
+        ->assertJsonPath('data.user.stripe_account_id', null)
+        ->assertJsonPath('data.onboarding_url', null)
+        ->assertJsonPath('message', 'OTP verified. Registration complete.');
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'customer@example.test',
+        'user_type' => 'client',
+        'stripe_customer_id' => 'cus_customer_signup_test',
+        'stripe_account_id' => null,
+    ]);
+});

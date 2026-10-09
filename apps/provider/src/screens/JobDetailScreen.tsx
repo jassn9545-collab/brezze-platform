@@ -1,6 +1,6 @@
 import { BackButtom, Button, Loader, SafeRemoteImage, Screen, Text } from '../components';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import React, { FC, useEffect } from 'react';
+import {AppState, DeviceEventEmitter, StyleSheet, TouchableOpacity, View} from 'react-native';
+import React, {FC, useCallback, useEffect} from 'react';
 import { AppStackScreenProps } from '../navigators';
 import { colors, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,8 @@ import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../store';
 import { getJobDetail } from '../slices/home.slice';
 import { Currency } from '../config/defaults';
+import {useFocusEffect} from '@react-navigation/native';
+import {AppPushEvent, PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
 
 type NavigationProps = AppStackScreenProps<'JobDetail'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -26,6 +28,8 @@ export type JobDetailParams = {
 
 const JobDetail: FC<Props> = props => {
   const insets = useSafeAreaInsets();
+  const getJob = props.get;
+  const jobId = props.route.params?.id;
   const jobQuickPoints: JobQuichPointType[] = [
     {
       key: 'home.category',
@@ -48,11 +52,32 @@ const JobDetail: FC<Props> = props => {
   ];
 
   useEffect(() => {
-    if (props.route.params?.id) {
-      props.get({ project_id: props.route.params?.id });
+    if (jobId) {
+      getJob({project_id: jobId});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.route.params?.id]);
+  }, [getJob, jobId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const reload = () => {
+        if (jobId) getJob({project_id: jobId});
+      };
+      const pushSubscription = DeviceEventEmitter.addListener(
+        PUSH_NOTIFICATION_EVENT,
+        (event: AppPushEvent) => {
+          if (event.actionId === jobId && event.actionType === 'project') reload();
+        },
+      );
+      const appStateSubscription = AppState.addEventListener('change', state => {
+        if (state === 'active') reload();
+      });
+
+      return () => {
+        pushSubscription.remove();
+        appStateSubscription.remove();
+      };
+    }, [getJob, jobId]),
+  );
 
   const onPressLogo = () => {
     props.navigation.navigate('ImageViewer', {
@@ -71,6 +96,10 @@ const JobDetail: FC<Props> = props => {
 
   const alreadyApplied =
     props.route.params.from === 'ApplyJob' || Boolean(props.data?.job_applied);
+  const isCompletedJob = props.route.params.from === 'CompleteJob';
+  const canReview = isCompletedJob &&
+    Boolean(props.data) &&
+    (props.data?.can_review ?? !props.data?.has_reviewed);
 
   return (
     <>
@@ -187,7 +216,16 @@ const JobDetail: FC<Props> = props => {
           style={styles.chatButton}
         />
       )}
-      <Button
+      {canReview && (
+        <Button
+          text="Give Review"
+          onPress={() =>
+            props.navigation.navigate('ReviewScreen', { jobId: props.route.params.id })
+          }
+          style={styles.chatButton}
+        />
+      )}
+      {!isCompletedJob && <Button
         tx={
           props.route.params.from === 'ActiveJob'
             ? 'home.submitWork'
@@ -204,7 +242,7 @@ const JobDetail: FC<Props> = props => {
           },
           { marginBottom: insets.bottom + spacing.sm },
         ]}
-      />
+      />}
       <Loader loading={props.loading === 'loading'} />
     </>
   );

@@ -10,6 +10,7 @@ import {
 import {
   ActivityIndicator,
   AppState,
+  DeviceEventEmitter,
   FlatList,
   Image,
   ListRenderItemInfo,
@@ -38,12 +39,13 @@ import ListEmptyComponent from '../components/ListEmptyComponent';
 import moment from 'moment';
 import { Job } from '../slices/types';
 import { Currency } from '../config/defaults';
-import { HITSLOP } from '../utils/util';
+import { getStatusStyle, HITSLOP } from '../utils/util';
 import { getCurrentLoaction, requestPermission } from '../utils/Location';
 import { useFocusEffect } from '@react-navigation/native';
 import { getNotificationFeed } from '../apis/account';
 import { subscribeToUser } from '../utils/realtime';
 import { useAppSelector } from '../store/hooks';
+import {PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
 
 type NavigationProps = AppBottomTabScreenProps<'Home'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -203,10 +205,19 @@ const Home: FC<Props> = props => {
             if (event.notification) refreshUnreadCount();
           })
         : undefined;
+      const pushSubscription = DeviceEventEmitter.addListener(
+        PUSH_NOTIFICATION_EVENT,
+        refreshUnreadCount,
+      );
+      const appStateSubscription = AppState.addEventListener('change', state => {
+        if (state === 'active') refreshUnreadCount();
+      });
 
       return () => {
         active = false;
         unsubscribe?.();
+        pushSubscription.remove();
+        appStateSubscription.remove();
       };
     }, [ownUserId]),
   );
@@ -373,6 +384,9 @@ export const JobCard = ({
   isSavedIcon = true,
   onPressSavedJob,
 }: JobCardProps) => {
+  const statusText = item.status?.trim() || 'active';
+  const statusStyle = getStatusStyle(statusText);
+
   return (
     <TouchableOpacity
       key={item.id}
@@ -390,6 +404,18 @@ export const JobCard = ({
             value: moment(item.created_at).fromNow(),
           }}
         />
+        <View
+          style={[
+            styles.statusBadge,
+            {backgroundColor: statusStyle.backgroundColor},
+          ]}>
+          <Text
+            text={statusText.toUpperCase()}
+            size="xxs"
+            weight="semiBold"
+            style={{color: statusStyle.color}}
+          />
+        </View>
         {isSavedIcon && (
           <TouchableOpacity
             hitSlop={HITSLOP.MEDIUM}
@@ -546,9 +572,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.palette.offWhite2,
   },
   spaceBetween: {
+    gap: spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  statusBadge: {
+    alignItems: 'center',
+    borderRadius: spacing.sm,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxxs,
   },
   extraSmallText: {
     fontSize: spacing.xs + 2,

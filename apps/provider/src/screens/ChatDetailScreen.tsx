@@ -1,6 +1,7 @@
 import React, {FC, useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  DeviceEventEmitter,
   FlatList,
   Image,
   Platform,
@@ -25,6 +26,7 @@ import {useAppSelector, useIsForeground} from '../store/hooks';
 import {colors, images, spacing} from '../theme';
 import {translate} from '../i18n';
 import {subscribeToConversation} from '../utils/realtime';
+import {CHAT_PUSH_EVENT} from '../utils/Firebase';
 
 type Props = AppStackScreenProps<'ChatDetail'>;
 
@@ -132,9 +134,16 @@ const ChatDetail: FC<Props> = props => {
       if (!isForeground) return;
       activeRef.current = true;
       initialize();
-      const timer = setInterval(() => loadMessages(false), 30000);
+      const pushSubscription = DeviceEventEmitter.addListener(
+        CHAT_PUSH_EVENT,
+        ({conversationId}: {conversationId: number}) => {
+          if (conversationId === conversationIdRef.current) loadMessages(false);
+        },
+      );
+      const timer = setInterval(() => loadMessages(false), 2500);
       return () => {
         activeRef.current = false;
+        pushSubscription.remove();
         clearInterval(timer);
       };
     }, [initialize, isForeground, loadMessages]),

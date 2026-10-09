@@ -3,6 +3,8 @@ import {
   FlatList,
   Image,
   ImageStyle,
+  AppState,
+  DeviceEventEmitter,
   TextStyle,
   TouchableOpacity,
   View,
@@ -23,6 +25,8 @@ import { getStatusStyle } from '../utils/util';
 import moment from 'moment';
 import { useAppSelector } from '../store/hooks';
 import { subscribeToUser } from '../utils/realtime';
+import URLs from '../config/urls';
+import {AppPushEvent, PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
 
 type ScreenProps = BookingScreenProps<'ActiveJob'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -60,11 +64,26 @@ const ActiveJob: FC<Props> = props => {
 
   useFocusEffect(useCallback(() => {
     load();
-    return ownUserId
+    const unsubscribeRealtime = ownUserId
       ? subscribeToUser(Number(ownUserId), () => undefined, event => {
           if (event.kind === 'job_in_progress' || event.kind === 'job_completed') load();
         })
       : undefined;
+    const pushSubscription = DeviceEventEmitter.addListener(
+      PUSH_NOTIFICATION_EVENT,
+      (event: AppPushEvent) => {
+        if (event.kind === 'job_in_progress' || event.kind === 'job_completed') load();
+      },
+    );
+    const appStateSubscription = AppState.addEventListener('change', state => {
+      if (state === 'active') load();
+    });
+
+    return () => {
+      unsubscribeRealtime?.();
+      pushSubscription.remove();
+      appStateSubscription.remove();
+    };
   }, [load, ownUserId]));
 
   const loading = props.fetching === 'loading';
@@ -133,7 +152,17 @@ export const TripCell: FC<TripCellProps> = ({
   onChat,
   onReview,
 }) => {
-  const status = getStatusStyle(item?.status);
+  const statusText = typeof item?.status === 'string' && item.status.trim()
+    ? item.status
+    : 'in progress';
+  const status = getStatusStyle(statusText);
+  const clientName = item?.client_name?.trim() || item?.client?.name?.trim() || 'Customer';
+  const profileImage = item?.client_profile_pic || item?.client?.profile_image;
+  const profileUri = profileImage
+    ? /^https?:\/\//i.test(profileImage)
+      ? profileImage
+      : `${baseURl.replace(/\/$/, '')}/${profileImage.replace(/^\//, '')}`
+    : null;
   return (
     <View key={index} style={$cellStyle}>
       <View style={$spaceBetween}>
@@ -142,7 +171,7 @@ export const TripCell: FC<TripCellProps> = ({
             size="xxs"
             weight="medium"
             style={[$shrinkPrimaryText, { color: status.color }]}
-            text={item?.status.toUpperCase()}
+            text={statusText.toUpperCase()}
           />
         </View>
         <Text
@@ -157,7 +186,7 @@ export const TripCell: FC<TripCellProps> = ({
       </View>
       <Text size="sm" weight="medium" text={item.title} />
       <View style={$rowWrapper}>
-        {item?.client_profile_pic || item?.client?.profile_image ? (
+        {profileUri ? (
           <SafeRemoteImage
             resizeMode="cover"
             style={{
@@ -166,11 +195,7 @@ export const TripCell: FC<TripCellProps> = ({
               borderRadius: spacing.md,
               backgroundColor: colors.primaryDimmed,
             }}
-            uri={
-              baseURl +
-              '/' +
-              (item?.client_profile_pic ?? item?.client?.profile_image)
-            }
+            uri={profileUri}
             fallback={images.user}
           />
         ) : (
@@ -179,9 +204,7 @@ export const TripCell: FC<TripCellProps> = ({
               size="xs"
               weight="medium"
               style={{ color: colors.primary }}
-              text={
-                item.client_name ? item.client_name[0] : item.client.name[0]
-              }
+              text={clientName.charAt(0).toUpperCase()}
             />
           </View>
         )}
@@ -189,7 +212,7 @@ export const TripCell: FC<TripCellProps> = ({
           size="xs"
           weight="medium"
           style={$shrinkText}
-          text={item.client_name ?? item.client.name}
+          text={clientName}
         />
         <View style={$smallBox}>
           <Text
@@ -267,7 +290,7 @@ export const TripCell: FC<TripCellProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Review customer"
         >
-          <Text text="Review Customer" size="xs" weight="semiBold" style={$reviewText} />
+          <Text text="Give Review" size="xs" weight="semiBold" style={$reviewText} />
         </TouchableOpacity>
       )}
     </View>
@@ -410,9 +433,9 @@ const $imageName: ViewStyle = {
 
 const mapStateToProps = (state: RootState) => ({
   fetching: state.home.activeJobsLoading,
-  activeJobs: state.home.activeJobs,
+  activeJobs: state.home.activeJobs ?? [],
   totalPage: state.home.totalActivePage,
-  baseURl: state.setting.basic?.base_url,
+  baseURl: state.setting.basic?.base_url ?? URLs.assets,
 });
 
 const mapDispatch = {

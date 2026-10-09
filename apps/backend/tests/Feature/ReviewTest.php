@@ -167,6 +167,29 @@ it('returns the current users review status and submitted review', function () {
         ->assertJsonPath('data.review.review', 'Already submitted feedback.');
 });
 
+it('returns review eligibility on the customer completed job detail', function () {
+    Sanctum::actingAs($this->customer);
+
+    $this->postJson('/api/client/job-details', ['job_id' => $this->job->id])
+        ->assertOk()
+        ->assertJsonPath('data.job.can_review', true)
+        ->assertJsonPath('data.job.has_reviewed', false);
+
+    Review::create([
+        'given_by' => $this->customer->id,
+        'given_to' => $this->provider->id,
+        'job_id' => $this->job->id,
+        'star' => 5,
+        'review' => 'Completed review.',
+        'review_to' => 'freelancer',
+    ]);
+
+    $this->postJson('/api/client/job-details', ['job_id' => $this->job->id])
+        ->assertOk()
+        ->assertJsonPath('data.job.can_review', false)
+        ->assertJsonPath('data.job.has_reviewed', true);
+});
+
 it('returns the existing review when submission is retried', function () {
     Sanctum::actingAs($this->customer);
 

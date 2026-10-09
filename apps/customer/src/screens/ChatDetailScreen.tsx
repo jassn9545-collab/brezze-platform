@@ -1,6 +1,7 @@
 import React, { FC, useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  DeviceEventEmitter,
   FlatList,
   Image,
   ImageStyle,
@@ -22,6 +23,7 @@ import { translate } from '../i18n';
 import { parseSource } from '../utils/util';
 import { useAppSelector, useIsForeground } from '../store/hooks';
 import { subscribeToConversation } from '../utils/realtime';
+import { CHAT_PUSH_EVENT } from '../utils/Firebase';
 
 type Props = AppStackScreenProps<'ChatDetail'>;
 
@@ -91,12 +93,19 @@ const ChatDetail: FC<Props> = ({ navigation, route }) => {
       newestMessageId.current = Math.max(newestMessageId.current ?? 0, incoming.id);
       setMessages(previous => [incoming, ...previous.filter(item => item.id !== incoming.id)]);
     });
+    const pushSubscription = DeviceEventEmitter.addListener(
+      CHAT_PUSH_EVENT,
+      ({conversationId: pushedConversationId}: {conversationId: number}) => {
+        if (pushedConversationId === conversationId) loadMessages('silent');
+      },
+    );
     const interval = setInterval(() => {
       if (autoRefreshEnabled.current) loadMessages('silent');
-    }, 30000);
+    }, 2500);
     return () => {
       focused.current = false;
       unsubscribe();
+      pushSubscription.remove();
       clearInterval(interval);
     };
   }, [loadMessages, isForeground]));

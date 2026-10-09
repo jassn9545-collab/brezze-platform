@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 
@@ -164,4 +165,71 @@ it('returns an existing application even after the job stops accepting bids', fu
     ])->assertOk()
         ->assertJsonPath('data.already_applied', true)
         ->assertJsonPath('data.bid_amount', '31');
+});
+
+it('treats retrying the same hire as an idempotent success', function () {
+    Mail::fake();
+    $bid = Bid::create([
+        'project_id' => $this->project->id,
+        'user_id' => $this->provider->id,
+        'bid_amount' => '31',
+        'date_time' => now(),
+        'is_hired' => false,
+    ]);
+    Sanctum::actingAs($this->client);
+
+    $payload = ['job_id' => $this->project->id, 'bid_id' => $bid->id];
+
+    $this->postJson('/api/client/hire-now', $payload)
+        ->assertOk()
+        ->assertJsonPath('data.already_hired', false)
+        ->assertJsonPath('data.hired_bid_id', $bid->id)
+        ->assertJsonPath('data.job.status', 'in progress')
+        ->assertJsonPath('data.job.bids.0.is_hired', true);
+
+    $this->postJson('/api/client/hire-now', $payload)
+        ->assertOk()
+        ->assertJsonPath('message', 'This provider is already hired for this job.')
+        ->assertJsonPath('data.already_hired', true)
+        ->assertJsonPath('data.hired_bid_id', $bid->id);
+
+    expect(Bid::query()->where('project_id', $this->project->id)->where('is_hired', true)->count())
+        ->toBe(1);
+});
+
+it('rejects hiring a different provider after a provider is selected', function () {
+    Mail::fake();
+    $otherProvider = User::create([
+        'name' => 'Other Provider',
+        'email' => 'other-provider-bid@example.test',
+        'password' => Hash::make('password'),
+        'user_type' => 'freelancer',
+    ]);
+    $firstBid = Bid::create([
+        'project_id' => $this->project->id,
+        'user_id' => $this->provider->id,
+        'bid_amount' => '31',
+        'is_hired' => false,
+    ]);
+    $secondBid = Bid::create([
+        'project_id' => $this->project->id,
+        'user_id' => $otherProvider->id,
+        'bid_amount' => '30',
+        'is_hired' => false,
+    ]);
+    Sanctum::actingAs($this->client);
+
+    $this->postJson('/api/client/hire-now', [
+        'job_id' => $this->project->id,
+        'bid_id' => $firstBid->id,
+    ])->assertOk();
+
+    $this->postJson('/api/client/hire-now', [
+        'job_id' => $this->project->id,
+        'bid_id' => $secondBid->id,
+    ])->assertStatus(409)
+        ->assertJsonPath('message', 'Another provider has already been hired for this job.');
+
+    expect($firstBid->fresh()->is_hired)->toBeTrue()
+        ->and($secondBid->fresh()->is_hired)->toBeFalse();
 });

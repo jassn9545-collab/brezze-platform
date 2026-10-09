@@ -2,6 +2,8 @@ import React, { FC, useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
+  DeviceEventEmitter,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -15,9 +17,8 @@ import { BackButtom, Button, Screen, Text } from '../components';
 import { colors, spacing } from '../theme';
 import { useAppSelector } from '../store/hooks';
 import { subscribeToUser } from '../utils/realtime';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../navigators/AppStack';
+import {PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
+import {openNotificationDestination} from '../utils/notificationNavigation';
 
 export const NotificationScreen: FC = () => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -25,7 +26,6 @@ export const NotificationScreen: FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
-  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -53,7 +53,18 @@ export const NotificationScreen: FC = () => {
             ]);
           })
         : undefined;
-      return unsubscribe;
+      const pushSubscription = DeviceEventEmitter.addListener(
+        PUSH_NOTIFICATION_EVENT,
+        () => load().catch(() => undefined),
+      );
+      const appStateSubscription = AppState.addEventListener('change', state => {
+        if (state === 'active') load(true).catch(() => undefined);
+      });
+      return () => {
+        unsubscribe?.();
+        pushSubscription.remove();
+        appStateSubscription.remove();
+      };
     }, [load, ownUserId]),
   );
 
@@ -73,9 +84,7 @@ export const NotificationScreen: FC = () => {
 
   const openNotification = async (notification: AppNotification) => {
     await markRead(notification);
-    if (notification.action_type === 'project' && notification.action_id) {
-      navigation.navigate('jobPostDetails', { id: notification.action_id });
-    }
+    openNotificationDestination(notification);
   };
 
   const markAll = () => {

@@ -88,10 +88,6 @@ export const hireJob = createAsyncThunk(
         },
         data: JSON.stringify(params),
       });
-      navigationRef.resetRoot({
-        index: 1,
-        routes: [{ name: 'Drawer' }, { name: 'HireHistory' }],
-      });
       return response.data.data;
     } catch (error) {
       throw thunkAPI.rejectWithValue(error);
@@ -261,8 +257,11 @@ export const jobSlice = createSlice({
       .addCase(hireJob.pending, state => {
         state.hireJobLoading = 'loading';
       })
-      .addCase(hireJob.fulfilled, state => {
+      .addCase(hireJob.fulfilled, (state, action) => {
         state.hireJobLoading = 'loaded';
+        if (action.payload?.job) {
+          state.jobDetail = action.payload.job;
+        }
       })
       .addCase(hireJob.rejected, (state, action) => {
         state.hireJobLoading = 'failed';

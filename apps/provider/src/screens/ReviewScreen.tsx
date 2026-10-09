@@ -66,17 +66,14 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
 
     setSubmitting(true);
     try {
-      const response = await api.post(URLs.submitReview, {
+      await api.post(URLs.submitReview, {
         project_id: route.params.jobId,
         star: rating,
         review: review.trim(),
       });
-      setStatus({
-        project_id: route.params.jobId,
-        project_status: 'completed',
-        can_review: false,
-        has_reviewed: true,
-        review: response.data.data as SubmittedReview,
+      navigation.replace('JobDetail', {
+        id: route.params.jobId,
+        from: 'CompleteJob',
       });
     } catch {
       // The shared API client displays the server error.
@@ -99,6 +96,7 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
           onPress={() => setRating(item)}
           accessibilityRole="button"
           accessibilityLabel={`${item} star rating`}
+          style={styles.starButton}
         >
           {star}
         </TouchableOpacity>
@@ -147,7 +145,16 @@ export const ReviewScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text text={status.review.review} style={styles.submittedReviewText} />
             </View>
           )}
-          <Button text="Done" style={styles.button} onPress={navigation.goBack} />
+          <Button
+            text="Done"
+            style={styles.button}
+            onPress={() =>
+              navigation.replace('JobDetail', {
+                id: route.params.jobId,
+                from: 'CompleteJob',
+              })
+            }
+          />
         </View>
       </Screen>
     );
@@ -234,15 +241,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: spacing.xl,
   },
+  starButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    minWidth: 48,
+  },
   star: {
     fontSize: 35,
+    lineHeight: 44,
     color: colors.palette.darkGray1,
     marginHorizontal: spacing.xxs,
+    paddingBottom: 2,
   },
   activeStar: {
     fontSize: 35,
+    lineHeight: 44,
     color: '#FFD700',
     marginHorizontal: spacing.xxs,
+    paddingBottom: 2,
   },
   label: {
     fontSize: 14,

@@ -13,9 +13,11 @@ use App\Traits\ApiResponse;
 use App\Models\Project;
 use App\Models\ProjectImage;
 use App\Models\Payment;
+use App\Models\Review;
 use App\Services\RealtimeNotifier;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class JobController extends BaseClientController
 {
@@ -117,11 +119,23 @@ class JobController extends BaseClientController
 
         $query->latest();
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+        $jobs = collect($paginator->items());
+        $reviewedJobIds = Review::query()
+            ->where('given_by', auth()->id())
+            ->whereIn('job_id', $jobs->pluck('id'))
+            ->pluck('job_id')
+            ->map(fn ($jobId) => (int) $jobId)
+            ->all();
+        $reviewedLookup = array_flip($reviewedJobIds);
 
-        
+        $jobs->each(function (Project $job) use ($reviewedLookup) {
+            $hasReviewed = isset($reviewedLookup[$job->id]);
+            $job->setAttribute('has_reviewed', $hasReviewed);
+            $job->setAttribute('can_review', $job->status === 'completed' && !$hasReviewed);
+        });
 
         return $this->success([
-            'jobs' => $paginator->items(),
+            'jobs' => $jobs->values()->all(),
             'total_pages' => $paginator->lastPage(),
             'current_page' => $paginator->currentPage(),
             'total' => $paginator->total(),
@@ -152,6 +166,13 @@ class JobController extends BaseClientController
             return $this->error('Job not found.', 404);
         }
 
+        $hasReviewed = Review::query()
+            ->where('job_id', $job->id)
+            ->where('given_by', auth()->id())
+            ->exists();
+        $job->setAttribute('has_reviewed', $hasReviewed);
+        $job->setAttribute('can_review', $job->status === 'completed' && !$hasReviewed);
+
         return $this->success(['job' => $job], 'Job details retrieved successfully.');
     }
 
@@ -170,7 +191,6 @@ class JobController extends BaseClientController
         }
 
         $job = Project::where('user_id', auth()->id())
-            ->where('status', 'active')
             ->find($request->job_id);
         if (!$job) {
             return $this->error('Job not found.', 404);
@@ -185,39 +205,113 @@ class JobController extends BaseClientController
             return $this->error('Freelancer not found.', 404);
         }
 
-        DB::transaction(function () use ($job, $bid) {
-            \App\Models\Bid::where('project_id', $job->id)->update(['is_hired' => 0]);
-            $bid->update(['is_hired' => 1]);
-            $job->update(['status' => 'in progress']);
+        $result = DB::transaction(function () use ($job, $bid) {
+            $lockedJob = Project::query()
+                ->where('id', $job->id)
+                ->where('user_id', auth()->id())
+                ->lockForUpdate()
+                ->first();
+            $lockedBid = \App\Models\Bid::query()
+                ->where('id', $bid->id)
+                ->where('project_id', $job->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $lockedJob || ! $lockedBid) {
+                return ['error' => 'Job or bid not found.', 'code' => 404];
+            }
+
+            $hiredBid = \App\Models\Bid::query()
+                ->where('project_id', $lockedJob->id)
+                ->where('is_hired', 1)
+                ->lockForUpdate()
+                ->first();
+
+            if ($hiredBid) {
+                if ((int) $hiredBid->id === (int) $lockedBid->id) {
+                    return ['already_hired' => true];
+                }
+
+                return [
+                    'error' => 'Another provider has already been hired for this job.',
+                    'code' => 409,
+                ];
+            }
+
+            if ($lockedJob->status !== 'active') {
+                return [
+                    'error' => 'This job is no longer accepting hires.',
+                    'code' => 409,
+                ];
+            }
+
+            \App\Models\Bid::where('project_id', $lockedJob->id)->update(['is_hired' => 0]);
+            $lockedBid->update(['is_hired' => 1]);
+            $lockedJob->update(['status' => 'in progress']);
+
+            return ['already_hired' => false];
         });
-        
 
-        Mail::html("Hi {$user->name}, <br/>Congratulations! You have been hired for the job: {$job->title}. <br/><br/>Best regards,<br/>The Team Bezzie", function ($message) use ($user) {
-            $message->to($user->email)
-                    ->subject('You have been hired!');
-        });
+        if (isset($result['error'])) {
+            return $this->error($result['error'], $result['code']);
+        }
 
-        app(RealtimeNotifier::class)->notify(
-            $user->id,
-            'You were hired',
-            'You have been hired for '.$job->title.'.',
-            'job_in_progress',
-            'project',
-            $job->id,
-            ['status' => 'in progress'],
-        );
+        $updatedJob = Project::with('bids')->find($job->id);
+        $alreadyHired = (bool) $result['already_hired'];
 
-        app(RealtimeNotifier::class)->notify(
-            $job->user_id,
-            'Job in progress',
-            $job->title.' is now in progress.',
-            'job_in_progress',
-            'project',
-            $job->id,
-            ['status' => 'in progress'],
-        );
+        if (! $alreadyHired) {
+            $providerId = (int) $user->id;
+            $providerName = (string) $user->name;
+            $providerEmail = (string) $user->email;
+            $customerId = (int) $job->user_id;
+            $jobId = (int) $job->id;
+            $jobTitle = (string) $job->title;
 
-        return $this->success(['job' => $job], 'Freelancer hired successfully.');
+            defer(function () use (
+                $providerId,
+                $providerName,
+                $providerEmail,
+                $customerId,
+                $jobId,
+                $jobTitle,
+            ) {
+                try {
+                    Mail::html(
+                        "Hi {$providerName}, <br/>Congratulations! You have been hired for the job: {$jobTitle}. <br/><br/>Best regards,<br/>The Team Bezzie",
+                        function ($message) use ($providerEmail) {
+                            $message->to($providerEmail)->subject('You have been hired!');
+                        }
+                    );
+                } catch (Throwable $exception) {
+                    report($exception);
+                }
+
+                foreach ([
+                    [$providerId, 'You were hired', 'You have been hired for '.$jobTitle.'.'],
+                    [$customerId, 'Job in progress', $jobTitle.' is now in progress.'],
+                ] as [$recipientId, $title, $message]) {
+                    try {
+                        app(RealtimeNotifier::class)->notify(
+                            $recipientId,
+                            $title,
+                            $message,
+                            'job_in_progress',
+                            'project',
+                            $jobId,
+                            ['status' => 'in progress'],
+                        );
+                    } catch (Throwable $exception) {
+                        report($exception);
+                    }
+                }
+            });
+        }
+
+        return $this->success([
+            'job' => $updatedJob,
+            'already_hired' => $alreadyHired,
+            'hired_bid_id' => $bid->id,
+        ], $alreadyHired ? 'This provider is already hired for this job.' : 'Freelancer hired successfully.');
     }
 
     public function jobMarkCompleted(Request $request){

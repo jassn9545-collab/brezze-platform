@@ -403,7 +403,10 @@ class PaymentController extends Controller
 
         $perPage = min(max($request->integer('per_page', 10), 1), 50);
         $payments = Payment::query()
-            ->with('project:id,title')
+            ->with([
+                'project:id,title',
+                'customer:id,name',
+            ])
             ->where('provider_id', $request->user()->id)
             ->latest()
             ->paginate($perPage);
@@ -768,6 +771,9 @@ class PaymentController extends Controller
                 ? $payment->project?->title
                 : null,
             'customer_id' => $payment->customer_id,
+            'client_name' => $payment->relationLoaded('customer')
+                ? $payment->customer?->name
+                : null,
             'provider_id' => $payment->provider_id,
             'transaction_id' => $payment->transaction_id,
             'amount' => $payment->amount,

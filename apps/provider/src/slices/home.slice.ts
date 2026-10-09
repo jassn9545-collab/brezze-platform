@@ -442,11 +442,11 @@ export const homeSlice = createSlice({
       .addCase(getActiveJob.fulfilled, (state, action) => {
         state.activeJobsLoading = 'loaded';
         if (action.meta.arg.page === 1) {
-          state.activeJobs = action.payload.jobs;
+          state.activeJobs = action.payload?.jobs ?? [];
         } else {
-          state.activeJobs = state.activeJobs.concat(action.payload.jobs);
+          state.activeJobs = state.activeJobs.concat(action.payload?.jobs ?? []);
         }
-        state.totalActivePage = action.payload.total ?? 10;
+        state.totalActivePage = action.payload?.total_pages ?? 1;
       })
       .addCase(getActiveJob.rejected, (state, action) => {
         state.activeJobsLoading = 'failed';
@@ -461,11 +461,11 @@ export const homeSlice = createSlice({
       .addCase(getCompleteJobs.fulfilled, (state, action) => {
         state.completeJobsLoading = 'loaded';
         if (action.meta.arg.page === 1) {
-          state.completeJobs = action.payload.jobs;
+          state.completeJobs = action.payload?.jobs ?? [];
         } else {
-          state.completeJobs = state.completeJobs.concat(action.payload.jobs);
+          state.completeJobs = state.completeJobs.concat(action.payload?.jobs ?? []);
         }
-        state.totalCompletePage = action.payload.total ?? 10;
+        state.totalCompletePage = action.payload?.total_pages ?? 1;
       })
       .addCase(getCompleteJobs.rejected, (state, action) => {
         state.completeJobsLoading = 'failed';

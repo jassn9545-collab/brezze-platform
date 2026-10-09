@@ -3,9 +3,13 @@ import {useAppSelector} from '../store/hooks';
 import {startFirebaseNotifications} from '../utils/Firebase';
 
 export const PushNotificationBridge = () => {
-  const userId = useAppSelector(state => state.auth.myProfile?.user?.id);
+  const shouldRegister = useAppSelector(
+    state =>
+      Boolean(state.auth.isAuthorized) ||
+      Boolean(state.auth.myProfile?.user?.id),
+  );
   useEffect(() => {
-    if (!userId) return;
+    if (!shouldRegister) return;
     let stopped = false;
     let cleanup: () => void = () => undefined;
     startFirebaseNotifications().then(unsubscribe => {
@@ -16,6 +20,6 @@ export const PushNotificationBridge = () => {
       stopped = true;
       cleanup();
     };
-  }, [userId]);
+  }, [shouldRegister]);
   return null;
 };

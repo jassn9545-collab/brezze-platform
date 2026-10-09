@@ -13,8 +13,10 @@ import {
   TouchableOpacity,
   FlatList,
   ListRenderItemInfo,
+  AppState,
+  DeviceEventEmitter,
 } from 'react-native';
-import React, { FC, useEffect } from 'react';
+import React, { FC, useCallback, useEffect } from 'react';
 import { spacing, colors } from '../theme';
 import { AppStackScreenProps } from '../navigators/AppStack';
 import { Currency } from '../config/defaults';
@@ -32,6 +34,8 @@ import { BasicData } from '../slices/setting.slice';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { translate } from '../i18n';
 import { openChatConversation } from '../apis/chat';
+import {useFocusEffect} from '@react-navigation/native';
+import {AppPushEvent, PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
 
 type NavigationProps = AppStackScreenProps<'jobPostDetails'>;
 type Props = NavigationProps & ConnectedProps<typeof connector>;
@@ -59,6 +63,29 @@ const JobPostDetails: FC<Props> = props => {
     }
   }, [hireJobLoading, currentJobId, get]);
 
+  useFocusEffect(
+    useCallback(() => {
+      const jobId = route.params?.id;
+      const reload = () => {
+        if (jobId) get({job_id: jobId});
+      };
+      const pushSubscription = DeviceEventEmitter.addListener(
+        PUSH_NOTIFICATION_EVENT,
+        (event: AppPushEvent) => {
+          if (event.actionId === jobId && event.actionType === 'project') reload();
+        },
+      );
+      const appStateSubscription = AppState.addEventListener('change', state => {
+        if (state === 'active') reload();
+      });
+
+      return () => {
+        pushSubscription.remove();
+        appStateSubscription.remove();
+      };
+    }, [get, route.params?.id]),
+  );
+
   const onPressProfile = (_data: Bid) => {
     props.navigation.navigate('ProfessionalProfile', { id: _data.user_id, projectId: route.params?.id });
   };
@@ -81,10 +108,21 @@ const JobPostDetails: FC<Props> = props => {
   };
 
   const onPressHire = (data: Bid) => {
-    if (route.params?.id) {
+    const hasHiredProvider = props.data?.bids?.some(bid => Boolean(bid.is_hired));
+    if (
+      route.params?.id &&
+      props.data?.status === 'active' &&
+      !hasHiredProvider &&
+      props.hireJobLoading !== 'loading'
+    ) {
       props.hireJob({ job_id: route.params?.id, bid_id: data.id });
     }
   };
+
+  const hasHiredProvider = Boolean(
+    props.data?.bids?.some(bid => Boolean(bid.is_hired)),
+  );
+  const canHireProvider = props.data?.status === 'active' && !hasHiredProvider;
 
   return (
     <>
@@ -117,6 +155,7 @@ const JobPostDetails: FC<Props> = props => {
                 openingChatBidId={openingChatBidId}
                 onPressHire={onPressHire}
                 isHired={info.item.is_hired || false}
+                hiringClosed={!canHireProvider && !info.item.is_hired}
                 hireJobLoading={props.hireJobLoading === 'loading'}
                 hiredFreelancerName={
                   info.item.is_hired ? info.item.freelancer_name : ''
@@ -148,11 +187,12 @@ const JobPostDetails: FC<Props> = props => {
             />
           </>
         )}
-        {props.data?.status === 'completed' && (
+        {props.data?.status === 'completed' &&
+          (props.data.can_review ?? !props.data.has_reviewed) && (
           <>
             <View style={styles.flexOne} />
             <Button
-              text="Review Provider"
+              text="Give Review"
               style={[
                 styles.button,
                 { marginBottom: insets.bottom + spacing.md },
@@ -219,6 +259,7 @@ type BidCardProps = ListRenderItemInfo<Bid> & {
   openingChatBidId: number | null;
   onPressHire: (data: Bid) => void;
   isHired: boolean;
+  hiringClosed: boolean;
   hireJobLoading: boolean;
   hiredFreelancerName: string;
 };
@@ -231,6 +272,7 @@ const BidCard = ({
   openingChatBidId,
   onPressHire,
   isHired,
+  hiringClosed,
   hireJobLoading,
   hiredFreelancerName,
 }: BidCardProps) => {
@@ -277,10 +319,10 @@ const BidCard = ({
             <TouchableOpacity
               style={[
                 styles.hireBtn,
-                (isHired || hireJobLoading) && styles.hireBtnDisabled,
+                (isHired || hiringClosed || hireJobLoading) && styles.hireBtnDisabled,
               ]}
               onPress={() => onPressHire(item)}
-              disabled={isHired || hireJobLoading}
+              disabled={isHired || hiringClosed || hireJobLoading}
             >
               <Text
                 size="xxs"
@@ -290,11 +332,16 @@ const BidCard = ({
                     ? `${translate(
                         'jobPostDetails.hired',
                       )}${hiredFreelancerName}`
+                    : hiringClosed
+                      ? 'Hiring Closed'
                     : translate('jobPostDetails.hireText')
                 }
                 numberOfLines={1}
                 style={{
-                  color: !isHired ? colors.palette.white : colors.palette.black,
+                  color:
+                    !isHired && !hiringClosed
+                      ? colors.palette.white
+                      : colors.palette.black,
                 }}
               />
             </TouchableOpacity>

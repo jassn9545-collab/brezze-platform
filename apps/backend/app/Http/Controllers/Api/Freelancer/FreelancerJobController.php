@@ -172,6 +172,20 @@ class FreelancerJobController extends BaseFreelancerController
         if (!$project) {
             return $this->error('Project not found.', 400);
         }
+        $isHiredProvider = Bid::query()
+            ->where('project_id', $project->id)
+            ->where('user_id', auth()->id())
+            ->where('is_hired', 1)
+            ->exists();
+        $hasReviewed = Review::query()
+            ->where('job_id', $project->id)
+            ->where('given_by', auth()->id())
+            ->exists();
+        $project->setAttribute('has_reviewed', $hasReviewed);
+        $project->setAttribute(
+            'can_review',
+            $project->status === 'completed' && $isHiredProvider && !$hasReviewed
+        );
         $project->base_url = rtrim((string) config('app.asset_url'), '/');
 
         return $this->success($project, 'Job details retrieved successfully.');
@@ -424,9 +438,19 @@ class FreelancerJobController extends BaseFreelancerController
             ->latest()
             ->paginate($perPage, ['*'], 'page', $page);
 
+        $reviewedJobIds = Review::query()
+            ->where('given_by', $user->id)
+            ->whereIn('job_id', $paginator->getCollection()->pluck('project_id'))
+            ->pluck('job_id')
+            ->map(fn ($jobId) => (int) $jobId)
+            ->all();
+        $reviewedLookup = array_flip($reviewedJobIds);
+
         // Transform data
-        $jobs = $paginator->getCollection()->map(function ($item) {
+        $jobs = $paginator->getCollection()->map(function ($item) use ($reviewedLookup) {
             if (!$item->project) return null;
+
+            $hasReviewed = isset($reviewedLookup[$item->project->id]);
 
             return array_merge(
                 $item->project->toArray(),
@@ -437,6 +461,8 @@ class FreelancerJobController extends BaseFreelancerController
 
                     'client_name' => $item->project->user->name ?? null,
                     'client_profile_pic' => $item->project->user->profile_image ?? null, // fixed key
+                    'has_reviewed' => $hasReviewed,
+                    'can_review' => !$hasReviewed,
                 ]
             );
         })->filter()->values();

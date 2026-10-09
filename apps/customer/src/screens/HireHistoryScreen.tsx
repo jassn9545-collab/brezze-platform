@@ -1,6 +1,8 @@
 import { BackButtom, Loader, Screen, Text } from '../components';
 import {
   ActivityIndicator,
+  AppState,
+  DeviceEventEmitter,
   FlatList,
   Image,
   StyleSheet,
@@ -16,6 +18,7 @@ import { getJobList } from '../slices/job.slice';
 import { Bid, Job } from '../slices/types';
 import ListEmptyComponent from '../components/ListEmptyComponent';
 import { subscribeToUser } from '../utils/realtime';
+import {AppPushEvent, PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
 
 type Props = AppStackScreenProps<'HireHistory'>;
 
@@ -41,7 +44,7 @@ const HireHistory: FC<Props> = props => {
     useCallback(() => {
       page = 1;
       loadHistory(1);
-      return ownUserId
+      const unsubscribeRealtime = ownUserId
         ? subscribeToUser(Number(ownUserId), () => undefined, event => {
             if (event.kind === 'job_in_progress' || event.kind === 'job_completed') {
               page = 1;
@@ -49,6 +52,27 @@ const HireHistory: FC<Props> = props => {
             }
           })
         : undefined;
+      const pushSubscription = DeviceEventEmitter.addListener(
+        PUSH_NOTIFICATION_EVENT,
+        (event: AppPushEvent) => {
+          if (event.kind === 'job_in_progress' || event.kind === 'job_completed') {
+            page = 1;
+            loadHistory(1);
+          }
+        },
+      );
+      const appStateSubscription = AppState.addEventListener('change', state => {
+        if (state === 'active') {
+          page = 1;
+          loadHistory(1);
+        }
+      });
+
+      return () => {
+        unsubscribeRealtime?.();
+        pushSubscription.remove();
+        appStateSubscription.remove();
+      };
     }, [loadHistory, ownUserId]),
   );
 
@@ -88,6 +112,9 @@ const HireHistory: FC<Props> = props => {
             onPress={() =>
               props.navigation.navigate('jobPostDetails', {id: item.id})
             }
+            onReview={() =>
+              props.navigation.navigate('ReviewScreen', {jobId: item.id})
+            }
           />
         )}
         ListEmptyComponent={
@@ -113,10 +140,12 @@ const HireHistoryCard = ({
   job,
   baseUrl,
   onPress,
+  onReview,
 }: {
   job: Job;
   baseUrl: string;
   onPress: () => void;
+  onReview: () => void;
 }) => {
   const hiredBid: Bid | undefined = job.bids?.find(bid => Boolean(bid.is_hired));
   const completed = job.status === 'completed';
@@ -125,41 +154,54 @@ const HireHistoryCard = ({
   const avatar = imagePath
     ? {uri: `${baseUrl.replace(/\/$/, '')}/${imagePath.replace(/^\//, '')}`}
     : images.user;
+  const canReview = completed && (job.can_review ?? !job.has_reviewed);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.rowBetween}>
-        <View style={styles.providerRow}>
-          <Image source={avatar} style={styles.avatar} />
-          <View style={styles.providerText}>
+    <View style={styles.card}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+        <View style={styles.rowBetween}>
+          <View style={styles.providerRow}>
+            <Image source={avatar} style={styles.avatar} />
+            <View style={styles.providerText}>
+              <Text
+                text={hiredBid?.freelancer_name ?? 'Hired professional'}
+                weight="semiBold"
+                numberOfLines={1}
+              />
+              <Text text={job.title} size="xs" style={styles.gray} numberOfLines={1} />
+            </View>
+          </View>
+          <View style={[styles.badge, {backgroundColor: `${statusColor}20`}]}>
             <Text
-              text={hiredBid?.freelancer_name ?? 'Hired professional'}
-              weight="semiBold"
-              numberOfLines={1}
+              text={(job.status || 'unknown').toUpperCase()}
+              size="xxs"
+              style={[styles.badgeText, {color: statusColor}]}
             />
-            <Text text={job.title} size="xs" style={styles.gray} numberOfLines={1} />
           </View>
         </View>
-        <View style={[styles.badge, {backgroundColor: `${statusColor}20`}]}>
-          <Text
-            text={job.status.toUpperCase()}
-            size="xxs"
-            style={[styles.badgeText, {color: statusColor}]}
-          />
-        </View>
-      </View>
 
-      <View style={styles.jobMeta}>
-        <View>
-          <Text text="Agreed amount" size="xs" style={styles.gray} />
-          <Text
-            text={`AUD ${hiredBid?.bid_amount ?? job.budget}`}
-            weight="semiBold"
-          />
+        <View style={styles.jobMeta}>
+          <View>
+            <Text text="Agreed amount" size="xs" style={styles.gray} />
+            <Text
+              text={`AUD ${hiredBid?.bid_amount ?? job.budget}`}
+              weight="semiBold"
+            />
+          </View>
+          <Text text={job.address} size="xs" style={styles.address} numberOfLines={2} />
         </View>
-        <Text text={job.address} size="xs" style={styles.address} numberOfLines={2} />
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      {canReview && (
+        <TouchableOpacity
+          style={styles.reviewButton}
+          onPress={onReview}
+          accessibilityRole="button"
+          accessibilityLabel="Give review"
+        >
+          <Text text="Give Review" size="xs" weight="semiBold" style={styles.reviewButtonText} />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 };
 
@@ -227,6 +269,17 @@ const styles = StyleSheet.create({
     maxWidth: '58%',
     textAlign: 'right',
     color: colors.palette.grayText,
+  },
+  reviewButton: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: spacing.xs,
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    minHeight: 42,
+  },
+  reviewButtonText: {
+    color: colors.palette.white,
   },
 });
 

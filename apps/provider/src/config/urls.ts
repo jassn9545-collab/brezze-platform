@@ -1,40 +1,18 @@
 
 
-import {NativeModules} from 'react-native';
-
 const ASSET_BASE_URL = 'https://hirephpdeveloperindia.com/bezzie/public';
-
-const getDevelopmentApiHost = (): string => {
-  try {
-    const sourceCode = NativeModules.SourceCode;
-    const scriptURL: unknown =
-      sourceCode?.getConstants?.()?.scriptURL ?? sourceCode?.scriptURL;
-    if (typeof scriptURL === 'string') {
-      const host = /^https?:\/\/(\[[^\]]+\]|[^:/?#]+)(?::\d+)?(?:[/?#]|$)/i.exec(scriptURL)?.[1];
-      if (host) {
-        const normalizedHost = host.replace(/^\[|\]$/g, '').toLowerCase();
-        // USB devices reach the backend through adb reverse, just like Metro.
-        return ['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(normalizedHost)
-          ? '127.0.0.1'
-          : host;
-      }
-    }
-  } catch {
-    // Metro URL is unavailable; use the USB-forwarded backend.
-  }
-
-  return '127.0.0.1';
-};
 
 const URLs = {
   base: 'https://hirephpdeveloperindia.com/bezzie/api',
   assets: ASSET_BASE_URL,
 
   realtime: {
-    host: __DEV__ ? getDevelopmentApiHost() : 'hirephpdeveloperindia.com',
-    port: __DEV__ ? 8083 : 443,
+    // Live hosting does not currently expose a Reverb WebSocket endpoint.
+    enabled: false,
+    host: 'hirephpdeveloperindia.com',
+    port: 443,
     key: 'bezzie-local-key',
-    secure: !__DEV__,
+    secure: true,
   },
 
   SHARE_URL: 'https://hirephpdeveloperindia.com/referral',

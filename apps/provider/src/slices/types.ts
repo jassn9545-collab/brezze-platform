@@ -94,9 +94,11 @@ export interface Job {
   provider_earnings?: string | null;
   transaction_id?: string | null;
   paid_at?: string | null;
-  client: {
+  has_reviewed?: boolean;
+  can_review?: boolean;
+  client?: {
     name: string;
-    profile_image: string;
+    profile_image: string | null;
   };
 }
 

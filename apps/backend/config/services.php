@@ -45,7 +45,10 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'currency' => strtolower(env('STRIPE_CURRENCY', 'aud')),
         'onboarding_base_url' => env('STRIPE_ONBOARDING_BASE_URL', env('APP_URL')),
-        'test_platform_payments' => env('STRIPE_TEST_PLATFORM_PAYMENTS', false),
+        // Test-mode charges stay on the platform so QA is not blocked while a
+        // provider's Connect account is unfinished. Live-mode payments still
+        // require a fully enabled connected account in PaymentController.
+        'test_platform_payments' => env('STRIPE_TEST_PLATFORM_PAYMENTS', true),
     ],
 
     'metal_price' => [

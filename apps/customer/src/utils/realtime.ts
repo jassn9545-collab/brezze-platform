@@ -55,6 +55,7 @@ export const subscribeToConversation = (
   conversationId: number,
   onMessage: (message: ChatMessage) => void,
 ) => {
+  if (!URLs.realtime.enabled) return () => undefined;
   const channelName = `chat.${conversationId}`;
   const channel = connection().private(channelName);
   const handler = (event: { message: ChatMessage }) => onMessage(event.message);
@@ -70,6 +71,7 @@ export const subscribeToUser = (
   onChatMessage: () => void,
   onUserEvent?: (event: UserRealtimeEvent) => void,
 ) => {
+  if (!URLs.realtime.enabled) return () => undefined;
   const channelName = `user.${userId}`;
   const channel = connection().private(channelName);
   channel.listen('.chat.message', onChatMessage);

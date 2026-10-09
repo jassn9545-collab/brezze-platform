@@ -84,6 +84,8 @@ export interface Job {
   modify_id: string
   user_id: string
   job_applied: boolean
+  has_reviewed?: boolean
+  can_review?: boolean
   bids: Bid[]
   bids_count: number
 }

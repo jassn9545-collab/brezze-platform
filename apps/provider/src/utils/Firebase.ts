@@ -1,47 +1,130 @@
 import {getApp} from '@react-native-firebase/app';
 import {
   AuthorizationStatus,
+  getInitialNotification,
   getMessaging,
   getToken,
   onMessage,
+  onNotificationOpenedApp,
   onTokenRefresh,
   registerDeviceForRemoteMessages,
   requestPermission,
 } from '@react-native-firebase/messaging';
-import {PermissionsAndroid, Platform} from 'react-native';
+import {AppState, DeviceEventEmitter, PermissionsAndroid, Platform} from 'react-native';
 import api from '../apis/api';
+import {openNotificationDestination} from './notificationNavigation';
+
+export const CHAT_PUSH_EVENT = 'bezzie.chat.push';
+export const PUSH_NOTIFICATION_EVENT = 'bezzie.push.received';
+
+export type AppPushEvent = {
+  kind: string;
+  actionType: string;
+  actionId: number | null;
+  conversationId: number | null;
+};
+
+let initialNotificationHandled = false;
+
+const pushEventFromData = (data: Record<string, unknown> | undefined): AppPushEvent => {
+  const actionId = Number(data?.action_id);
+  const conversationId = Number(data?.conversation_id ?? data?.action_id);
+  return {
+    kind: String(data?.type ?? ''),
+    actionType: String(data?.action_type ?? ''),
+    actionId: Number.isFinite(actionId) && actionId > 0 ? actionId : null,
+    conversationId:
+      Number.isFinite(conversationId) && conversationId > 0
+        ? conversationId
+        : null,
+  };
+};
+
+const emitPushEvent = (data: Record<string, unknown> | undefined) => {
+  const event = pushEventFromData(data);
+  DeviceEventEmitter.emit(PUSH_NOTIFICATION_EVENT, event);
+  if (event.kind === 'chat_message') {
+    DeviceEventEmitter.emit(CHAT_PUSH_EVENT, {
+      conversationId: event.conversationId,
+    });
+  }
+};
 
 const registerToken = async (token: string) => {
   await api.post('/devices', {token, platform: Platform.OS, app_type: 'provider'});
+  if (__DEV__) console.log('Firebase provider device registered.');
 };
 
 export const startFirebaseNotifications = async () => {
   try {
     const messaging = getMessaging(getApp());
     if (Platform.OS === 'android' && Platform.Version >= 33) {
-      await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+      const permission = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      );
+      if (
+        permission !== PermissionsAndroid.RESULTS.GRANTED &&
+        __DEV__
+      ) {
+        console.warn('Notification permission was not granted.');
+      }
     }
     await registerDeviceForRemoteMessages(messaging);
-    const permission = await requestPermission(messaging);
-    const allowed = permission === AuthorizationStatus.AUTHORIZED
-      || permission === AuthorizationStatus.PROVISIONAL;
-    if (!allowed && Platform.OS === 'ios') return () => undefined;
 
-    await registerToken(await getToken(messaging));
+    if (Platform.OS === 'ios') {
+      const permission = await requestPermission(messaging);
+      const allowed =
+        permission === AuthorizationStatus.AUTHORIZED ||
+        permission === AuthorizationStatus.PROVISIONAL;
+      if (!allowed) return () => undefined;
+    }
+
+    let stopped = false;
+    const syncToken = async () => {
+      try {
+        const token = await getToken(messaging);
+        if (!stopped && token) await registerToken(token);
+      } catch (error) {
+        if (__DEV__) console.warn('Firebase token registration failed', error);
+      }
+    };
+
     const unsubscribeRefresh = onTokenRefresh(messaging, token => {
-      registerToken(token).catch(() => undefined);
+      if (!stopped) registerToken(token).catch(() => undefined);
     });
     const unsubscribeMessage = onMessage(messaging, message => {
+      emitPushEvent(message.data);
       const title = message.notification?.title ?? 'Our Bezzie';
       const body = message.notification?.body;
       toast.show(body ? `${title}: ${body}` : title, {type: 'normal'});
     });
+    const unsubscribeOpened = onNotificationOpenedApp(messaging, message => {
+      emitPushEvent(message.data);
+      openNotificationDestination(message.data ?? {});
+    });
+    if (!initialNotificationHandled) {
+      initialNotificationHandled = true;
+      void getInitialNotification(messaging).then(message => {
+        if (!message) return;
+        emitPushEvent(message.data);
+        openNotificationDestination(message.data ?? {});
+      });
+    }
+    const appStateSubscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void syncToken();
+    });
+
+    void syncToken();
 
     return () => {
+      stopped = true;
+      appStateSubscription.remove();
       unsubscribeRefresh();
       unsubscribeMessage();
+      unsubscribeOpened();
     };
-  } catch {
+  } catch (error) {
+    if (__DEV__) console.warn('Firebase notification setup failed', error);
     return () => undefined;
   }
 };
