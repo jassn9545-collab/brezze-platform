@@ -102,6 +102,7 @@ const Service: FC<Props> = props => {
                 <TouchableOpacity style={styles.searchButton}>
                     <Image
                         source={images.searchService}
+                        style={styles.searchButtonIcon}
                     />
                 </TouchableOpacity>
             </View>
@@ -240,9 +241,15 @@ const styles = StyleSheet.create({
         height: 54,
         width: 54,
         borderRadius: spacing.xs,
-        backgroundColor: colors.palette.white,
+        backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+
+    searchButtonIcon: {
+        width: 22,
+        height: 22,
+        tintColor: colors.palette.white,
     },
 
   
@@ -262,11 +269,11 @@ const styles = StyleSheet.create({
 
     serviceContent: {
         flex: 1,
-        marginTop: 10,
+        justifyContent: 'center',
     },
 
     descriptionText: {
-        marginTop: 4,
+        marginTop: 2,
     },
     priceText: {
         color: colors.palette.primaryBlue,
@@ -281,10 +288,10 @@ const styles = StyleSheet.create({
     serviceCard: {
         flexDirection: 'row',
         backgroundColor: colors.palette.offWhite,
-        marginHorizontal: 15,
-        marginTop: 15,
-        borderRadius: 16,
-        padding: 15,
+        marginHorizontal: 12,
+        marginTop: 10,
+        borderRadius: 12,
+        padding: 10,
         alignItems: 'center',
         elevation: 2
     },
@@ -292,24 +299,27 @@ const styles = StyleSheet.create({
     ratingRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 6
+        marginBottom: 3
     },
 
     priceRow: {
         flexDirection: 'row',
-        marginTop: 8
+        marginTop: 4
     },
 
     serviceImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 10,
-        marginLeft: 10
+        width: 84,
+        height: 84,
+        borderRadius: 8,
+        marginLeft: 8
     },
 
     addButton: {
-        marginTop: 10,
-        width: 100,
+        marginTop: 6,
+        width: 88,
+        minHeight: 34,
+        paddingVertical: 4,
+        paddingHorizontal: 6,
         borderRadius: 4,
         backgroundColor: colors.palette.primaryDimmed,
     },

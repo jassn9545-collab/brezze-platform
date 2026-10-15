@@ -3,7 +3,9 @@
 const ASSET_BASE_URL = 'https://hirephpdeveloperindia.com/bezzie/public';
 
 const URLs = {
-  base: 'https://hirephpdeveloperindia.com/bezzie/api',
+  base: __DEV__
+    ? 'http://127.0.0.1:8000/api'
+    : 'https://hirephpdeveloperindia.com/bezzie/api',
   assets: ASSET_BASE_URL,
 
   realtime: {
@@ -53,6 +55,8 @@ const URLs = {
   submitJob: '/freelancer/submit-work',
   submitReview: '/submit-review',
   paymentHistory: '/freelancer/payments',
+  payouts: '/freelancer/payouts',
+  payoutDashboardLink: '/freelancer/payouts/dashboard-link',
   catalogs: '/freelancer/catalogs',
   chatConversations: '/chat/conversations',
   getUserNotifications: '/notifications',

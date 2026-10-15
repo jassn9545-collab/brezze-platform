@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
+    Schema::create('settings', function (Blueprint $table) {
+        $table->id();
+        $table->string('key')->unique();
+        $table->text('value')->nullable();
+    });
+
     Schema::create('users', function (Blueprint $table) {
         $table->id();
         $table->string('name');
@@ -92,6 +98,7 @@ afterEach(function () {
     Schema::dropIfExists('reviews');
     Schema::dropIfExists('categories');
     Schema::dropIfExists('users');
+    Schema::dropIfExists('settings');
 });
 
 it('creates a catalog for the authenticated provider', function () {
@@ -283,6 +290,11 @@ it('returns dynamic categories freelancers and active services for clients', fun
         'slug' => 'plumber',
         'photo' => 'plumber.png',
     ]);
+    Illuminate\Support\Facades\DB::table('settings')->insert([
+        ['key' => 'customer_hero_title', 'value' => 'Trusted help for every home'],
+        ['key' => 'customer_hero_button_text', 'value' => 'Browse Services'],
+        ['key' => 'customer_hero_image', 'value' => 'uploads/heroes/customer-home.jpg'],
+    ]);
     ServiceCatalog::create([
         'provider_id' => $this->provider->id,
         'heading' => 'Tap repair',
@@ -296,6 +308,9 @@ it('returns dynamic categories freelancers and active services for clients', fun
 
     $this->getJson('/api/client/discovery')
         ->assertOk()
+        ->assertJsonPath('data.hero.title', 'Trusted help for every home')
+        ->assertJsonPath('data.hero.button_text', 'Browse Services')
+        ->assertJsonPath('data.hero.image_url', 'http://localhost/uploads/heroes/customer-home.jpg')
         ->assertJsonPath('data.categories.0.name', 'Plumber')
         ->assertJsonPath('data.categories.0.image_url', 'http://localhost/uploads/category/plumber.png')
         ->assertJsonPath('data.professionals.0.id', $this->provider->id)
@@ -304,6 +319,37 @@ it('returns dynamic categories freelancers and active services for clients', fun
         ->assertJsonPath('data.featured_professionals.0.id', $this->provider->id)
         ->assertJsonPath('data.services.0.heading', 'Tap repair')
         ->assertJsonPath('data.services.0.image_urls.0', 'http://localhost/uploads/catalogs/tap.jpg');
+
+    $secondCustomer = User::create([
+        'name' => 'Second Customer',
+        'email' => 'second-customer-discovery@catalog.test',
+        'password' => Hash::make('password'),
+        'user_type' => 'client',
+    ]);
+
+    Sanctum::actingAs($secondCustomer);
+
+    $this->getJson('/api/client/hero')
+        ->assertOk()
+        ->assertJsonPath('data.title', 'Trusted help for every home')
+        ->assertJsonPath('data.button_text', 'Browse Services')
+        ->assertJsonPath('data.image_url', 'http://localhost/uploads/heroes/customer-home.jpg');
+
+    $this->getJson('/api/client/discovery')
+        ->assertOk()
+        ->assertJsonPath('data.hero.title', 'Trusted help for every home')
+        ->assertJsonPath('data.hero.button_text', 'Browse Services')
+        ->assertJsonPath('data.hero.image_url', 'http://localhost/uploads/heroes/customer-home.jpg');
+
+    Illuminate\Support\Facades\DB::table('settings')
+        ->whereIn('key', ['customer_hero_title', 'customer_hero_button_text'])
+        ->update(['value' => null]);
+
+    $this->getJson('/api/client/discovery')
+        ->assertOk()
+        ->assertJsonPath('data.hero.title', null)
+        ->assertJsonPath('data.hero.button_text', null)
+        ->assertJsonPath('data.hero.image_url', 'http://localhost/uploads/heroes/customer-home.jpg');
 });
 
 it('prevents an admin from featuring more than three professionals', function () {

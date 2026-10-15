@@ -13,6 +13,7 @@ import {
   DeviceEventEmitter,
   FlatList,
   Image,
+  Keyboard,
   ListRenderItemInfo,
   Linking,
   PermissionsAndroid,
@@ -21,7 +22,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { colors, images, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBottomTabScreenProps } from '../navigators';
@@ -64,6 +72,8 @@ const Home: FC<Props> = props => {
   const insets = useSafeAreaInsets();
   const flatlist = useRef<FlatList>(null);
   const [search, setSearch] = useState('');
+  const searchRef = useRef(search);
+  searchRef.current = search;
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -75,16 +85,22 @@ const Home: FC<Props> = props => {
   const fetching = props.loading === 'loading';
   const getJobs = props.get;
 
-  const getData = (locationParams = location, pageNumber = page) => {
+  const getData = (
+    locationParams = location,
+    pageNumber = page,
+    searchTerm = search,
+  ) => {
     if (!locationParams) {
       return;
     }
 
+    const normalizedSearch = searchTerm.trim();
     props.get({
       page: pageNumber,
       limit: 10,
       latitude: locationParams.latitude,
       longitude: locationParams.longitude,
+      search: normalizedSearch || undefined,
     });
   };
 
@@ -174,13 +190,31 @@ const Home: FC<Props> = props => {
     }
 
     page = 1;
+    const normalizedSearch = searchRef.current.trim();
     getJobs({
       page: 1,
       limit: 10,
       latitude: location.latitude,
       longitude: location.longitude,
+      search: normalizedSearch || undefined,
     });
   }, [getJobs, location]);
+
+  useEffect(() => {
+    if (!location) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      page = 1;
+      flatlist.current?.scrollToOffset({ animated: false, offset: 0 });
+      getData(location, 1, search);
+    }, 400);
+
+    return () => clearTimeout(timeout);
+    // Search is intentionally debounced; location changes are loaded separately.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   useFocusEffect(
     useCallback(() => {
@@ -232,9 +266,43 @@ const Home: FC<Props> = props => {
     return () => subscription.remove();
   }, [refreshJobs]);
 
-  const onPressFilter = () => {
-    props.navigation.navigate('AdvanceFilter');
+  const onPressSearch = () => {
+    Keyboard.dismiss();
+    page = 1;
+    flatlist.current?.scrollToOffset({ animated: false, offset: 0 });
+    getData(location, 1, search);
   };
+
+  const filteredJobs = useMemo(() => {
+    const terms = search
+      .trim()
+      .toLocaleLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (terms.length === 0) {
+      return props.data;
+    }
+
+    return props.data.filter(job => {
+      const searchableText = [
+        job.title,
+        job.category,
+        job.description,
+        job.address,
+        job.city,
+        job.country,
+      ]
+        .filter(value => typeof value === 'string')
+        .join(' ')
+        .toLocaleLowerCase();
+      const searchableWords = searchableText.split(/[^\p{L}\p{N}]+/u);
+
+      return terms.every(term =>
+        searchableWords.some(word => word.startsWith(term)),
+      );
+    });
+  }, [props.data, search]);
 
   const onPressJob = (data: Job) => {
     props.navigation.navigate('JobDetail', {
@@ -313,24 +381,28 @@ const Home: FC<Props> = props => {
                 LeftAccessory={searchLeftAccessory}
                 placeholderTextColor={colors.palette.placeholderColor}
                 inputWrapperStyle={styles.inputWrapper}
-                style={{ color: colors.palette.white }}
+                style={styles.searchInput}
                 containerStyle={styles.flexOne}
                 placeholderTx="home.searchJobs"
+                returnKeyType="search"
+                onSubmitEditing={onPressSearch}
               />
               <TouchableOpacity
                 style={styles.wrapSearchIcon}
-                onPress={onPressFilter}
+                accessibilityRole="button"
+                accessibilityLabel="Search jobs"
+                onPress={onPressSearch}
               >
                 <Image
-                  source={images.filter}
-                  tintColor={colors.palette.white}
+                  source={images.search}
+                  style={styles.searchButtonIcon}
                 />
               </TouchableOpacity>
             </View>
 
             <FlatList
               ref={flatlist}
-              data={props.data}
+              data={filteredJobs}
               refreshing={fetching && page === 1}
               onRefresh={refreshJobs}
               style={styles.flatlist}
@@ -510,6 +582,9 @@ const styles = StyleSheet.create({
     borderRadius: spacing.xs,
     backgroundColor: colors.palette.offWhite2,
   },
+  searchInput: {
+    color: colors.palette.black,
+  },
   wrapSearchIcon: {
     height: 50,
     alignItems: 'center',
@@ -517,6 +592,9 @@ const styles = StyleSheet.create({
     borderRadius: spacing.xs,
     paddingHorizontal: spacing.sm,
     backgroundColor: colors.primary,
+  },
+  searchButtonIcon: {
+    tintColor: colors.palette.white,
   },
   inputAccessoryStyle: {
     height: 24,

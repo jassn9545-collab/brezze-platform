@@ -81,11 +81,52 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <hr>
+                            <h4>Customer Home Hero</h4>
+                            <p class="text-muted">Changes saved here are loaded by the customer app automatically. An app update is not required.</p>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label>Hero Text</label>
+                                        <textarea class="form-control" name="customer_hero_title" rows="3" maxlength="160">{{ old('customer_hero_title', $settings->has('customer_hero_title') ? $settings->get('customer_hero_title') : 'Book Expert For Your Home & Get 30% Off on First Booking.') }}</textarea>
+                                        <small class="form-text text-muted">Optional. Leave empty to hide the hero text.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Button Text</label>
+                                        <input type="text" class="form-control" name="customer_hero_button_text" maxlength="40" value="{{ old('customer_hero_button_text', $settings->has('customer_hero_button_text') ? $settings->get('customer_hero_button_text') : 'Book Now') }}">
+                                        <small class="form-text text-muted">Optional. Leave empty to hide the button.</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Logo <span class="text-danger">*</span></label>
-                                        <input type="file" class="form-control" name="logo" required onchange="previewImages(this);" >
+                                        <label>Hero Image</label>
+                                        <input type="file" class="form-control" name="customer_hero_image" accept="image/jpeg,image/png,image/webp" onchange="previewImage(this, 'heroImagePreview');">
+                                        <small class="form-text text-muted">JPG, PNG or WebP, up to 5 MB. Leave empty to keep the current image.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div id="heroImagePreview" class="d-flex flex-wrap">
+                                        @if (!empty($settings['customer_hero_image']))
+                                            <img src="{{ url('public') }}/{{ $settings['customer_hero_image'] }}" class="img-fluid" style="max-height: 180px; border-radius: 12px;" alt="Customer home hero">
+                                        @else
+                                            <div class="alert alert-secondary mb-0">The app's default placeholder image is active.</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Logo</label>
+                                        <input type="file" class="form-control" name="logo" accept="image/jpeg,image/png,image/webp" onchange="previewImage(this, 'imagePreview');" >
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -107,8 +148,8 @@
 @endsection
 @push('scripts')
 <script>
-   function previewImages(input) {
-    let preview = document.getElementById('imagePreview');
+function previewImage(input, previewId) {
+    let preview = document.getElementById(previewId);
     preview.innerHTML = '';
 
     Array.from(input.files).forEach(file => {
@@ -123,12 +164,5 @@
         reader.readAsDataURL(file);
     });
 }
-
-document.querySelector('input[name="title"]').addEventListener('keyup', function () {
-    document.getElementById('slug').value =
-        this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}); 
-
-
 </script>
 @endpush

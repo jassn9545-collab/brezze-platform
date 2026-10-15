@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Contracts\PaymentGateway;
 use App\Contracts\CustomerPaymentGateway;
+use App\Contracts\PaymentGateway;
 use App\Http\Controllers\Controller;
 use App\Models\Bid;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
-use App\Traits\ApiResponse;
+use App\Models\WithdrawalRequest;
 use App\Services\RealtimeNotifier;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,8 +26,7 @@ class PaymentController extends Controller
         Request $request,
         PaymentGateway $gateway,
         CustomerPaymentGateway $customerGateway
-    )
-    {
+    ) {
         if ($response = $this->requireClient($request)) {
             return $response;
         }
@@ -191,7 +191,10 @@ class PaymentController extends Controller
                     $intentParameters = [
                         'amount' => $payment->amount_minor,
                         'currency' => $payment->currency,
-                        'automatic_payment_methods' => ['enabled' => true],
+                        'automatic_payment_methods' => [
+                            'enabled' => true,
+                            'allow_redirects' => 'never',
+                        ],
                         'description' => 'Payment for job #'.$job->id,
                         'receipt_email' => $request->user()->email,
                         'metadata' => [
@@ -466,6 +469,50 @@ class PaymentController extends Controller
             }
         }
 
+        if (in_array($event->type, [
+            'payout.created',
+            'payout.updated',
+            'payout.paid',
+            'payout.failed',
+            'payout.canceled',
+        ], true)) {
+            $payout = $event->data->object;
+            $withdrawal = WithdrawalRequest::query()
+                ->where('stripe_payout_id', $payout->id)
+                ->first();
+            $eventAccount = is_string($event->account ?? null) ? $event->account : null;
+
+            if (
+                $withdrawal
+                && (! $eventAccount || $withdrawal->provider?->stripe_account_id === $eventAccount)
+            ) {
+                $status = match ((string) ($payout->status ?? 'pending')) {
+                    'paid' => WithdrawalRequest::STATUS_PAID,
+                    'failed' => WithdrawalRequest::STATUS_FAILED,
+                    'canceled', 'cancelled' => WithdrawalRequest::STATUS_CANCELED,
+                    'in_transit' => WithdrawalRequest::STATUS_IN_TRANSIT,
+                    default => WithdrawalRequest::STATUS_PENDING,
+                };
+                $processed = in_array($status, [
+                    WithdrawalRequest::STATUS_PAID,
+                    WithdrawalRequest::STATUS_FAILED,
+                    WithdrawalRequest::STATUS_CANCELED,
+                ], true);
+
+                $withdrawal->update([
+                    'status' => $status,
+                    'destination' => $payout->destination ?? $withdrawal->destination,
+                    'method' => $payout->method ?? $withdrawal->method,
+                    'arrival_at' => ! empty($payout->arrival_date)
+                        ? now()->setTimestamp((int) $payout->arrival_date)
+                        : $withdrawal->arrival_at,
+                    'failure_code' => $payout->failure_code ?? null,
+                    'failure_message' => $payout->failure_message ?? null,
+                    'processed_at' => $processed ? now() : null,
+                ]);
+            }
+        }
+
         return response()->json(['received' => true]);
     }
 
@@ -547,8 +594,7 @@ class PaymentController extends Controller
         Payment $payment,
         object $intent,
         ?string $connectedAccountId
-    ): void
-    {
+    ): void {
         $previousStatus = $payment->status;
         if ($payment->stripe_payment_intent_id && $payment->stripe_payment_intent_id !== $intent->id) {
             abort(409, 'Payment intent mismatch.');

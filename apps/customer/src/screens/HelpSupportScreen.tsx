@@ -50,9 +50,9 @@ const faqData: FAQ[] = [
   {
     id: 1,
     type: 'general',
-    question: 'What is Our Bezzie?',
+    question: 'What is Our Bezzie Provider?',
     answer:
-      'Our Bezzie connects customers with service professionals for jobs and bookings.',
+      'Our Bezzie Provider connects customers with service professionals for jobs and bookings.',
     created_at: '2026-03-20T10:00:00Z',
     modify_at: '2026-03-20T10:00:00Z',
   },

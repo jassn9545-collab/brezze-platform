@@ -44,6 +44,7 @@ export type AppStackParamList = {
   SavedJob: undefined;
   SubmitWork: undefined;
   Wallet: undefined;
+  PaymentAccount: undefined;
   ServiceCatalog: undefined;
   CatalogDetail: { catalog: ProviderCatalog };
   ChatDetail: { conversationId: number; projectId?: never } | { projectId: number; conversationId?: never };
@@ -141,7 +142,8 @@ export const AppStack: FC = () => {
         name="CatalogDetail"
         component={Screens.CatalogDetailScreen}
       />
-      <Stack.Screen name="Wallet" component={Screens.WalletScreen} />
+      <Stack.Screen name="Wallet" component={Screens.PayoutWalletScreen} />
+      <Stack.Screen name="PaymentAccount" component={Screens.PaymentAccountScreen} />
       <Stack.Screen name="ChatDetail" component={Screens.ChatDetailScreen} />
       <Stack.Screen
         name="Notification"

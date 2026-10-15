@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\PayoutGateway;
 use App\Models\Bid;
 use App\Models\Project;
 use App\Models\User;
@@ -18,6 +19,7 @@ beforeEach(function () {
         $table->string('password');
         $table->string('user_type');
         $table->string('profile_image')->nullable();
+        $table->string('stripe_account_id')->nullable();
         $table->rememberToken();
         $table->timestamps();
     });
@@ -52,6 +54,12 @@ beforeEach(function () {
         $table->string('work_attachment')->nullable();
         $table->text('work_description')->nullable();
     });
+    Schema::create('saved_projects', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('project_id');
+        $table->unsignedBigInteger('user_id');
+        $table->timestamps();
+    });
     Schema::create('user_notifications', function (Blueprint $table) {
         $table->id();
         $table->unsignedBigInteger('user_id')->index();
@@ -75,6 +83,7 @@ beforeEach(function () {
         'email' => 'provider-bid@example.test',
         'password' => Hash::make('password'),
         'user_type' => 'freelancer',
+        'stripe_account_id' => 'acct_provider_bid_test',
     ]);
     $this->project = Project::create([
         'title' => 'Repair the wall',
@@ -84,6 +93,106 @@ beforeEach(function () {
     ]);
 
     Sanctum::actingAs($this->provider);
+
+    $this->paymentAccount = (object) [
+        'details_submitted' => true,
+        'charges_enabled' => true,
+        'payouts_enabled' => true,
+    ];
+    $gateway = Mockery::mock(PayoutGateway::class);
+    $gateway->shouldReceive('retrieveConnectedAccount')
+        ->zeroOrMoreTimes()
+        ->andReturnUsing(fn () => $this->paymentAccount);
+    app()->instance(PayoutGateway::class, $gateway);
+});
+
+it('searches active jobs by their searchable details', function () {
+    Project::create([
+        'title' => 'Kitchen plumbing repair',
+        'category' => 'Plumbing',
+        'description' => 'Repair a leaking kitchen pipe.',
+        'address' => 'Central Road',
+        'city' => 'London',
+        'country' => 'United Kingdom',
+        'budget' => '80',
+        'status' => 'active',
+        'user_id' => $this->client->id,
+    ]);
+    Project::create([
+        'title' => 'Old plumbing job',
+        'budget' => '50',
+        'status' => 'completed',
+        'user_id' => $this->client->id,
+    ]);
+
+    $this->postJson('/api/freelancer/latest-jobs', [
+        'search' => 'plumbing',
+        'page' => 1,
+        'limit' => 10,
+    ])->assertOk()
+        ->assertJsonCount(1, 'data.jobs')
+        ->assertJsonPath('data.jobs.0.title', 'Kitchen plumbing repair')
+        ->assertJsonPath('data.total', 1);
+});
+
+it('requires a payment account before creating a bid', function () {
+    $this->provider->update(['stripe_account_id' => null]);
+
+    $this->postJson('/api/freelancer/apply-job', [
+        'project_id' => $this->project->id,
+        'bid_amount' => '31',
+    ])->assertStatus(422)
+        ->assertJsonPath('errors.payment_account_required', true);
+
+    expect(Bid::query()->count())->toBe(0);
+});
+
+it('requires the attached payment account to finish Stripe verification', function () {
+    $this->paymentAccount->details_submitted = false;
+    $this->paymentAccount->charges_enabled = false;
+    $this->paymentAccount->payouts_enabled = false;
+
+    $this->postJson('/api/freelancer/apply-job', [
+        'project_id' => $this->project->id,
+        'bid_amount' => '31',
+    ])->assertStatus(422)
+        ->assertJsonPath('errors.payment_account_required', true);
+
+    expect(Bid::query()->count())->toBe(0);
+});
+
+it('notifies freelancers when a client posts a new job', function () {
+    $otherProvider = User::create([
+        'name' => 'Other Provider',
+        'email' => 'other-provider-new-job@example.test',
+        'password' => Hash::make('password'),
+        'user_type' => 'freelancer',
+    ]);
+    Sanctum::actingAs($this->client);
+
+    $this->postJson('/api/client/new-job', [
+        'title' => 'New plumbing work',
+        'category' => 'Plumbing',
+        'description' => 'A test job for provider notifications.',
+        'budget' => '75',
+    ])->assertOk()
+        ->assertJsonPath('message', 'Job created successfully.');
+
+    $job = Project::query()->where('title', 'New plumbing work')->firstOrFail();
+
+    foreach ([$this->provider->id, $otherProvider->id] as $providerId) {
+        expect(UserNotification::query()
+            ->where('user_id', $providerId)
+            ->where('type', 'new_job')
+            ->where('action_type', 'project')
+            ->where('action_id', $job->id)
+            ->count())->toBe(1);
+    }
+
+    expect(UserNotification::query()
+        ->where('user_id', $this->client->id)
+        ->where('type', 'new_job')
+        ->count())->toBe(0);
 });
 
 afterEach(function () {

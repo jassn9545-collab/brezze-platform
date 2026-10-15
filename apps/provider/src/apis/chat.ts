@@ -62,3 +62,10 @@ export const sendConversationMessage = async (
   );
   return response.data.data.message;
 };
+
+export const setChatPresence = async (
+  conversationId: number,
+  active: boolean,
+): Promise<void> => {
+  await api.post(`${URLs.chatConversations}/${conversationId}/presence`, {active});
+};

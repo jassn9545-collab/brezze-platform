@@ -49,6 +49,8 @@ return [
         // provider's Connect account is unfinished. Live-mode payments still
         // require a fully enabled connected account in PaymentController.
         'test_platform_payments' => env('STRIPE_TEST_PLATFORM_PAYMENTS', true),
+        // Amount is in the currency's smallest unit (1000 = AUD 10.00).
+        'minimum_payout_minor' => (int) env('STRIPE_MINIMUM_PAYOUT_MINOR', 1000),
     ],
 
     'metal_price' => [

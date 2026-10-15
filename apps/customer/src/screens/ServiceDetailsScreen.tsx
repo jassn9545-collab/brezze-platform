@@ -461,10 +461,10 @@ export const ServiceDetailsScreen: FC<Props> = ({ navigation, route }) => {
               disabled={requestingBooking}
               style={styles.requestButton}
               accessibilityRole="button"
-              accessibilityLabel="Post a job for this service"
+              accessibilityLabel="Book this service"
             >
               <Text
-                text="Post a Job"
+                text="Book Service"
                 size="xxs"
                 weight="bold"
                 style={styles.whiteText}

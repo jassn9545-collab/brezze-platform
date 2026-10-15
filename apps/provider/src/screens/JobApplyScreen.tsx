@@ -1,5 +1,5 @@
 import { BackButtom, Button, Loader, Screen, Text, TextField } from '../components';
-import { FlatList, Keyboard, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Keyboard, StyleSheet, View } from 'react-native';
 import React, { FC, useState } from 'react';
 import { AppStackScreenProps } from '../navigators';
 import { colors, spacing } from '../theme';
@@ -13,6 +13,8 @@ import { RootState } from '../store';
 import { connect, ConnectedProps } from 'react-redux';
 import { addToSavedJob, jobApply, JobSavedParams, removeFromSavedJob } from '../slices/home.slice';
 import { Job } from '../slices/types';
+import {getStripeAccountStatus} from '../apis/stripe';
+import {ValidationError} from 'yup';
 
 type NavigationProps = AppStackScreenProps<'JobApply'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -28,6 +30,7 @@ const JobDetail: FC<Props> = props => {
   const [bidAmount, setBidAmount] = useState('');
   // const [estimatedTime, setEstimatedTime] = useState('');
   const [error, setError] = useState<FieldError>({});
+  const [checkingPaymentAccount, setCheckingPaymentAccount] = useState(false);
 
   const onPressSavedJob = (data: Job) => {
     if (data.saved) {
@@ -42,28 +45,53 @@ const JobDetail: FC<Props> = props => {
   }
 
 
-  const onPressJob = () => {
-    if (props.data?.job_applied || props.fetching === 'loading') return;
+  const onPressJob = async () => {
+    if (
+      props.data?.job_applied ||
+      props.fetching === 'loading' ||
+      checkingPaymentAccount
+    ) return;
 
-    let loginParams: JobApplyParams = {
-      bidAmount,
-      project_id: props.data?.id!,
-    };
-    jobApplySchema
-      .validate(loginParams, { abortEarly: false })
-      .then(res => {
+    setCheckingPaymentAccount(true);
+    try {
+      const status = await getStripeAccountStatus();
+      if (!status.ready_for_payments) {
+        Alert.alert(
+          'Payment account not attached',
+          'Attach and verify your payment account before applying for jobs.',
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {
+              text: 'Attach Account',
+              onPress: () => props.navigation.navigate('PaymentAccount'),
+            },
+          ],
+        );
+        return;
+      }
+
+      const loginParams: JobApplyParams = {
+        bidAmount,
+        project_id: props.data?.id!,
+      };
+      try {
+        const res = await jobApplySchema.validate(loginParams, {abortEarly: false});
         Keyboard.dismiss();
         const formData = new FormData();
         formData.append('project_id', res.project_id.toString());
         formData.append('bid_amount', res.bidAmount);
-        props.apply(formData)
+        props.apply(formData);
 
         setError({});
-      })
-      .catch(errors => {
-        const err = buildError<FieldError>(errors);
+      } catch (errors) {
+        const err = buildError<FieldError>(errors as ValidationError);
         setError(err);
-      });
+      }
+    } catch {
+      // Shared API handling displays the request error.
+    } finally {
+      setCheckingPaymentAccount(false);
+    }
   };
 
   return (
@@ -172,7 +200,11 @@ const JobDetail: FC<Props> = props => {
         <Button
           tx={props.data?.job_applied ? 'home.alreadyApplied' : 'home.submitProposal'}
           onPress={onPressJob}
-          disabled={props.data?.job_applied || props.fetching === 'loading'}
+          disabled={
+            props.data?.job_applied ||
+            props.fetching === 'loading' ||
+            checkingPaymentAccount
+          }
           style={{ marginBottom: insets.bottom + spacing.sm }}
         />
       </View>

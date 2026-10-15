@@ -21,6 +21,8 @@ const COMPLETED_JOB_TYPES = new Set([
   'review_received',
 ]);
 
+const OPEN_MARKET_JOB_TYPES = new Set(['new_job']);
+
 export const openNotificationDestination = (
   data: NotificationNavigationData,
   attempt = 0,
@@ -45,7 +47,11 @@ export const openNotificationDestination = (
   if (actionType === 'project' && actionId) {
     navigationRef.navigate('JobDetail', {
       id: actionId,
-      from: COMPLETED_JOB_TYPES.has(type) ? 'CompleteJob' : 'ActiveJob',
+      from: OPEN_MARKET_JOB_TYPES.has(type)
+        ? 'Home'
+        : COMPLETED_JOB_TYPES.has(type)
+          ? 'CompleteJob'
+          : 'ActiveJob',
     });
     return;
   }

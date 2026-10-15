@@ -9,11 +9,14 @@ use App\Models\ChatMessage;
 use App\Models\Project;
 use App\Models\ServiceBooking;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Events\ChatMessageSent;
 use App\Services\RealtimeNotifier;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
 
@@ -203,6 +206,16 @@ class ChatController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
+        if (Schema::hasTable('user_notifications')) {
+            UserNotification::query()
+                ->where('user_id', $request->user()->id)
+                ->where('type', 'chat_message')
+                ->where('action_type', 'conversation')
+                ->where('action_id', $conversation->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now(), 'updated_at' => now()]);
+        }
+
         $query = $conversation->messages()->orderBy('id');
         if ($request->filled('after_id')) {
             $query->where('id', '>', (int) $request->input('after_id'));
@@ -262,7 +275,8 @@ class ChatController extends Controller
         } catch (Throwable $exception) {
             report($exception);
         }
-        app(RealtimeNotifier::class)->notify(
+        if (!Cache::has($this->presenceKey($recipientId, (int) $conversation->id))) {
+            app(RealtimeNotifier::class)->notify(
             $recipientId,
             $request->user()->name ?: 'New message',
             mb_strimwidth($body, 0, 140, '…'),
@@ -271,9 +285,33 @@ class ChatController extends Controller
             $conversation->id,
             ['conversation_id' => $conversation->id],
             'You have a new message.',
-        );
+            );
+        }
 
         return $this->success(['message' => $this->messageData($message)], 'Message sent.', 201);
+    }
+
+    public function presence(Request $request, ChatConversation $conversation)
+    {
+        if (!$this->isParticipant($conversation, $request->user())) {
+            return $this->error('Conversation not found.', 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'active' => 'required|boolean',
+        ]);
+        if ($validator->fails()) {
+            return $this->error('Validation error.', 422, $validator->errors());
+        }
+
+        $key = $this->presenceKey((int) $request->user()->id, (int) $conversation->id);
+        if ($request->boolean('active')) {
+            Cache::put($key, true, now()->addSeconds(90));
+        } else {
+            Cache::forget($key);
+        }
+
+        return $this->success(['active' => $request->boolean('active')], 'Chat presence updated.');
     }
 
     private function canChat(?User $user): bool
@@ -287,6 +325,11 @@ class ChatController extends Controller
             (int) $conversation->client_id === (int) $user->id
             || (int) $conversation->provider_id === (int) $user->id
         );
+    }
+
+    private function presenceKey(int $userId, int $conversationId): string
+    {
+        return "chat:presence:{$userId}:{$conversationId}";
     }
 
     private function conversationData(ChatConversation $conversation, User $user, Request $request): array

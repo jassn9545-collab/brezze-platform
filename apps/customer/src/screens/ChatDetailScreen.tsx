@@ -15,7 +15,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import moment from 'moment';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChatConversation, ChatMessage, getChatMessages, sendChatMessage } from '../apis/chat';
+import { ChatConversation, ChatMessage, getChatMessages, sendChatMessage, setChatPresence } from '../apis/chat';
 import { AppStackScreenProps } from '../navigators';
 import { Screen, Text } from '../components';
 import { colors, images, spacing } from '../theme';
@@ -87,6 +87,7 @@ const ChatDetail: FC<Props> = ({ navigation, route }) => {
     if (!isForeground) return;
     focused.current = true;
     autoRefreshEnabled.current = true;
+    setChatPresence(conversationId, true).catch(() => undefined);
     loadMessages('initial');
     const unsubscribe = subscribeToConversation(conversationId, incoming => {
       if (!focused.current) return;
@@ -102,13 +103,18 @@ const ChatDetail: FC<Props> = ({ navigation, route }) => {
     const interval = setInterval(() => {
       if (autoRefreshEnabled.current) loadMessages('silent');
     }, 2500);
+    const presenceInterval = setInterval(() => {
+      setChatPresence(conversationId, true).catch(() => undefined);
+    }, 30000);
     return () => {
       focused.current = false;
+      setChatPresence(conversationId, false).catch(() => undefined);
       unsubscribe();
       pushSubscription.remove();
       clearInterval(interval);
+      clearInterval(presenceInterval);
     };
-  }, [loadMessages, isForeground]));
+  }, [conversationId, loadMessages, isForeground]));
 
   const onSend = async () => {
     const body = message.trim();

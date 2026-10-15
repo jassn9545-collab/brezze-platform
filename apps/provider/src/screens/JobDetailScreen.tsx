@@ -1,6 +1,6 @@
 import { BackButtom, Button, Loader, SafeRemoteImage, Screen, Text } from '../components';
-import {AppState, DeviceEventEmitter, StyleSheet, TouchableOpacity, View} from 'react-native';
-import React, {FC, useCallback, useEffect} from 'react';
+import {Alert, AppState, DeviceEventEmitter, StyleSheet, TouchableOpacity, View} from 'react-native';
+import React, {FC, useCallback, useEffect, useState} from 'react';
 import { AppStackScreenProps } from '../navigators';
 import { colors, spacing } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { getJobDetail } from '../slices/home.slice';
 import { Currency } from '../config/defaults';
 import {useFocusEffect} from '@react-navigation/native';
 import {AppPushEvent, PUSH_NOTIFICATION_EVENT} from '../utils/Firebase';
+import {getStripeAccountStatus} from '../apis/stripe';
 
 type NavigationProps = AppStackScreenProps<'JobDetail'>;
 type StoreProps = ConnectedProps<typeof connector>;
@@ -30,6 +31,7 @@ const JobDetail: FC<Props> = props => {
   const insets = useSafeAreaInsets();
   const getJob = props.get;
   const jobId = props.route.params?.id;
+  const [checkingPaymentAccount, setCheckingPaymentAccount] = useState(false);
   const jobQuickPoints: JobQuichPointType[] = [
     {
       key: 'home.category',
@@ -86,11 +88,34 @@ const JobDetail: FC<Props> = props => {
     });
   };
 
-  const onPressJob = () => {
+  const onPressJob = async () => {
     if (props.route.params.from === 'ActiveJob') {
       props.navigation.navigate('SubmitWork');
     } else if (!props.data?.job_applied) {
-      props.navigation.navigate('JobApply');
+      if (checkingPaymentAccount) return;
+      setCheckingPaymentAccount(true);
+      try {
+        const status = await getStripeAccountStatus();
+        if (status.ready_for_payments) {
+          props.navigation.navigate('JobApply');
+          return;
+        }
+        Alert.alert(
+          'Payment account not attached',
+          'Attach and verify your payment account before applying for jobs.',
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {
+              text: 'Attach Account',
+              onPress: () => props.navigation.navigate('PaymentAccount'),
+            },
+          ],
+        );
+      } catch {
+        // Shared API handling displays the request error.
+      } finally {
+        setCheckingPaymentAccount(false);
+      }
     }
   };
 

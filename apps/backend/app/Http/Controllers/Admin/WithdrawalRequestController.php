@@ -93,6 +93,11 @@ class WithdrawalRequestController extends Controller
 
         DB::transaction(function () use ($request, $withdrawal, $validated) {
             $locked = WithdrawalRequest::query()->lockForUpdate()->findOrFail($withdrawal->id);
+            if ($locked->stripe_payout_id) {
+                throw ValidationException::withMessages([
+                    'status' => 'Stripe payout statuses are updated automatically and cannot be changed manually.',
+                ]);
+            }
             $allowedTransitions = [
                 WithdrawalRequest::STATUS_PENDING => [WithdrawalRequest::STATUS_PENDING, WithdrawalRequest::STATUS_APPROVED, WithdrawalRequest::STATUS_REJECTED],
                 WithdrawalRequest::STATUS_APPROVED => [WithdrawalRequest::STATUS_APPROVED, WithdrawalRequest::STATUS_PAID, WithdrawalRequest::STATUS_REJECTED],
@@ -100,7 +105,7 @@ class WithdrawalRequestController extends Controller
                 WithdrawalRequest::STATUS_REJECTED => [WithdrawalRequest::STATUS_REJECTED, WithdrawalRequest::STATUS_PENDING],
             ];
 
-            if (!in_array($validated['status'], $allowedTransitions[$locked->status] ?? [], true)) {
+            if (! in_array($validated['status'], $allowedTransitions[$locked->status] ?? [], true)) {
                 throw ValidationException::withMessages([
                     'status' => 'This withdrawal status transition is not allowed.',
                 ]);
@@ -140,7 +145,13 @@ class WithdrawalRequestController extends Controller
 
         $committedQuery = WithdrawalRequest::query()
             ->where('provider_id', $providerId)
-            ->whereIn('status', [WithdrawalRequest::STATUS_APPROVED, WithdrawalRequest::STATUS_PAID]);
+            ->whereIn('status', [
+                WithdrawalRequest::STATUS_PENDING,
+                WithdrawalRequest::STATUS_APPROVED,
+                WithdrawalRequest::STATUS_PROCESSING,
+                WithdrawalRequest::STATUS_IN_TRANSIT,
+                WithdrawalRequest::STATUS_PAID,
+            ]);
         if ($exceptWithdrawalId) {
             $committedQuery->where('id', '!=', $exceptWithdrawalId);
         }
@@ -158,7 +169,11 @@ class WithdrawalRequestController extends Controller
         return [
             WithdrawalRequest::STATUS_PENDING,
             WithdrawalRequest::STATUS_APPROVED,
+            WithdrawalRequest::STATUS_PROCESSING,
+            WithdrawalRequest::STATUS_IN_TRANSIT,
             WithdrawalRequest::STATUS_PAID,
+            WithdrawalRequest::STATUS_FAILED,
+            WithdrawalRequest::STATUS_CANCELED,
             WithdrawalRequest::STATUS_REJECTED,
         ];
     }

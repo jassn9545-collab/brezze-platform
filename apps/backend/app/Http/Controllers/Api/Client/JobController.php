@@ -81,6 +81,36 @@ class JobController extends BaseClientController
             }
         }
 
+        $jobId = (int) $project->id;
+        $jobTitle = (string) $project->title;
+        $jobCategory = (string) ($project->category ?? '');
+
+        defer(function () use ($jobId, $jobTitle, $jobCategory) {
+            User::query()
+                ->where('user_type', 'freelancer')
+                ->select('id')
+                ->chunkById(100, function ($freelancers) use ($jobId, $jobTitle, $jobCategory) {
+                    foreach ($freelancers as $freelancer) {
+                        try {
+                            app(RealtimeNotifier::class)->notify(
+                                (int) $freelancer->id,
+                                'New job available',
+                                $jobTitle.' has just been posted.',
+                                'new_job',
+                                'project',
+                                $jobId,
+                                [
+                                    'status' => 'active',
+                                    'category' => $jobCategory,
+                                ],
+                            );
+                        } catch (Throwable $exception) {
+                            report($exception);
+                        }
+                    }
+                });
+        });
+
         $myjobs = Project::where('user_id', auth()->id())->latest()->get();
 
         return $this->success([

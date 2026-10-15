@@ -1,5 +1,9 @@
-const API_BASE_URL = 'https://hirephpdeveloperindia.com/bezzie/api';
-const ASSET_BASE_URL = 'https://hirephpdeveloperindia.com/bezzie/public';
+const API_BASE_URL = __DEV__
+  ? 'http://127.0.0.1:8000/api'
+  : 'https://hirephpdeveloperindia.com/bezzie/api';
+const ASSET_BASE_URL = __DEV__
+  ? 'http://127.0.0.1:8000'
+  : 'https://hirephpdeveloperindia.com/bezzie/public';
 
 const URLs = {
   base: API_BASE_URL,

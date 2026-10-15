@@ -15,6 +15,7 @@ class NotificationController extends Controller
     {
         $notifications = UserNotification::query()
             ->where('user_id', $request->user()->id)
+            ->where('type', '!=', 'chat_message')
             ->latest()
             ->paginate(20);
 
@@ -24,6 +25,7 @@ class NotificationController extends Controller
                 ->values(),
             'unread_count' => UserNotification::query()
                 ->where('user_id', $request->user()->id)
+                ->where('type', '!=', 'chat_message')
                 ->whereNull('read_at')
                 ->count(),
             'pagination' => [
@@ -49,6 +51,7 @@ class NotificationController extends Controller
     {
         UserNotification::query()
             ->where('user_id', $request->user()->id)
+            ->where('type', '!=', 'chat_message')
             ->whereNull('read_at')
             ->update(['read_at' => now(), 'updated_at' => now()]);
 

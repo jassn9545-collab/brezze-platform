@@ -11,6 +11,7 @@ export type Pagination = {
   limit: number;
   latitude?: number;
   longitude?: number;
+  search?: string;
 };
 
 export const getJobList = createAsyncThunk(

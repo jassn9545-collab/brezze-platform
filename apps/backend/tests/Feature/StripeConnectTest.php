@@ -6,8 +6,12 @@ use Laravel\Sanctum\Sanctum;
 use Stripe\Account;
 use Stripe\AccountLink;
 use Stripe\Service\AccountLinkService;
-use Stripe\Service\AccountService;
+use Stripe\Service\AccountService as LegacyAccountService;
+use Stripe\Service\V2\Core\AccountService as V2AccountService;
+use Stripe\Service\V2\Core\CoreServiceFactory;
+use Stripe\Service\V2\V2ServiceFactory;
 use Stripe\StripeClient;
+use Stripe\V2\Core\Account as V2Account;
 
 beforeEach(function () {
     config()->set('services.stripe.secret', 'sk_test_not_a_real_key');
@@ -36,18 +40,34 @@ function mockStripeService(string $name, object $service): StripeClient
     return $stripe;
 }
 
-test('account creation uses the stable Connect API for an Express account', function () {
-    $accounts = Mockery::mock(AccountService::class);
-    $stripe = mockStripeService('accounts', $accounts);
+function mockV2AccountService(V2AccountService $accounts): StripeClient
+{
+    $stripe = Mockery::mock(StripeClient::class);
+    $core = new CoreServiceFactory($stripe);
+    $v2 = new V2ServiceFactory($stripe);
+
+    $services = new ReflectionProperty($core, 'services');
+    $services->setValue($core, ['accounts' => $accounts]);
+    $services->setValue($v2, ['core' => $core]);
+
+    $stripe->shouldReceive('getService')->with('v2')->andReturn($v2);
+
+    return $stripe;
+}
+
+test('account creation uses Accounts v2 for an Express connected account', function () {
+    $accounts = Mockery::mock(V2AccountService::class);
+    $stripe = mockV2AccountService($accounts);
     $accounts->shouldReceive('create')->once()->with(Mockery::on(function ($params) {
-        return $params['type'] === 'express'
-            && $params['country'] === 'AU'
-            && $params['business_type'] === 'individual'
-            && $params['email'] === 'freelancer@example.com'
-            && $params['capabilities']['card_payments']['requested'] === true
-            && $params['capabilities']['transfers']['requested'] === true
+        return $params['dashboard'] === 'express'
+            && $params['identity']['country'] === 'AU'
+            && $params['identity']['entity_type'] === 'individual'
+            && $params['contact_email'] === 'freelancer@example.com'
+            && $params['configuration']['merchant']['capabilities']['card_payments']['requested'] === true
+            && $params['configuration']['recipient']['capabilities']['stripe_balance']['stripe_transfers']['requested'] === true
             && $params['metadata']['user_id'] === '42';
-    }))->andReturn(Account::constructFrom(['id' => 'acct_test_123']));
+    }), Mockery::on(fn ($options) => $options['idempotency_key'] === 'user_42_stripe_connected_account_v2'))
+        ->andReturn(V2Account::constructFrom(['id' => 'acct_test_123']));
 
     $method = new ReflectionMethod(AuthController::class, 'createStripeConnectedAccount');
     $account = $method->invoke(new AuthController, connectedUser(null), 'AU', $stripe);
@@ -55,14 +75,14 @@ test('account creation uses the stable Connect API for an Express account', func
     expect($account->id)->toBe('acct_test_123');
 });
 
-test('the installed Stripe SDK dispatches connected account creation to Accounts v1', function () {
+test('the installed Stripe SDK dispatches connected account creation to Accounts v2', function () {
     $stripe = Mockery::mock(StripeClient::class, ['sk_test_not_a_real_key'])->makePartial();
     $stripe->shouldReceive('request')->once()->withArgs(function ($method, $path, $params) {
         return $method === 'post'
-            && $path === '/v1/accounts'
-            && $params['type'] === 'express'
-            && $params['capabilities']['card_payments']['requested'] === true;
-    })->andReturn(Account::constructFrom(['id' => 'acct_test_123']));
+            && $path === '/v2/core/accounts'
+            && $params['dashboard'] === 'express'
+            && $params['configuration']['merchant']['capabilities']['card_payments']['requested'] === true;
+    })->andReturn(V2Account::constructFrom(['id' => 'acct_test_123']));
 
     $method = new ReflectionMethod(AuthController::class, 'createStripeConnectedAccount');
     $account = $method->invoke(new AuthController, connectedUser(null), 'AU', $stripe);
@@ -78,8 +98,7 @@ test('signup onboarding link uses the saved connected account and mobile callbac
             && $params['type'] === 'account_onboarding'
             && $params['return_url'] === 'https://example.com/stripe/return'
             && $params['refresh_url'] === 'https://example.com/stripe/refresh'
-            && $params['collection_options']['fields'] === 'eventually_due'
-            && $params['collection_options']['future_requirements'] === 'include';
+            && $params['collection_options']['fields'] === 'currently_due';
     }))->andReturn(AccountLink::constructFrom([
         'url' => 'https://connect.stripe.com/signup-link',
         'expires_at' => 1800000000,
@@ -166,7 +185,7 @@ test('live-mode onboarding links require HTTPS callback URLs', function () {
 
 test('account status reports whether the connected account can charge and pay out', function () {
     Sanctum::actingAs(connectedUser());
-    $accounts = Mockery::mock(AccountService::class);
+    $accounts = Mockery::mock(LegacyAccountService::class);
     $stripe = mockStripeService('accounts', $accounts);
     $accounts->shouldReceive('retrieve')->once()->with('acct_test_123', [])
         ->andReturn(Account::constructFrom([
@@ -194,7 +213,7 @@ test('account status reports whether the connected account can charge and pay ou
 
 test('future requirements keep onboarding available before the account is ready', function () {
     Sanctum::actingAs(connectedUser());
-    $accounts = Mockery::mock(AccountService::class);
+    $accounts = Mockery::mock(LegacyAccountService::class);
     $accounts->shouldReceive('retrieve')->once()->andReturn(Account::constructFrom([
         'charges_enabled' => false,
         'payouts_enabled' => false,
@@ -212,7 +231,7 @@ test('future requirements keep onboarding available before the account is ready'
 
 test('an account under review is not marked ready but needs no more onboarding', function () {
     Sanctum::actingAs(connectedUser());
-    $accounts = Mockery::mock(AccountService::class);
+    $accounts = Mockery::mock(LegacyAccountService::class);
     $accounts->shouldReceive('retrieve')->once()->andReturn(Account::constructFrom([
         'charges_enabled' => false,
         'payouts_enabled' => false,

@@ -230,6 +230,34 @@ it('updates both account and proof verification status', function () {
         ->and((int) $this->provider->proof()->first()->is_verified)->toBe(1);
 });
 
+it('updates customer home hero content from admin settings', function () {
+    $this->post(route('admin.settings.update'), [
+        'customer_hero_title' => 'Book trusted local professionals',
+        'customer_hero_button_text' => 'Find a Professional',
+    ])->assertRedirect();
+
+    expect(Illuminate\Support\Facades\DB::table('settings')->where('key', 'customer_hero_title')->value('value'))
+        ->toBe('Book trusted local professionals')
+        ->and(Illuminate\Support\Facades\DB::table('settings')->where('key', 'customer_hero_button_text')->value('value'))
+        ->toBe('Find a Professional');
+
+    $this->post(route('admin.settings.update'), [
+        'customer_hero_title' => '',
+        'customer_hero_button_text' => '',
+    ])->assertRedirect();
+
+    expect(Illuminate\Support\Facades\DB::table('settings')->where('key', 'customer_hero_title')->value('value'))
+        ->toBeNull()
+        ->and(Illuminate\Support\Facades\DB::table('settings')->where('key', 'customer_hero_button_text')->value('value'))
+        ->toBeNull();
+
+    $this->get(route('admin.settings'))
+        ->assertOk()
+        ->assertSee('Customer Home Hero')
+        ->assertDontSee('Book Expert For Your Home &amp; Get 30% Off on First Booking.', false)
+        ->assertDontSee('value="Book Now"', false);
+});
+
 it('renders disputes and requires resolution notes to close one', function () {
     $this->get(route('admin.disputes.index'))->assertOk()->assertSee('Invoice question');
     $this->get(route('admin.disputes.show', $this->dispute))->assertOk()->assertSee('Please clarify the final invoice.')->assertSee('Bathroom plumbing');

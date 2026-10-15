@@ -1,7 +1,7 @@
 <?php
 
-use App\Contracts\PaymentGateway;
 use App\Contracts\CustomerPaymentGateway;
+use App\Contracts\PaymentGateway;
 use App\Models\Bid;
 use App\Models\Payment;
 use App\Models\Project;
@@ -254,6 +254,10 @@ it('calculates the ten percent split on the backend from the hired bid', functio
 
     expect($this->gateway->lastCreateParameters['amount'])->toBe(12345)
         ->and($this->gateway->lastCreateParameters['application_fee_amount'])->toBe(1235)
+        ->and($this->gateway->lastCreateParameters['automatic_payment_methods'])->toBe([
+            'enabled' => true,
+            'allow_redirects' => 'never',
+        ])
         ->and($this->gateway->lastConnectedAccountId)->toBe('acct_provider_test')
         ->and($this->gateway->lastCreateParameters)->not->toHaveKey('transfer_data');
 

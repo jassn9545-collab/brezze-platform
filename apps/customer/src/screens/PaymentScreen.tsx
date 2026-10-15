@@ -119,7 +119,7 @@ export const PaymentMethodsScreen: FC = () => {
         <View style={styles.flex}>
           <Text text="Secure card payments" weight="semiBold" />
           <Text
-            text="Your full card number is handled by Stripe and is never stored by Our Bezzie."
+            text="Your full card number is handled by Stripe and is never stored by Our Bezzie Provider."
             size="xs"
             style={styles.secondaryText}
           />

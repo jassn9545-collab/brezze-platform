@@ -23,6 +23,8 @@ export * from './ApplyJobScreen';
 export * from './SavedJobScreen';
 export * from './SubmitWorkScreen';
 export * from './WalletScreen';
+export * from './PayoutWalletScreen';
+export * from './PaymentAccountScreen';
 export * from './ServiceCatalogScreen';
 export * from './CatalogDetailScreen';
 export * from './ChatScreen';

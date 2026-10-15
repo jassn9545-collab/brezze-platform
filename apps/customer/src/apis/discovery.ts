@@ -44,7 +44,14 @@ export type DiscoveryService = {
   created_at: string | null;
 };
 
+export type DiscoveryHero = {
+  title: string | null;
+  button_text: string | null;
+  image_url: string | null;
+};
+
 export type DiscoveryResponse = {
+  hero?: DiscoveryHero;
   categories: DiscoveryCategory[];
   featured_professionals: DiscoveryProfessional[];
   professionals: DiscoveryProfessional[];
@@ -62,6 +69,12 @@ export const getDiscovery = async (params?: {
     },
     timeout: 15000,
   });
+
+  return response.data.data;
+};
+
+export const getCustomerHero = async (): Promise<DiscoveryHero> => {
+  const response = await api.get('/client/hero', { timeout: 10000 });
 
   return response.data.data;
 };

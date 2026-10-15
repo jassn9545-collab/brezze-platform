@@ -21,6 +21,7 @@ import {
   getConversationMessages,
   getOrCreateConversation,
   sendConversationMessage,
+  setChatPresence,
 } from '../apis/chat';
 import {useAppSelector, useIsForeground} from '../store/hooks';
 import {colors, images, spacing} from '../theme';
@@ -133,7 +134,19 @@ const ChatDetail: FC<Props> = props => {
     useCallback(() => {
       if (!isForeground) return;
       activeRef.current = true;
-      initialize();
+      let presenceConversationId: number | null = null;
+      let presenceTimer: ReturnType<typeof setInterval> | undefined;
+      const start = async () => {
+        await initialize();
+        const id = conversationIdRef.current;
+        if (!activeRef.current || !id) return;
+        presenceConversationId = id;
+        setChatPresence(id, true).catch(() => undefined);
+        presenceTimer = setInterval(() => {
+          setChatPresence(id, true).catch(() => undefined);
+        }, 30000);
+      };
+      start().catch(() => undefined);
       const pushSubscription = DeviceEventEmitter.addListener(
         CHAT_PUSH_EVENT,
         ({conversationId}: {conversationId: number}) => {
@@ -143,6 +156,9 @@ const ChatDetail: FC<Props> = props => {
       const timer = setInterval(() => loadMessages(false), 2500);
       return () => {
         activeRef.current = false;
+        const id = presenceConversationId ?? conversationIdRef.current;
+        if (id) setChatPresence(id, false).catch(() => undefined);
+        if (presenceTimer) clearInterval(presenceTimer);
         pushSubscription.remove();
         clearInterval(timer);
       };

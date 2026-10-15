@@ -188,7 +188,11 @@ const EditProfile: FC<Props> = props => {
           paddingTop: insets.top + spacing.sm,
         }}
       />
-      <Screen preset="auto" contentContainerStyle={styles.container}>
+      <Screen
+        preset="auto"
+        scrollViewProps={{ nestedScrollEnabled: true }}
+        contentContainerStyle={styles.container}
+      >
         <View style={styles.header}>
           <View>
             <SafeRemoteImage
@@ -318,7 +322,9 @@ const EditProfile: FC<Props> = props => {
               <View style={[styles.dropdownContainer, commonStyle.lightShadow]}>
                 <ScrollView
                   style={styles.dropdown}
-                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator
                 >
                   {props?.skills!.map(item => (
                     <TouchableOpacity
@@ -449,8 +455,11 @@ const styles = StyleSheet.create({
   dropdownContainer: {
     bottom: 0,
     zIndex: 1000,
-    width: '70%',
+    width: '100%',
     position: 'absolute',
+    borderRadius: spacing.xs,
+    overflow: 'hidden',
+    elevation: 8,
     backgroundColor: colors.palette.offWhite2,
   },
   dropdown: {

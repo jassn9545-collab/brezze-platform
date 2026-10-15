@@ -2,22 +2,18 @@
 
 namespace App\Http\Controllers\Api\Freelancer;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\UserProof;
-use Illuminate\Support\Facades\Hash;
-use Mail;
-use Illuminate\Support\Facades\Cache;
-use App\Traits\ApiResponse;
-use App\Models\Project;
-use App\Models\ProjectImage;
-use App\Models\Payment;
-use App\Models\Review;
-use App\Services\RealtimeNotifier;
+use App\Contracts\PayoutGateway;
 use App\Models\Bid;
+use App\Models\Payment;
+use App\Models\Project;
+use App\Models\Review;
+use App\Models\UserProof;
+use App\Services\RealtimeNotifier;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Mail;
+use Throwable;
 
 class FreelancerJobController extends BaseFreelancerController
 {
@@ -30,7 +26,8 @@ class FreelancerJobController extends BaseFreelancerController
         }
 
         $page = (int) $request->input('page', 1);
-        $perPage = (int) $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', $request->input('limit', 10));
+        $search = trim((string) $request->input('search', ''));
         $userId = auth()->id();
 
         $query = Project::withCount('bids')
@@ -39,6 +36,19 @@ class FreelancerJobController extends BaseFreelancerController
                 $q->where('user_id', $userId);
             }])
             ->latest();
+
+        if ($search !== '') {
+            $query->where(function ($query) use ($search) {
+                $like = '%'.$search.'%';
+
+                $query->where('title', 'like', $like)
+                    ->orWhere('category', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhere('address', 'like', $like)
+                    ->orWhere('city', 'like', $like)
+                    ->orWhere('country', 'like', $like);
+            });
+        }
 
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
 
@@ -51,7 +61,7 @@ class FreelancerJobController extends BaseFreelancerController
         ], 'jobs retrieved successfully.');
     }
 
-    public function applyJob(Request $request)
+    public function applyJob(Request $request, PayoutGateway $payoutGateway)
     {
         if ($check = $this->checkFreelancer()) {
             return $check;
@@ -62,13 +72,13 @@ class FreelancerJobController extends BaseFreelancerController
             'attachment' => 'nullable|file|mimes:pdf,doc,docx',
             'bid_amount' => ['required', 'numeric', 'gt:0', 'decimal:0,2', 'max:99999999.99'],
         ]);
-        
+
         if ($validator->fails()) {
-            return $this->error('Validation error.', 400,$validator->errors());
+            return $this->error('Validation error.', 400, $validator->errors());
         }
         $user = auth()->user();
         $project = Project::find($request->project_id);
-        if (!$project) {
+        if (! $project) {
             return $this->error('Job not found.', 404);
         }
 
@@ -84,6 +94,38 @@ class FreelancerJobController extends BaseFreelancerController
             return $this->success($project, 'You have already applied for this job.');
         }
 
+        if (! $user->stripe_account_id) {
+            return $this->error(
+                'Attach your payment account before applying for jobs.',
+                422,
+                ['payment_account_required' => true]
+            );
+        }
+
+        try {
+            $paymentAccount = $payoutGateway->retrieveConnectedAccount($user->stripe_account_id);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $this->error(
+                'Your payment account could not be verified. Please try again.',
+                422,
+                ['payment_account_required' => true]
+            );
+        }
+
+        $paymentAccountReady = (bool) data_get($paymentAccount, 'details_submitted', false)
+            && (bool) data_get($paymentAccount, 'charges_enabled', false)
+            && (bool) data_get($paymentAccount, 'payouts_enabled', false);
+
+        if (! $paymentAccountReady) {
+            return $this->error(
+                'Complete and verify your payment account before applying for jobs.',
+                422,
+                ['payment_account_required' => true]
+            );
+        }
+
         if ($project->status !== 'active') {
             return $this->error('This job is no longer accepting applications.', 409);
         }
@@ -92,7 +134,7 @@ class FreelancerJobController extends BaseFreelancerController
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = time().'_'.$file->getClientOriginalName();
             $file->move(public_path('uploads/bids'), $filename);
         }
         $result = DB::transaction(function () use ($project, $user, $request, $filename) {
@@ -131,7 +173,7 @@ class FreelancerJobController extends BaseFreelancerController
         $bid = $result['bid'];
         $created = $result['created'];
         $project = Project::withCount('bids')->find($project->id);
-        $project->setAttribute('already_applied', !$created);
+        $project->setAttribute('already_applied', ! $created);
         $project->setAttribute('bid_id', $bid->id);
         $project->setAttribute('bid_amount', $bid->bid_amount);
 
@@ -162,14 +204,14 @@ class FreelancerJobController extends BaseFreelancerController
         $validator = \Validator::make($request->all(), [
             'project_id' => 'required|exists:projects,id',
         ]);
-        
+
         if ($validator->fails()) {
-            return $this->error('Validation error.', 400,$validator->errors());
+            return $this->error('Validation error.', 400, $validator->errors());
         }
 
-        $project = Project::with(['bids', 'images','client:id,name,profile_image'])->find($request->project_id);
+        $project = Project::with(['bids', 'images', 'client:id,name,profile_image'])->find($request->project_id);
 
-        if (!$project) {
+        if (! $project) {
             return $this->error('Project not found.', 400);
         }
         $isHiredProvider = Bid::query()
@@ -184,7 +226,7 @@ class FreelancerJobController extends BaseFreelancerController
         $project->setAttribute('has_reviewed', $hasReviewed);
         $project->setAttribute(
             'can_review',
-            $project->status === 'completed' && $isHiredProvider && !$hasReviewed
+            $project->status === 'completed' && $isHiredProvider && ! $hasReviewed
         );
         $project->base_url = rtrim((string) config('app.asset_url'), '/');
 
@@ -200,7 +242,7 @@ class FreelancerJobController extends BaseFreelancerController
         $validator = \Validator::make($request->all(), [
             'project_id' => 'required|exists:projects,id',
         ]);
-        
+
         if ($validator->fails()) {
             return $this->error('Validation error.', 400, $validator->errors());
         }
@@ -212,12 +254,12 @@ class FreelancerJobController extends BaseFreelancerController
             ->exists();
 
         if ($alreadySaved) {
-                $savedJobs = \App\Models\SavedJob::with('project')
+            $savedJobs = \App\Models\SavedJob::with('project')
                 ->where('user_id', $user->id)
                 ->latest()
                 ->get();
 
-                return $this->success($savedJobs, 'Job saved successfully.');
+            return $this->success($savedJobs, 'Job saved successfully.');
         }
 
         \App\Models\SavedJob::create([
@@ -243,13 +285,13 @@ class FreelancerJobController extends BaseFreelancerController
         $validator = \Validator::make($request->all(), [
             'project_id' => 'required|exists:projects,id',
         ]);
-        
+
         if ($validator->fails()) {
             return $this->error('Validation error.', 400, $validator->errors());
         }
 
         $user = auth()->user();
-        if( !\App\Models\SavedJob::where('project_id', $request->project_id)->where('user_id', $user->id)->exists() ) {
+        if (! \App\Models\SavedJob::where('project_id', $request->project_id)->where('user_id', $user->id)->exists()) {
             return $this->error('Job not found in saved list.', 400, null);
         }
         \App\Models\SavedJob::where('project_id', $request->project_id)
@@ -265,7 +307,6 @@ class FreelancerJobController extends BaseFreelancerController
         return $this->success($savedJobs, 'Job removed from saved list successfully.');
     }
 
-    
     public function savedJobs(Request $request)
     {
         if ($check = $this->checkFreelancer()) {
@@ -285,7 +326,9 @@ class FreelancerJobController extends BaseFreelancerController
 
         // Transform data
         $jobs = $paginator->getCollection()->map(function ($item) {
-            if (!$item->project) return null;
+            if (! $item->project) {
+                return null;
+            }
 
             return array_merge(
                 $item->project->toArray(),
@@ -319,14 +362,14 @@ class FreelancerJobController extends BaseFreelancerController
         $perPage = (int) $request->input('per_page', 10);
 
         $paginator = \App\Models\Bid::with([
-                'project' => function ($q) {
-                    $q->withCount('bids')
+            'project' => function ($q) {
+                $q->withCount('bids')
                     ->with([
                         'user:id,name,profile_image',
                         'payment:id,project_id,provider_id,transaction_id,provider_earnings,status,paid_at',
                     ]);
-                }
-            ])
+            },
+        ])
             ->where('user_id', $user->id)
             ->where('is_hired', 1)
             ->whereHas('project', function ($q) {
@@ -337,7 +380,9 @@ class FreelancerJobController extends BaseFreelancerController
 
         // Transform data
         $jobs = $paginator->getCollection()->map(function ($item) {
-            if (!$item->project) return null;
+            if (! $item->project) {
+                return null;
+            }
 
             $payment = $item->project->payment;
 
@@ -389,7 +434,9 @@ class FreelancerJobController extends BaseFreelancerController
 
         // Transform data
         $jobs = $paginator->getCollection()->map(function ($item) {
-            if (!$item->project) return null;
+            if (! $item->project) {
+                return null;
+            }
 
             return array_merge(
                 $item->project->toArray(),
@@ -425,11 +472,11 @@ class FreelancerJobController extends BaseFreelancerController
         $perPage = (int) $request->input('per_page', 10);
 
         $paginator = \App\Models\Bid::with([
-                'project' => function ($q) {
-                    $q->withCount('bids')
+            'project' => function ($q) {
+                $q->withCount('bids')
                     ->with('user:id,name,profile_image');
-                }
-            ])
+            },
+        ])
             ->where('user_id', $user->id)
             ->where('is_hired', 1)
             ->whereHas('project', function ($q) {
@@ -448,7 +495,9 @@ class FreelancerJobController extends BaseFreelancerController
 
         // Transform data
         $jobs = $paginator->getCollection()->map(function ($item) use ($reviewedLookup) {
-            if (!$item->project) return null;
+            if (! $item->project) {
+                return null;
+            }
 
             $hasReviewed = isset($reviewedLookup[$item->project->id]);
 
@@ -462,7 +511,7 @@ class FreelancerJobController extends BaseFreelancerController
                     'client_name' => $item->project->user->name ?? null,
                     'client_profile_pic' => $item->project->user->profile_image ?? null, // fixed key
                     'has_reviewed' => $hasReviewed,
-                    'can_review' => !$hasReviewed,
+                    'can_review' => ! $hasReviewed,
                 ]
             );
         })->filter()->values();
@@ -505,7 +554,7 @@ class FreelancerJobController extends BaseFreelancerController
         $categoryIds = $user->skills ? explode(',', $user->skills) : [];
 
         $user->categories = \App\Models\Category::whereIn('id', $categoryIds)
-        ->pluck('name');
+            ->pluck('name');
 
         return $this->success($user, 'Profile retrieved successfully.');
     }
@@ -536,10 +585,10 @@ class FreelancerJobController extends BaseFreelancerController
         // Handle image upload
         if ($request->hasFile('profile_image')) {
             $file = $request->file('profile_image');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = time().'_'.$file->getClientOriginalName();
             $file->move(public_path('uploads/user'), $filename);
 
-            $user->profile_image = 'uploads/user/' . $filename;
+            $user->profile_image = 'uploads/user/'.$filename;
         }
 
         // Update other fields
@@ -573,7 +622,8 @@ class FreelancerJobController extends BaseFreelancerController
         $categoryIds = $user->skills ? explode(',', $user->skills) : [];
 
         $user->categories = \App\Models\Category::whereIn('id', $categoryIds)
-        ->pluck('name');
+            ->pluck('name');
+
         return $this->success($user, 'Profile updated successfully.');
     }
 
@@ -601,7 +651,7 @@ class FreelancerJobController extends BaseFreelancerController
             })
             ->first();
 
-        if (!$bid) {
+        if (! $bid) {
             return $this->error('You are not hired for this job or job not found.', 400);
         }
 
@@ -609,7 +659,7 @@ class FreelancerJobController extends BaseFreelancerController
 
         if ($request->hasFile('work_attachment')) {
             $file = $request->file('work_attachment');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = time().'_'.$file->getClientOriginalName();
             $file->move(public_path('uploads/work'), $filename);
         }
 
@@ -617,16 +667,16 @@ class FreelancerJobController extends BaseFreelancerController
         // For simplicity, we will just update the bid with work details
 
         $bid->update([
-            'work_attachment' => ($filename) ? 'uploads/work/' . $filename : null,
+            'work_attachment' => ($filename) ? 'uploads/work/'.$filename : null,
             'work_description' => $request->work_description,
             'end_date_time' => date('Y-m-d H:i:s'),
         ]);
         $clientEmail = $bid->project->user->email;
-        $clientmessage = '<p>Dear ' . $bid->project->user->name . ',</p>';
-        $clientmessage .= '<p>Work has been submitted for project: ' . $bid->project->title . '</p>';
+        $clientmessage = '<p>Dear '.$bid->project->user->name.',</p>';
+        $clientmessage .= '<p>Work has been submitted for project: '.$bid->project->title.'</p>';
         Mail::html($clientmessage, function ($message) use ($clientEmail) {
             $message->to($clientEmail)
-                    ->subject('Work Submitted for Your Project');
+                ->subject('Work Submitted for Your Project');
         });
 
         app(RealtimeNotifier::class)->notify(

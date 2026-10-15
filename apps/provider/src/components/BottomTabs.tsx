@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, LayoutAnimation } from 'react-native';
+import { AppState, DeviceEventEmitter, LayoutAnimation } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigators/AppStack';
@@ -8,6 +8,7 @@ import {
   ProviderBottomTabName,
 } from './ProviderBottomBar';
 import { getConversations } from '../apis/chat';
+import {CHAT_PUSH_EVENT} from '../utils/Firebase';
 
 const BottomTabs = ({ state, navigation }: BottomTabBarProps) => {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -43,10 +44,15 @@ const BottomTabs = ({ state, navigation }: BottomTabBarProps) => {
         refreshUnreadCount();
       }
     });
+    const chatPushSubscription = DeviceEventEmitter.addListener(
+      CHAT_PUSH_EVENT,
+      refreshUnreadCount,
+    );
 
     return () => {
       clearInterval(timer);
       subscription.remove();
+      chatPushSubscription.remove();
     };
   }, [refreshUnreadCount]);
 

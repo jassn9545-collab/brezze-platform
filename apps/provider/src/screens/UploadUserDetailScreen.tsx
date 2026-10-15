@@ -103,7 +103,6 @@ const UploadUserDetail: FC<Props> = props => {
         ? [...currentSkills, item]
         : currentSkills;
     });
-    setShowSkillDropdown(false);
   };
 
   const removeSkill = (item: Skill) => {
@@ -156,6 +155,7 @@ const UploadUserDetail: FC<Props> = props => {
       <Screen
         preset="auto"
         safeAreaEdges={['top']}
+        scrollViewProps={{ nestedScrollEnabled: true }}
         contentContainerStyle={styles.containerStyle}
       >
         <AuthHeader tx="document.heading" desc="document.description" />
@@ -256,7 +256,9 @@ const UploadUserDetail: FC<Props> = props => {
               <View style={[styles.dropdownContainer, commonStyle.lightShadow]}>
                 <ScrollView
                   style={styles.dropdown}
-                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator
                 >
                   {props.skills!.map(item => (
                     <TouchableOpacity
@@ -407,8 +409,11 @@ const styles = StyleSheet.create({
   dropdownContainer: {
     top: 55,
     zIndex: 1000,
-    width: '70%',
+    width: '100%',
     position: 'absolute',
+    borderRadius: spacing.xs,
+    overflow: 'hidden',
+    elevation: 8,
     backgroundColor: colors.palette.offWhite2,
   },
   dropdown: {

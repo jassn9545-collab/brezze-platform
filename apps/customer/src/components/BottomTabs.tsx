@@ -5,6 +5,7 @@ import {
   ImageStyle,
   LayoutAnimation,
   AppState,
+  DeviceEventEmitter,
   TextStyle,
   TouchableOpacity,
   View,
@@ -19,6 +20,7 @@ import { scale } from 'react-native-size-matters';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TxKeyPath } from '../i18n';
 import { getChatConversations } from '../apis/chat';
+import {CHAT_PUSH_EVENT} from '../utils/Firebase';
 
 type ImageKeys = Extract<AppImage, string>;
 
@@ -62,10 +64,15 @@ const BottomTabs = (props: BottomTabBarProps) => {
         refreshUnreadCount();
       }
     });
+    const chatPushSubscription = DeviceEventEmitter.addListener(
+      CHAT_PUSH_EVENT,
+      refreshUnreadCount,
+    );
 
     return () => {
       clearInterval(timer);
       subscription.remove();
+      chatPushSubscription.remove();
     };
   }, [refreshUnreadCount]);
 

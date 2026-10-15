@@ -4,8 +4,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Stripe\Customer;
-use Stripe\Service\AccountService;
 use Stripe\Service\CustomerService;
+use Stripe\Service\V2\Core\AccountService as V2AccountService;
+use Stripe\Service\V2\Core\CoreServiceFactory;
+use Stripe\Service\V2\V2ServiceFactory;
 use Stripe\StripeClient;
 
 beforeEach(function () {
@@ -62,12 +64,18 @@ test('provider OTP signup stores its Stripe customer ID even when Connect onboar
         ))
     )->andReturn(Customer::constructFrom(['id' => 'cus_provider_test']));
 
-    $accounts = Mockery::mock(AccountService::class);
+    $accounts = Mockery::mock(V2AccountService::class);
     $accounts->shouldReceive('create')->once()->andThrow(new RuntimeException('Stripe unavailable'));
 
     $stripe = Mockery::mock(StripeClient::class);
+    $core = new CoreServiceFactory($stripe);
+    $v2 = new V2ServiceFactory($stripe);
+    $services = new ReflectionProperty($core, 'services');
+    $services->setValue($core, ['accounts' => $accounts]);
+    $services->setValue($v2, ['core' => $core]);
+
     $stripe->shouldReceive('getService')->with('customers')->andReturn($customers);
-    $stripe->shouldReceive('getService')->with('accounts')->andReturn($accounts);
+    $stripe->shouldReceive('getService')->with('v2')->andReturn($v2);
     app()->instance(StripeClient::class, $stripe);
 
     $this->postJson('/api/verify-otp', [

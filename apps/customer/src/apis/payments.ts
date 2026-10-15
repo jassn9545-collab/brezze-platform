@@ -61,7 +61,7 @@ export const payForJob = async (jobId: number): Promise<JobPayment> => {
   });
   const initialized = intent.stripe_customer_id && intent.customer_session_client_secret
     ? await initPaymentSheet({
-        merchantDisplayName: 'Our Bezzie',
+        merchantDisplayName: 'Our Bezzie Provider',
         paymentIntentClientSecret: intent.client_secret,
         customerId: intent.stripe_customer_id,
         customerSessionClientSecret: intent.customer_session_client_secret,
@@ -69,7 +69,7 @@ export const payForJob = async (jobId: number): Promise<JobPayment> => {
         allowsDelayedPaymentMethods: false,
       })
     : await initPaymentSheet({
-        merchantDisplayName: 'Our Bezzie',
+        merchantDisplayName: 'Our Bezzie Provider',
         paymentIntentClientSecret: intent.client_secret,
         returnURL: 'bezzie://stripe-redirect',
         allowsDelayedPaymentMethods: false,

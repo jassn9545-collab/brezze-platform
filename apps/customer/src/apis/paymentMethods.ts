@@ -34,7 +34,7 @@ export const addPaymentMethod = async (): Promise<'added' | 'cancelled'> => {
 
   await initStripe({ publishableKey: setup.publishable_key });
   const initialized = await initPaymentSheet({
-    merchantDisplayName: 'Our Bezzie',
+    merchantDisplayName: 'Our Bezzie Provider',
     customerId: setup.customer_id,
     customerSessionClientSecret: setup.customer_session_client_secret,
     setupIntentClientSecret: setup.setup_intent_client_secret,

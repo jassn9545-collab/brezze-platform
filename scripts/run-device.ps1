@@ -8,10 +8,32 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $toolsRoot = Join-Path $repoRoot '.tools'
-$sdkRoot = Join-Path $toolsRoot 'android-sdk'
-$node = Join-Path $toolsRoot 'node/node_modules/node/bin/node.exe'
+$bundledSdkRoot = Join-Path $toolsRoot 'android-sdk'
+$systemSdkRoot = Join-Path $env:LOCALAPPDATA 'Android/Sdk'
+$sdkRoot = if (Test-Path -LiteralPath "$bundledSdkRoot/platforms/android-36/android.jar") {
+    $bundledSdkRoot
+} elseif (Test-Path -LiteralPath "$systemSdkRoot/platforms/android-36/android.jar") {
+    $systemSdkRoot
+} else {
+    $bundledSdkRoot
+}
+$bundledNode = Join-Path $toolsRoot 'node/node_modules/node/bin/node.exe'
+$node = if (Test-Path -LiteralPath $bundledNode) {
+    $bundledNode
+} else {
+    (Get-Command node -ErrorAction Stop).Source
+}
 $adb = Join-Path $sdkRoot 'platform-tools/adb.exe'
-$php = 'C:/laragon/bin/php/php-8.3.33-Win32-vs16-x64/php.exe'
+$configuredPhp = 'C:/laragon/bin/php/php-8.3.33-Win32-vs16-x64/php.exe'
+$php = if (Test-Path -LiteralPath $configuredPhp) {
+    $configuredPhp
+} else {
+    Get-ChildItem 'C:/laragon/bin/php' -Directory -ErrorAction Stop |
+        ForEach-Object { Join-Path $_.FullName 'php.exe' } |
+        Where-Object { Test-Path -LiteralPath $_ } |
+        Sort-Object -Descending |
+        Select-Object -First 1
+}
 $mysql = 'C:/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysqld.exe'
 $mysqlConfig = 'C:/laragon/bin/mysql/mysql-8.4.3-winx64/my.ini'
 
@@ -21,7 +43,11 @@ foreach ($required in @($node, $adb, $php, "$sdkRoot/platforms/android-36/androi
 if (!$env:JAVA_HOME) { $env:JAVA_HOME = 'C:/Program Files/Microsoft/jdk-17.0.11.9-hotspot' }
 $env:ANDROID_HOME = $sdkRoot
 $env:ANDROID_SDK_ROOT = $sdkRoot
-$env:GRADLE_USER_HOME = Join-Path $toolsRoot 'gradle'
+$repoGradleHome = Join-Path $toolsRoot 'gradle'
+$userGradleHome = Join-Path $env:USERPROFILE '.gradle'
+$cachedGradle = Get-ChildItem "$userGradleHome/wrapper/dists/gradle-9.0.0-bin" -Recurse -Filter 'gradle-9.0.0-bin.zip.ok' -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+$env:GRADLE_USER_HOME = if ($cachedGradle) { $userGradleHome } else { $repoGradleHome }
 $env:PATH = "$(Split-Path $node);$(Split-Path $adb);$env:PATH"
 $env:DEBUG = ''
 

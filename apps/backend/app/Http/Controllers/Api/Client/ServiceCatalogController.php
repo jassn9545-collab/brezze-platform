@@ -9,11 +9,24 @@ use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class ServiceCatalogController extends BaseClientController
 {
     use ApiResponse;
+
+    public function hero(Request $request)
+    {
+        if ($check = $this->checkClient()) {
+            return $check;
+        }
+
+        return $this->success(
+            $this->globalCustomerHero($request),
+            'Customer hero retrieved successfully.'
+        );
+    }
 
     public function index(Request $request, User $provider)
     {
@@ -202,6 +215,7 @@ class ServiceCatalogController extends BaseClientController
             ->values();
 
         return $this->success([
+            'hero' => $this->globalCustomerHero($request),
             'categories' => $categories->map(fn (Category $category) => [
                 'id' => $category->id,
                 'name' => $category->name,
@@ -213,6 +227,32 @@ class ServiceCatalogController extends BaseClientController
             'professionals' => $professionals,
             'services' => $services,
         ], 'Discovery data retrieved successfully.');
+    }
+
+    /**
+     * Customer Home hero is one shared admin setting for every customer account.
+     */
+    private function globalCustomerHero(Request $request): array
+    {
+        $settings = Schema::hasTable('settings')
+            ? DB::table('settings')
+                ->whereIn('key', [
+                    'customer_hero_title',
+                    'customer_hero_button_text',
+                    'customer_hero_image',
+                ])
+                ->pluck('value', 'key')
+            : collect();
+
+        return [
+            'title' => $settings->has('customer_hero_title')
+                ? $settings->get('customer_hero_title')
+                : 'Book Expert For Your Home & Get 30% Off on First Booking.',
+            'button_text' => $settings->has('customer_hero_button_text')
+                ? $settings->get('customer_hero_button_text')
+                : 'Book Now',
+            'image_url' => $this->absoluteUrl($request, $settings->get('customer_hero_image')),
+        ];
     }
 
     private function providerMatchesCategory(User $provider, Category $category): bool

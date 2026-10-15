@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
-use App\Contracts\PaymentGateway;
 use App\Contracts\CustomerPaymentGateway;
+use App\Contracts\PaymentGateway;
+use App\Contracts\PayoutGateway;
 use App\Services\StripeCustomerPaymentGateway;
 use App\Services\StripePaymentGateway;
+use App\Services\StripePayoutGateway;
 use Illuminate\Support\ServiceProvider;
 use Stripe\StripeClient;
 
@@ -21,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
         ]));
         $this->app->bind(PaymentGateway::class, StripePaymentGateway::class);
         $this->app->bind(CustomerPaymentGateway::class, StripeCustomerPaymentGateway::class);
+        $this->app->bind(PayoutGateway::class, StripePayoutGateway::class);
     }
 
     /**

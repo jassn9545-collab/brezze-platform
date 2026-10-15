@@ -32,9 +32,16 @@ export const submitSupportRequest = async (params: SupportRequestParams) => {
 
 export const getNotificationFeed = async (): Promise<NotificationFeed> => {
   const response = await api.get(URLs.getUserNotifications);
+  const notifications: AppNotification[] = response.data.data.notifications ?? [];
+  const bellNotifications = notifications.filter(
+    notification =>
+      notification.type !== 'chat_message' &&
+      notification.action_type !== 'conversation',
+  );
+
   return {
-    notifications: response.data.data.notifications ?? [],
-    unread_count: Number(response.data.data.unread_count ?? 0),
+    notifications: bellNotifications,
+    unread_count: bellNotifications.filter(notification => !notification.is_read).length,
   };
 };
 

@@ -60,3 +60,10 @@ export async function sendChatMessage(
   });
   return response.data.data.message;
 }
+
+export async function setChatPresence(
+  conversationId: number,
+  active: boolean,
+): Promise<void> {
+  await api.post(`/chat/conversations/${conversationId}/presence`, { active });
+}

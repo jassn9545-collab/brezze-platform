@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\UserProof;
-use Illuminate\Support\Facades\Hash;
-use Mail;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use App\Traits\ApiResponse;
+use Mail;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Throwable;
@@ -23,10 +23,10 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = \Validator::make($request->all(), [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required',
-            'phone'    => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:20',
             'confirm_password' => 'required|same:password',
             'user_type' => 'nullable|string|in:client,freelancer',
             'country' => 'nullable|string',
@@ -38,7 +38,7 @@ class AuthController extends Controller
         }
 
         $country = $request->input('country', $request->input('country_code'));
-        if ($country && !$this->normalizeStripeCountry($country)) {
+        if ($country && ! $this->normalizeStripeCountry($country)) {
             return $this->error('Country must be Australia or India.', 400);
         }
 
@@ -46,26 +46,26 @@ class AuthController extends Controller
         $otp = random_int(100000, 999999);
 
         // Store OTP in cache for 5 minutes (you can also use DB)
-        Cache::put('user_otp_' . $request->email, $otp, now()->addMinutes(5));
+        Cache::put('user_otp_'.$request->email, $otp, now()->addMinutes(5));
 
         // Send OTP via email
         Mail::send([], [], function ($message) use ($request, $otp) {
             $message->to($request->email)
-                    ->subject('OTP Verification')
-                    ->html('<p>Hello ' . $request->name . '</p>
-                            <p>Your OTP is <strong>' . $otp . '</strong></p>');
+                ->subject('OTP Verification')
+                ->html('<p>Hello '.$request->name.'</p>
+                            <p>Your OTP is <strong>'.$otp.'</strong></p>');
         });
 
         return $this->success([], 'OTP sent to your email.');
     }
 
-
-    public function verifyOtp(Request $request, StripeClient $stripe){
+    public function verifyOtp(Request $request, StripeClient $stripe)
+    {
         $validator = \Validator::make($request->all(), [
-            'otp'     => 'required|digits:6',
-            'email'   => 'required|email|unique:users,email',
-            'phone'   => 'nullable|string|max:20|unique:users,phone',
-            'name'    => 'required|string|max:255',
+            'otp' => 'required|digits:6',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:20|unique:users,phone',
+            'name' => 'required|string|max:255',
             'password' => 'required|min:6',
             'confirm_password' => 'required|same:password',
             'reference' => 'nullable|string',
@@ -86,36 +86,36 @@ class AuthController extends Controller
             $request->input('country', $request->input('country_code'))
         );
 
-        if (!$stripeCountry) {
+        if (! $stripeCountry) {
             return $this->error('Country must be Australia or India.', 400);
         }
 
         $needsStripeAccount = ($request->user_type ?? 'client') === 'freelancer';
 
-        if ($needsStripeAccount && !config('services.stripe.secret')) {
+        if ($needsStripeAccount && ! config('services.stripe.secret')) {
             return $this->error('Stripe is not configured. Please add STRIPE_SECRET.', 500);
         }
 
         [$returnUrl, $refreshUrl] = $this->onboardingCallbackUrls($request);
 
         if ($needsStripeAccount && str_starts_with((string) config('services.stripe.secret'), 'sk_live_')
-            && (!str_starts_with($returnUrl, 'https://') || !str_starts_with($refreshUrl, 'https://'))) {
+            && (! str_starts_with($returnUrl, 'https://') || ! str_starts_with($refreshUrl, 'https://'))) {
             return $this->error('Stripe live-mode onboarding URLs must use HTTPS.', 400);
         }
 
-        $cachedOtp = Cache::get('user_otp_' . $request->email);
+        $cachedOtp = Cache::get('user_otp_'.$request->email);
 
-        if (!$cachedOtp || $cachedOtp != $request->otp) {
+        if (! $cachedOtp || $cachedOtp != $request->otp) {
             return $this->error('Invalid or expired OTP.', 400);
         }
 
         try {
             $user = DB::transaction(function () use ($request, $stripeCountry) {
                 $user = User::create([
-                    'name'      => $request->name,
-                    'email'     => $request->email,
-                    'phone'     => $request->phone,
-                    'password'  => \Hash::make($request->password),
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'password' => \Hash::make($request->password),
                     'user_type' => $request->user_type ?? 'client',
                     'is_verified' => true,
                     'email_verified_at' => date('Y-m-d H:i:s'),
@@ -127,7 +127,7 @@ class AuthController extends Controller
                 ]);
 
                 // Generate referral code
-                $referral_code = strtoupper(substr($user->name, 0, 3)) . $user->id;
+                $referral_code = strtoupper(substr($user->name, 0, 3)).$user->id;
                 $user->refral_code = $referral_code;
                 $user->save();
 
@@ -140,7 +140,7 @@ class AuthController extends Controller
         }
 
         // Remove OTP from cache (correct key)
-        Cache::forget('user_otp_' . $request->email);
+        Cache::forget('user_otp_'.$request->email);
 
         // Generate token
         $token = $user->createToken('api-token')->plainTextToken;
@@ -176,18 +176,19 @@ class AuthController extends Controller
         }
 
         $user->makeHidden(['password', 'remember_token']);
-        if(!$user->dob && !$user->street_address){
+        if (! $user->dob && ! $user->street_address) {
             $user->basic_info = 0;
-        }else{
+        } else {
             $user->basic_info = 1;
         }
-        if(!$user->profile_image){
+        if (! $user->profile_image) {
             $user->profile_pic = 0;
-        }else{
+        } else {
             $user->profile_pic = 1;
         }
         // return $user->id;
         $user->proof = 0;
+
         return $this->success([
             'user' => $user,
             'token' => $token,
@@ -236,22 +237,49 @@ class AuthController extends Controller
 
     private function createStripeConnectedAccount(User $user, string $country, StripeClient $stripe)
     {
-        return $stripe->accounts->create([
-            'type' => 'express',
-            'country' => $country,
-            'email' => $user->email,
-            'business_type' => 'individual',
-            'capabilities' => [
-                'card_payments' => ['requested' => true],
-                'transfers' => ['requested' => true],
+        return $stripe->v2->core->accounts->create([
+            'display_name' => $user->name,
+            'contact_email' => $user->email,
+            'contact_phone' => $user->phone,
+            'dashboard' => 'express',
+            'defaults' => [
+                'currency' => strtolower((string) config('services.stripe.currency', 'aud')),
+                'profile' => [
+                    'product_description' => 'Professional services provided through Our Bezzie.',
+                ],
+                'responsibilities' => [
+                    'fees_collector' => 'application',
+                    'losses_collector' => 'application',
+                ],
             ],
-            'business_profile' => [
-                'product_description' => 'Professional services provided through Our Bezzie.',
+            'identity' => [
+                'country' => $country,
+                'entity_type' => 'individual',
+                'individual' => [
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                ],
+            ],
+            'configuration' => [
+                'merchant' => [
+                    'capabilities' => [
+                        'card_payments' => ['requested' => true],
+                    ],
+                ],
+                'recipient' => [
+                    'capabilities' => [
+                        'stripe_balance' => [
+                            'stripe_transfers' => ['requested' => true],
+                        ],
+                    ],
+                ],
             ],
             'metadata' => [
                 'user_id' => (string) $user->id,
                 'user_type' => (string) $user->user_type,
             ],
+        ], [
+            'idempotency_key' => 'user_'.$user->id.'_stripe_connected_account_v2',
         ]);
     }
 
@@ -263,8 +291,7 @@ class AuthController extends Controller
             'return_url' => $returnUrl,
             'type' => 'account_onboarding',
             'collection_options' => [
-                'fields' => 'eventually_due',
-                'future_requirements' => 'include',
+                'fields' => 'currently_due',
             ],
         ]);
     }
@@ -274,8 +301,8 @@ class AuthController extends Controller
         $baseUrl = rtrim((string) config('services.stripe.onboarding_base_url'), '/');
 
         return [
-            $request->input('return_url') ?: $baseUrl . route('stripe.onboarding.return', [], false),
-            $request->input('refresh_url') ?: $baseUrl . route('stripe.onboarding.refresh', [], false),
+            $request->input('return_url') ?: $baseUrl.route('stripe.onboarding.return', [], false),
+            $request->input('refresh_url') ?: $baseUrl.route('stripe.onboarding.refresh', [], false),
         ];
     }
 
@@ -290,14 +317,14 @@ class AuthController extends Controller
             return $this->error($validator->errors()->first(), 400, $validator->errors());
         }
 
-        if (!config('services.stripe.secret')) {
+        if (! config('services.stripe.secret')) {
             return $this->error('Stripe is not configured. Please add STRIPE_SECRET.', 500);
         }
 
         [$returnUrl, $refreshUrl] = $this->onboardingCallbackUrls($request);
 
         if (str_starts_with((string) config('services.stripe.secret'), 'sk_live_')
-            && (!str_starts_with($returnUrl, 'https://') || !str_starts_with($refreshUrl, 'https://'))) {
+            && (! str_starts_with($returnUrl, 'https://') || ! str_starts_with($refreshUrl, 'https://'))) {
             return $this->error('Stripe live-mode onboarding URLs must use HTTPS.', 400);
         }
 
@@ -317,10 +344,10 @@ class AuthController extends Controller
             return $this->error('Unable to create Stripe customer. Please try again.', 500);
         }
 
-        if (!$user->stripe_account_id) {
+        if (! $user->stripe_account_id) {
             $stripeCountry = $this->normalizeStripeCountry($user->country);
 
-            if (!$stripeCountry) {
+            if (! $stripeCountry) {
                 return $this->error('Country must be Australia or India.', 400);
             }
 
@@ -358,7 +385,7 @@ class AuthController extends Controller
     {
         $accountId = $request->user()->stripe_account_id;
 
-        if (!$accountId) {
+        if (! $accountId) {
             return $this->success([
                 'connected' => false,
                 'stripe_account_id' => null,
@@ -375,7 +402,7 @@ class AuthController extends Controller
             ], 'No Stripe account is connected.');
         }
 
-        if (!config('services.stripe.secret')) {
+        if (! config('services.stripe.secret')) {
             return $this->error('Stripe is not configured. Please add STRIPE_SECRET.', 500);
         }
 
@@ -408,8 +435,8 @@ class AuthController extends Controller
             'details_submitted' => $detailsSubmitted,
             'charges_enabled' => $chargesEnabled,
             'payouts_enabled' => $payoutsEnabled,
-            'ready_for_payments' => $chargesEnabled && $payoutsEnabled,
-            'onboarding_required' => !$detailsSubmitted || $currentlyDue !== [] || $eventuallyDue !== [],
+            'ready_for_payments' => $detailsSubmitted && $chargesEnabled && $payoutsEnabled,
+            'onboarding_required' => ! $detailsSubmitted || $currentlyDue !== [] || $eventuallyDue !== [],
             'requirements' => [
                 'currently_due' => $currentlyDue,
                 'eventually_due' => $eventuallyDue,
@@ -418,33 +445,36 @@ class AuthController extends Controller
         ], 'Stripe account status retrieved successfully.');
     }
 
-    public function profileVerificationInfo(Request $request){
+    public function profileVerificationInfo(Request $request)
+    {
         $user = $request->user();
-        if(!$user->dob && !$user->street_address){
+        if (! $user->dob && ! $user->street_address) {
             $basic_info = 0;
-        }else{
+        } else {
             $basic_info = 1;
         }
-        if(!$user->profile_image){
+        if (! $user->profile_image) {
             $profile_pic = 0;
-        }else{
+        } else {
             $profile_pic = 1;
         }
         $user_proof = UserProof::where('user_id', $user->id)->first();
-        if($user_proof){
+        if ($user_proof) {
             $proof = 1;
-        }else{
+        } else {
             $proof = 0;
         }
+
         return $this->success([
             'basic_info' => $basic_info,
             'profile_pic' => $profile_pic,
             'proof' => $proof,
-            'is_verification_completed' => $user_proof?->is_verified ?? 0
+            'is_verification_completed' => $user_proof?->is_verified ?? 0,
         ]);
     }
 
-    public function resendOtp(Request $request){
+    public function resendOtp(Request $request)
+    {
         $validator = \Validator::make($request->all(), [
             'email' => 'required|email',
         ]);
@@ -457,14 +487,14 @@ class AuthController extends Controller
         $otp = random_int(100000, 999999);
 
         // Store in cache for 5 minutes
-        Cache::put('user_otp_' . $request->email, $otp, now()->addMinutes(5));
+        Cache::put('user_otp_'.$request->email, $otp, now()->addMinutes(5));
 
         // Send OTP via email
         Mail::send([], [], function ($message) use ($request, $otp) {
             $message->to($request->email)
-                    ->subject('OTP Verification')
-                    ->html('<h2>Hello ' . $request->name . '</h2>
-                            <p>Your new OTP is <strong>' . $otp . '</strong></p>');
+                ->subject('OTP Verification')
+                ->html('<h2>Hello '.$request->name.'</h2>
+                            <p>Your new OTP is <strong>'.$otp.'</strong></p>');
         });
 
         return $this->success([], 'New OTP sent successfully.');
@@ -479,7 +509,7 @@ class AuthController extends Controller
         ], [
             'email.required' => 'Email is required',
             'email.exists' => 'This email is not registered with us.',
-            'user_type.in' => 'User type must be either client or freelancer.'
+            'user_type.in' => 'User type must be either client or freelancer.',
         ]);
 
         if ($validator->fails()) {
@@ -487,11 +517,11 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->with('proof')->first();
-        if($user->user_type !== $request->user_type){
+        if ($user->user_type !== $request->user_type) {
             return $this->error('This email is not associated with the selected user type', 400);
         }
         $user_proof = UserProof::where('user_id', $user->id)->first();
-        if($user_proof?->is_verified === 2){
+        if ($user_proof?->is_verified === 2) {
             return $this->error('Your ID verification has been rejected. Please contact support for further assistance.', 400);
 
         }
@@ -506,20 +536,20 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         $user->makeHidden(['password', 'remember_token']);
-        if(!$user->dob && !$user->street_address){
+        if (! $user->dob && ! $user->street_address) {
             $basic_info = 0;
-        }else{
+        } else {
             $basic_info = 1;
         }
-        if(!$user->profile_image){
+        if (! $user->profile_image) {
             $profile_pic = 0;
-        }else{
+        } else {
             $profile_pic = 1;
         }
-        
-        if($user_proof){
+
+        if ($user_proof) {
             $proof = 1;
-        }else{
+        } else {
             $proof = 0;
         }
 
@@ -529,7 +559,7 @@ class AuthController extends Controller
             'basic_info' => $basic_info,
             'profile_pic' => $profile_pic,
             'proof' => $proof,
-            'is_verification_completed' => ($user_proof) ? $user_proof->is_verified : 0
+            'is_verification_completed' => ($user_proof) ? $user_proof->is_verified : 0,
 
         ], 'Login successful.');
     }
@@ -541,7 +571,8 @@ class AuthController extends Controller
         if ($user && $user->currentAccessToken()) {
             $user->currentAccessToken()->delete();
         }
-        return response()->json(['status'  => 'success','message' => 'Logged out'], 200);
+
+        return response()->json(['status' => 'success', 'message' => 'Logged out'], 200);
     }
 
     public function profile(Request $request)
@@ -551,11 +582,12 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $user
-        ],200);
+            'data' => $user,
+        ], 200);
     }
 
-    public function forgetPassword(Request $request){
+    public function forgetPassword(Request $request)
+    {
         $validator = \Validator::make($request->all(), [
             'email' => 'required|exists:users,email',
         ]);
@@ -570,7 +602,7 @@ class AuthController extends Controller
         $otp = random_int(100000, 999999);
 
         Cache::put(
-            'password_reset_otp_' . $user->id,
+            'password_reset_otp_'.$user->id,
             Hash::make((string) $otp),
             now()->addMinutes(5)
         );
@@ -578,18 +610,19 @@ class AuthController extends Controller
         // Send OTP via email
         Mail::send([], [], function ($message) use ($user, $otp) {
             $message->to($user->email)
-                    ->subject('Forget Password OTP')
-                    ->html('<p>Hello ' . $user->name . '</p>
-                            <p>Your OTP is <strong>' . $otp . '</strong></p>');
+                ->subject('Forget Password OTP')
+                ->html('<p>Hello '.$user->name.'</p>
+                            <p>Your OTP is <strong>'.$otp.'</strong></p>');
         });
 
         return $this->success(['user_id' => $user->id], 'Forget password OTP sent to your email.');
     }
 
-    public function forgetPasswordOtpVerification(Request $request){
+    public function forgetPasswordOtpVerification(Request $request)
+    {
         $validator = \Validator::make($request->all(), [
             'user_id' => 'required|exists:users,id',
-            'otp'     => 'required|digits:6',
+            'otp' => 'required|digits:6',
         ]);
 
         if ($validator->fails()) {
@@ -597,10 +630,10 @@ class AuthController extends Controller
         }
 
         $user = User::find($request->user_id);
-        $cacheKey = 'password_reset_otp_' . $user->id;
+        $cacheKey = 'password_reset_otp_'.$user->id;
         $cachedOtp = Cache::get($cacheKey);
 
-        if (!$cachedOtp || !Hash::check((string) $request->otp, $cachedOtp)) {
+        if (! $cachedOtp || ! Hash::check((string) $request->otp, $cachedOtp)) {
             return $this->error('Invalid or expired OTP.', 400);
         }
 
@@ -608,7 +641,7 @@ class AuthController extends Controller
 
         $resetToken = Str::random(64);
         Cache::put(
-            'password_reset_token_' . $user->id,
+            'password_reset_token_'.$user->id,
             hash('sha256', $resetToken),
             now()->addMinutes(10)
         );
@@ -619,11 +652,12 @@ class AuthController extends Controller
         ], 'OTP verified. You can now reset your password.');
     }
 
-    public function updatePassword(Request $request){
+    public function updatePassword(Request $request)
+    {
         $validator = \Validator::make($request->all(), [
-            'user_id'          => 'required|exists:users,id',
-            'reset_token'      => 'required|string|size:64',
-            'new_password'     => 'required|min:6',
+            'user_id' => 'required|exists:users,id',
+            'reset_token' => 'required|string|size:64',
+            'new_password' => 'required|min:6',
             'confirmed_password' => 'required|same:new_password',
         ]);
 
@@ -632,10 +666,10 @@ class AuthController extends Controller
         }
 
         $user = User::find($request->user_id);
-        $cacheKey = 'password_reset_token_' . $user->id;
+        $cacheKey = 'password_reset_token_'.$user->id;
         $cachedToken = Cache::get($cacheKey);
 
-        if (!$cachedToken || !hash_equals($cachedToken, hash('sha256', $request->reset_token))) {
+        if (! $cachedToken || ! hash_equals($cachedToken, hash('sha256', $request->reset_token))) {
             return $this->error('Invalid or expired password reset token.', 400);
         }
 
@@ -646,15 +680,16 @@ class AuthController extends Controller
 
         Mail::send([], [], function ($message) use ($user) {
             $message->to($user->email)
-                    ->subject('Password Updated')
-                    ->html('<p>Hello ' . $user->name . '</p>
+                ->subject('Password Updated')
+                ->html('<p>Hello '.$user->name.'</p>
                             <p>Your password has been updated successfully.</p>');
         });
 
         return $this->success([], 'Password updated successfully.');
     }
 
-    public function basicInfoUpdate(Request $request){
+    public function basicInfoUpdate(Request $request)
+    {
         $validator = \Validator::make($request->all(), [
             'dob' => 'required|date',
             'street_address' => 'required|string|max:255',
@@ -681,7 +716,8 @@ class AuthController extends Controller
         return $this->success($user, 'Basic information updated successfully.');
     }
 
-    public function profilePhotoUpload(Request $request){
+    public function profilePhotoUpload(Request $request)
+    {
         $validator = \Validator::make($request->all(), [
             'profile_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -694,12 +730,12 @@ class AuthController extends Controller
 
         if ($request->hasFile('profile_image')) {
             $file = $request->file('profile_image');
-            $filename = time() . '.' . $file->guessExtension();
+            $filename = time().'.'.$file->guessExtension();
             $filePath = public_path('uploads/user/');
             $file->move($filePath, $filename);
 
             // Update user's profile image path
-            $user->profile_image = 'uploads/user/' . $filename;
+            $user->profile_image = 'uploads/user/'.$filename;
             $user->save();
 
             return $this->success([
@@ -710,7 +746,8 @@ class AuthController extends Controller
         }
     }
 
-    public function idVerification(Request $request){
+    public function idVerification(Request $request)
+    {
         $validator = \Validator::make($request->all(), [
             'proof_type' => 'required|string|max:255',
             'id_number' => 'required|string|max:255',
@@ -727,35 +764,36 @@ class AuthController extends Controller
 
         if ($request->hasFile('front_image')) {
             $file = $request->file('front_image');
-            $filename = 'uploads/id_proofs/'.$user->id.'/front_' . time() . '.' . $file->guessExtension();
-            $filePath = public_path('uploads/id_proofs/' . $user->id);
+            $filename = 'uploads/id_proofs/'.$user->id.'/front_'.time().'.'.$file->guessExtension();
+            $filePath = public_path('uploads/id_proofs/'.$user->id);
             $file->move($filePath, $filename);
-        } 
+        }
         if ($request->hasFile('back_image')) {
             $file = $request->file('back_image');
-            $filename_back = 'uploads/id_proofs/'.$user->id.'/back_' . time() . '.' . $file->guessExtension();
-            $filePath = public_path('uploads/id_proofs/' . $user->id);
+            $filename_back = 'uploads/id_proofs/'.$user->id.'/back_'.time().'.'.$file->guessExtension();
+            $filePath = public_path('uploads/id_proofs/'.$user->id);
             $file->move($filePath, $filename_back);
         }
 
         UserProof::updateOrInsert(
-                        [
-                            'user_id'    => $user->id,
-                            'proof_type' => $request->proof_type,
-                        ],
-                        [
-                            'id_number'   => $request->id_number,
-                            'expiry_date' => date('Y-m-d', strtotime($request->expiry_date)),
-                            'front_image' => $filename ?? null,
-                            'back_image'  => $filename_back ?? null
-                        ]
-                    );
+            [
+                'user_id' => $user->id,
+                'proof_type' => $request->proof_type,
+            ],
+            [
+                'id_number' => $request->id_number,
+                'expiry_date' => date('Y-m-d', strtotime($request->expiry_date)),
+                'front_image' => $filename ?? null,
+                'back_image' => $filename_back ?? null,
+            ]
+        );
 
         return $this->success([$user->load('proof')], 'ID verification submitted successfully. It will be reviewed shortly.');
     }
 
-    public function setting(Request $request){
-        $data['skills'] = DB::table('categories')->select('id', 'name','slug','photo')->get();
+    public function setting(Request $request)
+    {
+        $data['skills'] = DB::table('categories')->select('id', 'name', 'slug', 'photo')->get();
         $data['proof_type'] = DB::table('proof_type')->select('name')->get();
         $data['base_url'] = rtrim((string) config('app.asset_url'), '/');
 

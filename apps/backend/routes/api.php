@@ -1,21 +1,22 @@
 <?php
-use App\Http\Controllers\Api\UserController;
+
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\HomeController;
-use App\Http\Controllers\Api\Client\JobController as ClientJobController;
+use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\Client\ClientHomeController;
+use App\Http\Controllers\Api\Client\JobController as ClientJobController;
 use App\Http\Controllers\Api\Client\ServiceCatalogController as ClientServiceCatalogController;
+use App\Http\Controllers\Api\CustomerPaymentMethodController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\Freelancer\FreelancerJobController;
 use App\Http\Controllers\Api\Freelancer\ServiceCatalogController;
-use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\CustomerPaymentMethodController;
-use App\Http\Controllers\Api\ChatController;
-use App\Http\Controllers\Api\ServiceBookingController;
+use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LegalController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ProviderPayoutController;
+use App\Http\Controllers\Api\ServiceBookingController;
 use App\Http\Controllers\Api\SupportController;
-use App\Http\Controllers\Api\DeviceController;
-
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:10,1')->group(function () {
@@ -40,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('chat')->group(function () {
         Route::get('conversations', [ChatController::class, 'index']);
         Route::post('conversations', [ChatController::class, 'store']);
+        Route::post('conversations/{conversation}/presence', [ChatController::class, 'presence'])
+            ->middleware('throttle:120,1');
         Route::get('conversations/{conversation}/messages', [ChatController::class, 'messages']);
         Route::post('conversations/{conversation}/messages', [ChatController::class, 'send'])
             ->middleware('throttle:60,1');
@@ -74,6 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // jobs routes
     Route::prefix('client')->group(function () {
         Route::get('discovery', [ClientServiceCatalogController::class, 'discovery']);
+        Route::get('hero', [ClientServiceCatalogController::class, 'hero']);
         Route::get('freelancer-catalogs/{provider}', [ClientServiceCatalogController::class, 'index']);
         Route::get('service-bookings', [ServiceBookingController::class, 'clientIndex']);
         Route::post('service-bookings', [ServiceBookingController::class, 'store']);
@@ -114,6 +118,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('profile-update', [FreelancerJobController::class, 'profileUpdate']);
         Route::post('submit-work', [FreelancerJobController::class, 'submitWork']);
         Route::post('payments', [PaymentController::class, 'providerHistory']);
+        Route::get('payouts', [ProviderPayoutController::class, 'index']);
+        Route::post('payouts', [ProviderPayoutController::class, 'store'])
+            ->middleware('throttle:5,1');
+        Route::post('payouts/dashboard-link', [ProviderPayoutController::class, 'dashboardLink'])
+            ->middleware('throttle:10,1');
         Route::get('catalogs', [ServiceCatalogController::class, 'index']);
         Route::post('catalogs', [ServiceCatalogController::class, 'store']);
         Route::get('service-bookings', [ServiceBookingController::class, 'providerIndex']);
@@ -121,9 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
-Route::post('submit-review', [FreelancerJobController::class, 'submitReview']);
-Route::get('reviews/projects/{project}', \App\Http\Controllers\ReviewStatusController::class);
+    Route::post('submit-review', [FreelancerJobController::class, 'submitReview']);
+    Route::get('reviews/projects/{project}', \App\Http\Controllers\ReviewStatusController::class);
     Route::post('account/update-password', [HomeController::class, 'updatePassword']);
 });
-
-?>

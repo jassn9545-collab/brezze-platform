@@ -3,7 +3,9 @@
 use App\Models\Bid;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 
@@ -43,6 +45,18 @@ beforeEach(function () {
         $table->timestamps();
     });
 
+    Schema::create('user_notifications', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('user_id')->index();
+        $table->string('title');
+        $table->text('message');
+        $table->string('type')->default('general');
+        $table->string('action_type')->nullable();
+        $table->unsignedBigInteger('action_id')->nullable();
+        $table->timestamp('read_at')->nullable();
+        $table->timestamps();
+    });
+
     $this->chatMigration = require database_path('migrations/2026_10_01_000001_create_chat_tables.php');
     $this->chatMigration->up();
 
@@ -71,11 +85,52 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    Cache::flush();
     $this->chatMigration->down();
+    Schema::dropIfExists('user_notifications');
     Schema::dropIfExists('service_bookings');
     Schema::dropIfExists('bids');
     Schema::dropIfExists('projects');
     Schema::dropIfExists('users');
+});
+
+it('suppresses chat notifications while the recipient has that conversation open', function () {
+    Sanctum::actingAs($this->client);
+    $conversationId = $this->postJson('/api/chat/conversations', [
+        'project_id' => $this->project->id,
+        'recipient_id' => $this->provider->id,
+    ])->assertOk()->json('data.conversation.id');
+
+    Sanctum::actingAs($this->provider);
+    $this->postJson("/api/chat/conversations/{$conversationId}/presence", [
+        'active' => true,
+    ])->assertOk()->assertJsonPath('data.active', true);
+
+    Sanctum::actingAs($this->client);
+    $this->postJson("/api/chat/conversations/{$conversationId}/messages", [
+        'body' => 'Visible inside the open chat',
+    ])->assertCreated();
+
+    expect(UserNotification::query()
+        ->where('user_id', $this->provider->id)
+        ->where('type', 'chat_message')
+        ->count())->toBe(0);
+
+    Sanctum::actingAs($this->provider);
+    $this->postJson("/api/chat/conversations/{$conversationId}/presence", [
+        'active' => false,
+    ])->assertOk()->assertJsonPath('data.active', false);
+
+    Sanctum::actingAs($this->client);
+    $this->postJson("/api/chat/conversations/{$conversationId}/messages", [
+        'body' => 'Notify after leaving the chat',
+    ])->assertCreated();
+
+    expect(UserNotification::query()
+        ->where('user_id', $this->provider->id)
+        ->where('type', 'chat_message')
+        ->where('action_id', $conversationId)
+        ->count())->toBe(1);
 });
 
 it('lets both participants exchange messages and tracks unread status', function () {
@@ -119,6 +174,12 @@ it('lets both participants exchange messages and tracks unread status', function
         ->assertJsonPath('data.messages.0.sender_id', $this->provider->id);
 
     expect($received->json('data.messages.0.read_at'))->not->toBeNull();
+    expect(UserNotification::query()
+        ->where('user_id', $this->client->id)
+        ->where('type', 'chat_message')
+        ->where('action_id', $conversationId)
+        ->firstOrFail()
+        ->read_at)->not->toBeNull();
 
     $this->getJson('/api/chat/conversations')
         ->assertJsonPath('data.conversations.0.unread_count', 0);

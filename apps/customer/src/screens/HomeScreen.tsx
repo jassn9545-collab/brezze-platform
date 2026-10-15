@@ -4,8 +4,6 @@ import {
   SafeRemoteImage,
   Screen,
   Text,
-  TextField,
-  TextFieldAccessoryProps,
 } from '../components';
 import {
   ActivityIndicator,
@@ -19,13 +17,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, { FC, useCallback, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, images, spacing } from '../theme';
 import { AppBottomTabScreenProps } from '../navigators/BottomTabNavigator';
 import {
   DiscoveryCategory,
+  DiscoveryHero,
   DiscoveryProfessional,
+  getCustomerHero,
   getDiscovery,
 } from '../apis/discovery';
 import { getNotificationFeed } from '../apis/account';
@@ -39,37 +39,71 @@ type NavigationProps = AppBottomTabScreenProps<'Home'>;
 type Props = NavigationProps;
 
 const screenWidth = Dimensions.get('window').width;
+const HERO_REFRESH_INTERVAL_MS = 10000;
 
 const Home: FC<Props> = (props) => {
   const [categories, setCategories] = useState<DiscoveryCategory[]>([]);
   const [professionals, setProfessionals] = useState<DiscoveryProfessional[]>([]);
+  const [hero, setHero] = useState<DiscoveryHero | null>(null);
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const ownUserId = useAppSelector(state => state.auth.myProfile?.user?.id);
 
   useFocusEffect(useCallback(() => {
     let active = true;
-    setLoading(true);
 
-    getDiscovery()
-      .then(data => {
-        if (!active) return;
-        setCategories(data.categories);
-        setProfessionals(data.featured_professionals.slice(0, 3));
-      })
-      .catch(() => {
-        if (!active) return;
-        setCategories([]);
-        setProfessionals([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const refreshHero = () => {
+      getCustomerHero()
+        .then(latestHero => {
+          if (active) setHero(latestHero);
+        })
+        .catch(() => undefined);
+    };
+
+    const refreshDiscovery = () => {
+      setLoading(true);
+
+      getDiscovery()
+        .then(data => {
+          if (!active) return;
+          setHero(data.hero ?? null);
+          setCategories(data.categories);
+          setProfessionals(data.featured_professionals.slice(0, 3));
+        })
+        .catch(() => {
+          if (!active) return;
+          setHero(null);
+          setCategories([]);
+          setProfessionals([]);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    };
+
+    refreshDiscovery();
+    const heroRefreshInterval = setInterval(
+      refreshHero,
+      HERO_REFRESH_INTERVAL_MS,
+    );
+    const appStateSubscription = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        refreshDiscovery();
+        refreshHero();
+      }
+    });
 
     return () => {
       active = false;
+      clearInterval(heroRefreshInterval);
+      appStateSubscription.remove();
     };
   }, []));
+
+  useEffect(() => {
+    setHeroImageFailed(false);
+  }, [hero?.image_url]);
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -152,36 +186,38 @@ const Home: FC<Props> = (props) => {
           </TouchableOpacity>
         </View>
 
-        {/* SEARCH */}
-        <View style={styles.searchContainer}>
-
-          <TextField
-            placeholderTx="home.searchPlaceholder"
-            containerStyle={styles.flex}
-            LeftAccessory={leftAccessory}
-          />
-
-          <Image
-            source={images.filterIcon}
-            style={styles.filterButton}
-          />
-        </View>
-
         {/* BANNER */}
 
         <View style={styles.thirdSection}>
           <ImageBackground
-            source={images.homeImage}
+            source={hero?.image_url && !heroImageFailed ? { uri: hero.image_url } : images.homeImage}
+            defaultSource={images.homeImage}
+            onError={() => setHeroImageFailed(true)}
             style={styles.imageHome}
             imageStyle={{ borderRadius: 20 }}
           >
-            <View style={styles.overlay}>
-              <Text style={styles.bannerText} tx="home.title" />
-              <TouchableOpacity onPress={() => props.navigation.navigate('Service')}>
-                <Button
-                  tx="home.bookNow"
-                />
-              </TouchableOpacity>
+            <View
+              style={[
+                styles.overlay,
+                hero !== null && !hero.title?.trim() && !hero.button_text?.trim()
+                  ? styles.overlayTransparent
+                  : null,
+              ]}
+            >
+              {hero === null ? (
+                <Text style={styles.bannerText} tx="home.title" />
+              ) : hero.title?.trim() ? (
+                <Text style={styles.bannerText} text={hero.title.trim()} />
+              ) : null}
+              {hero === null ? (
+                <TouchableOpacity onPress={() => props.navigation.navigate('Service')}>
+                  <Button tx="home.bookNow" />
+                </TouchableOpacity>
+              ) : hero.button_text?.trim() ? (
+                <TouchableOpacity onPress={() => props.navigation.navigate('Service')}>
+                  <Button text={hero.button_text.trim()} />
+                </TouchableOpacity>
+              ) : null}
             </View>
           </ImageBackground>
         </View>
@@ -295,15 +331,6 @@ const Home: FC<Props> = (props) => {
 };
 
 
-const leftAccessory = (props: TextFieldAccessoryProps) => {
-  return (
-    <View style={[props.style, styles.inputAccessoryStyle]}>
-      <Image source={images.searchIcon} />
-    </View>
-  );
-};
-
-
 const styles = StyleSheet.create({
 
   container: {
@@ -341,25 +368,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 12,
   },
-  inputAccessoryStyle: {
-    marginVertical: spacing.sm,
-    height: 24,
-  },
-
-
-  searchContainer: {
-    gap: spacing.xs,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: spacing.md,
-  },
-  flex: { flex: 1 },
-  filterButton: {
-    height: 54,
-    width: 54,
-    borderRadius: spacing.xs,
-  },
-
   thirdSection: {
     paddingHorizontal: 15,
     marginTop: 15,
@@ -378,6 +386,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
     borderRadius: 20,
     alignItems: 'center',
+  },
+  overlayTransparent: {
+    backgroundColor: colors.transparent,
   },
 
   bannerText: {

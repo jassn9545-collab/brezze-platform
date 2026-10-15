@@ -94,7 +94,7 @@ export const startFirebaseNotifications = async () => {
     });
     const unsubscribeMessage = onMessage(messaging, message => {
       emitPushEvent(message.data);
-      const title = message.notification?.title ?? 'Our Bezzie';
+      const title = message.notification?.title ?? 'Our Bezzie Provider';
       const body = message.notification?.body;
       toast.show(body ? `${title}: ${body}` : title, {type: 'normal'});
     });

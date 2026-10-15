@@ -1,6 +1,7 @@
 ﻿import React, {FC, useCallback, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  DeviceEventEmitter,
   FlatList,
   Image,
   StyleSheet,
@@ -15,6 +16,7 @@ import {Conversation, getConversations} from '../apis/chat';
 import {colors, images, spacing} from '../theme';
 import {useAppSelector, useIsForeground} from '../store/hooks';
 import {subscribeToUser} from '../utils/realtime';
+import {CHAT_PUSH_EVENT} from '../utils/Firebase';
 
 type Props = AppBottomTabScreenProps<'Chat'>;
 
@@ -65,10 +67,15 @@ const Chat: FC<Props> = props => {
       const unsubscribe = ownUserId
         ? subscribeToUser(Number(ownUserId), () => loadConversations('poll'))
         : undefined;
+      const pushSubscription = DeviceEventEmitter.addListener(
+        CHAT_PUSH_EVENT,
+        () => loadConversations('poll'),
+      );
       const timer = setInterval(() => loadConversations('poll'), 30000);
       return () => {
         activeRef.current = false;
         unsubscribe?.();
+        pushSubscription.remove();
         clearInterval(timer);
       };
     }, [loadConversations, isForeground, ownUserId]),

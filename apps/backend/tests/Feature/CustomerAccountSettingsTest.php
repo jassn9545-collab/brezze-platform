@@ -145,7 +145,7 @@ it('rejects an incorrect current password and password reuse', function () {
     ])->assertStatus(400);
 });
 
-it('returns only the signed-in users notifications and marks them read', function () {
+it('returns only non-chat notifications for the signed-in users bell and marks them read', function () {
     $user = accountSettingsUser();
     $other = accountSettingsUser('other@example.test');
     $own = UserNotification::create([
@@ -157,6 +157,14 @@ it('returns only the signed-in users notifications and marks them read', functio
         'user_id' => $other->id,
         'title' => 'Other notification',
         'message' => 'Must not be returned.',
+    ]);
+    UserNotification::create([
+        'user_id' => $user->id,
+        'title' => 'New message',
+        'message' => 'This belongs on the Chat badge.',
+        'type' => 'chat_message',
+        'action_type' => 'conversation',
+        'action_id' => 42,
     ]);
 
     Sanctum::actingAs($user);
