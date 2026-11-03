@@ -14,7 +14,7 @@ import {
 import {AppState, DeviceEventEmitter, PermissionsAndroid, Platform} from 'react-native';
 import api from '../apis/api';
 import {openNotificationDestination} from './notificationNavigation';
-import {displayForegroundNotification} from './foregroundNotification';
+import {createNotificationChannel, displayForegroundNotification} from './foregroundNotification';
 
 export const CHAT_PUSH_EVENT = 'bezzie.chat.push';
 export const PUSH_NOTIFICATION_EVENT = 'bezzie.push.received';
@@ -72,6 +72,7 @@ export const startFirebaseNotifications = async () => {
       }
     }
     await registerDeviceForRemoteMessages(messaging);
+    await createNotificationChannel();
 
     if (Platform.OS === 'ios') {
       const permission = await requestPermission(messaging);
@@ -117,7 +118,7 @@ export const startFirebaseNotifications = async () => {
     });
     const unsubscribeMessage = onMessage(messaging, async message => {
       emitPushEvent(message.data);
-      const title = message.notification?.title ?? 'Our Bezzie Provider';
+      const title = message.notification?.title ?? 'Our Bezzie';
       const body = message.notification?.body;
       try {
         await displayForegroundNotification(title, body, message.data, message.messageId);
@@ -183,7 +184,7 @@ export const startFirebaseNotifications = async () => {
     };
   } catch (error) {
     if (__DEV__) console.warn('Firebase notification setup failed', error);
-    return () => undefined;
+    throw error;
   }
 };
 

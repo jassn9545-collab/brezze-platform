@@ -36,30 +36,41 @@ class FirebasePushService
         }
 
         $result['devices'] = $tokens->count();
+        if ($tokens->isEmpty()) {
+            return [...$result, 'error' => 'No enabled devices registered. Open the app and sign in again.'];
+        }
 
         foreach ($tokens as $token) {
             try {
-                $response = Http::withToken($this->accessToken($credentials))
-                    ->timeout(15)
-                    ->acceptJson()
-                    ->post(
-                        'https://fcm.googleapis.com/v1/projects/'.$credentials['project_id'].'/messages:send',
-                        [
-                            'message' => [
-                                'token' => $token,
-                                'notification' => ['title' => $title, 'body' => $body],
-                                'data' => collect($data)->map(fn ($value) => (string) $value)->all(),
-                                'android' => [
-                                    'priority' => 'high',
-                                    'notification' => ['sound' => 'default', 'channel_id' => 'bezzie_updates'],
+                // A revoked/expired cached OAuth token must not block all push
+                // delivery until the cache expires. Refresh and retry once.
+                for ($attempt = 0; $attempt < 2; $attempt++) {
+                    $response = Http::withToken($this->accessToken($credentials))
+                        ->timeout(15)
+                        ->acceptJson()
+                        ->post(
+                            'https://fcm.googleapis.com/v1/projects/'.$credentials['project_id'].'/messages:send',
+                            [
+                                'message' => [
+                                    'token' => $token,
+                                    'notification' => ['title' => $title, 'body' => $body],
+                                    'data' => collect($data)->map(fn ($value) => (string) $value)->all(),
+                                    'android' => [
+                                        'priority' => 'high',
+                                        'notification' => ['sound' => 'default', 'channel_id' => 'bezzie_updates'],
+                                    ],
+                                    'apns' => [
+                                        'headers' => ['apns-priority' => '10'],
+                                        'payload' => ['aps' => ['sound' => 'default']],
+                                    ],
                                 ],
-                                'apns' => [
-                                    'headers' => ['apns-priority' => '10'],
-                                    'payload' => ['aps' => ['sound' => 'default']],
-                                ],
-                            ],
-                        ]
-                    );
+                            ]
+                        );
+                    if ($response->status() !== 401 || $attempt === 1) {
+                        break;
+                    }
+                    Cache::forget($this->accessTokenCacheKey($credentials));
+                }
 
                 $fcmError = collect(data_get($response->json(), 'error.details', []))
                     ->firstWhere('@type', 'type.googleapis.com/google.firebase.fcm.v1.FcmError')['errorCode'] ?? null;
@@ -87,7 +98,12 @@ class FirebasePushService
     {
         $credentials = $this->credentials();
 
-        return ['configured' => (bool) $credentials, 'project_id' => $credentials['project_id'] ?? null];
+        return [
+            'configured' => (bool) $credentials,
+            'project_id' => $credentials['project_id'] ?? null,
+            'matches_mobile_project' => ($credentials['project_id'] ?? null) === 'our-bezzie-42461',
+            'openssl_available' => function_exists('openssl_sign'),
+        ];
     }
 
     private function credentials(): ?array
@@ -115,7 +131,7 @@ class FirebasePushService
 
     private function accessToken(array $credentials): string
     {
-        $cacheKey = 'firebase_access_token:'.hash('sha256', $credentials['project_id'].'|'.$credentials['client_email']);
+        $cacheKey = $this->accessTokenCacheKey($credentials);
 
         return Cache::remember($cacheKey, now()->addMinutes(50), function () use ($credentials) {
             $now = time();
@@ -140,6 +156,11 @@ class FirebasePushService
 
             return (string) $response->json('access_token');
         });
+    }
+
+    private function accessTokenCacheKey(array $credentials): string
+    {
+        return 'firebase_access_token:'.hash('sha256', $credentials['project_id'].'|'.$credentials['client_email']);
     }
 
     private function base64Url(string $value): string

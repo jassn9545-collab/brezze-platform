@@ -14,7 +14,7 @@ import {
 import {AppState, DeviceEventEmitter, PermissionsAndroid, Platform} from 'react-native';
 import api from '../apis/api';
 import {openNotificationDestination} from './notificationNavigation';
-import {displayForegroundNotification} from './foregroundNotification';
+import {createNotificationChannel, displayForegroundNotification} from './foregroundNotification';
 
 export const CHAT_PUSH_EVENT = 'bezzie.chat.push';
 export const PUSH_NOTIFICATION_EVENT = 'bezzie.push.received';
@@ -54,7 +54,8 @@ const emitPushEvent = (data: Record<string, unknown> | undefined) => {
 
 const registerToken = async (token: string) => {
   await api.post('/devices', {token, platform: Platform.OS, app_type: 'provider'});
-  if (__DEV__) console.log('Firebase provider device registered.');
+  // Keep production diagnostics useful without logging the device token.
+  console.info('Firebase provider device registered.');
 };
 
 export const startFirebaseNotifications = async () => {
@@ -72,6 +73,7 @@ export const startFirebaseNotifications = async () => {
       }
     }
     await registerDeviceForRemoteMessages(messaging);
+    await createNotificationChannel();
 
     if (Platform.OS === 'ios') {
       const permission = await requestPermission(messaging);
@@ -96,16 +98,23 @@ export const startFirebaseNotifications = async () => {
     const syncToken = async () => {
       if (stopped || syncing) return;
       syncing = true;
+      let stage = 'get-token';
       try {
         const token = await getToken(messaging);
         if (!stopped && token) {
+          stage = 'register-device';
           await registerToken(token);
           retryDelay = 5000;
           if (retryTimer) clearTimeout(retryTimer);
           retryTimer = undefined;
         }
-      } catch {
-        if (__DEV__) console.warn('Firebase token registration failed; retrying.');
+      } catch (error) {
+        const failure = error as {code?: string; status_code?: number} | null;
+        console.warn('Firebase provider token sync failed; retrying.', {
+          stage,
+          code: failure?.code ?? 'unknown',
+          status: failure?.status_code ?? null,
+        });
         retryToken();
       } finally {
         syncing = false;
@@ -183,7 +192,7 @@ export const startFirebaseNotifications = async () => {
     };
   } catch (error) {
     if (__DEV__) console.warn('Firebase notification setup failed', error);
-    return () => undefined;
+    throw error;
   }
 };
 

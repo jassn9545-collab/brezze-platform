@@ -26,6 +26,10 @@ Route::get('/admin', [LoginController::class, 'index'])->name('admin_home');
 Route::post('/admin/login', [LoginController::class, 'admin_login'])->name('admin_login');
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/push-diagnostics', [\App\Http\Controllers\Admin\PushDiagnosticsController::class, 'index'])
+        ->name('admin.push-diagnostics');
+    Route::post('/push-diagnostics/test', [\App\Http\Controllers\Admin\PushDiagnosticsController::class, 'sendTest'])
+        ->middleware('throttle:5,1')->name('admin.push-diagnostics.test');
     Route::post('/cache', function () {
         \Illuminate\Support\Facades\Artisan::call('cache:clear');
         \Illuminate\Support\Facades\Artisan::call('config:clear');

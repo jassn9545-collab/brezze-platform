@@ -59,3 +59,31 @@ it('disables expired tokens even when FCM error details are not the first detail
     app(FirebasePushService::class)->sendToUser(15, 'Title', 'Body');
     expect($this->device->fresh()->enabled)->toBeFalse();
 });
+
+it('refreshes rejected cached OAuth credentials and retries delivery once', function () {
+    $key = openssl_pkey_new(['private_key_bits' => 2048]);
+    openssl_pkey_export($key, $privateKey);
+    file_put_contents($this->credentialsPath, json_encode([
+        'project_id' => 'test-project', 'client_email' => 'test@example.test', 'private_key' => $privateKey,
+    ]));
+    Http::fake([
+        'oauth2.googleapis.com/token' => Http::response(['access_token' => 'refreshed-access-token'], 200),
+        'fcm.googleapis.com/*' => Http::sequence()
+            ->push(['error' => ['status' => 'UNAUTHENTICATED']], 401)
+            ->push(['name' => 'projects/test-project/messages/retried'], 200),
+    ]);
+
+    $result = app(FirebasePushService::class)->sendToUser(15, 'Title', 'Body');
+
+    expect($result['sent'])->toBe(1)->and($result['failed'])->toBe(0);
+    Http::assertSentCount(3);
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'fcm.googleapis.com')
+        && $request->hasHeader('Authorization', 'Bearer refreshed-access-token'));
+    expect($this->device->fresh()->enabled)->toBeTrue();
+});
+
+it('reports an account without devices as a registration problem', function () {
+    $result = app(FirebasePushService::class)->sendToUser(99, 'Title', 'Body');
+    expect($result['devices'])->toBe(0)->and($result['error'])->toContain('No enabled devices');
+    Http::assertNothingSent();
+});

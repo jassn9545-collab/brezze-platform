@@ -27,6 +27,7 @@ jest.mock('@notifee/react-native', () => ({
 }));
 jest.mock('../src/apis/api', () => ({post: jest.fn(async () => ({}))}));
 jest.mock('../src/utils/foregroundNotification', () => ({
+  createNotificationChannel: jest.fn(async () => 'bezzie_updates'),
   displayForegroundNotification: jest.fn(async () => undefined),
 }));
 jest.mock('../src/utils/notificationNavigation', () => ({
