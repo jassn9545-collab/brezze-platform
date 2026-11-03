@@ -484,32 +484,9 @@ class PaymentController extends Controller
 
             if (
                 $withdrawal
-                && (! $eventAccount || $withdrawal->provider?->stripe_account_id === $eventAccount)
+                && $eventAccount && $withdrawal->provider?->stripe_account_id === $eventAccount
             ) {
-                $status = match ((string) ($payout->status ?? 'pending')) {
-                    'paid' => WithdrawalRequest::STATUS_PAID,
-                    'failed' => WithdrawalRequest::STATUS_FAILED,
-                    'canceled', 'cancelled' => WithdrawalRequest::STATUS_CANCELED,
-                    'in_transit' => WithdrawalRequest::STATUS_IN_TRANSIT,
-                    default => WithdrawalRequest::STATUS_PENDING,
-                };
-                $processed = in_array($status, [
-                    WithdrawalRequest::STATUS_PAID,
-                    WithdrawalRequest::STATUS_FAILED,
-                    WithdrawalRequest::STATUS_CANCELED,
-                ], true);
-
-                $withdrawal->update([
-                    'status' => $status,
-                    'destination' => $payout->destination ?? $withdrawal->destination,
-                    'method' => $payout->method ?? $withdrawal->method,
-                    'arrival_at' => ! empty($payout->arrival_date)
-                        ? now()->setTimestamp((int) $payout->arrival_date)
-                        : $withdrawal->arrival_at,
-                    'failure_code' => $payout->failure_code ?? null,
-                    'failure_message' => $payout->failure_message ?? null,
-                    'processed_at' => $processed ? now() : null,
-                ]);
+                app(\App\Services\ProviderWallet::class)->apply($withdrawal, $payout);
             }
         }
 

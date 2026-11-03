@@ -1,7 +1,7 @@
 const en = {
   bottomTab: {
     Home: 'Home',
-    HireJobs: 'Hire Jobs',
+    HireJobs: 'My Jobs',
     Chat: 'Chat',
     Profile: 'Profile',
   },
@@ -224,9 +224,10 @@ const en = {
     client: 'Client'
   },
   job: {
-    hireJob: 'Hire Job List',
-    activejob: 'Active Job',
-    completejob: 'Complete Job',
+    hireJob: 'My Jobs',
+    appliedjob: 'Applied',
+    activejob: 'Active',
+    completejob: 'Completed',
     viewDetails: 'View Details',
     advancefilter: 'Advance filter',
     chooseCategory: 'CHOOSE CATEGORY',

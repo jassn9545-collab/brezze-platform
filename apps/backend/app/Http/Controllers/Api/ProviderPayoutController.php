@@ -8,9 +8,6 @@ use App\Models\Payment;
 use App\Models\WithdrawalRequest;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use Stripe\Exception\ApiErrorException;
 use Throwable;
 
 class ProviderPayoutController extends Controller
@@ -39,6 +36,8 @@ class ProviderPayoutController extends Controller
                 'balance' => $this->balanceData(0, 0, $currency),
                 'minimum_payout_minor' => $this->minimumPayoutMinor(),
                 'total_earnings' => $this->totalEarnings((int) $provider->id),
+                'payment_mode' => $this->paymentMode(),
+                'wallet' => app(\App\Services\ProviderWallet::class)->balance((int) $provider->id, $currency),
                 'payouts' => $history(),
             ], 'Connect a Stripe account to receive payouts.');
         }
@@ -69,8 +68,40 @@ class ProviderPayoutController extends Controller
             ),
             'minimum_payout_minor' => $this->minimumPayoutMinor(),
             'total_earnings' => $this->totalEarnings((int) $provider->id),
+            'payment_mode' => $this->paymentMode(),
+            'wallet' => app(\App\Services\ProviderWallet::class)->balance((int) $provider->id, $currency),
             'payouts' => $history(),
+            'wallet_sync_supported' => true,
         ], 'Payout information retrieved successfully.');
+    }
+
+    public function sync(Request $request, PayoutGateway $gateway)
+    {
+        if ($response = $this->requireProvider($request)) {
+            return $response;
+        }
+        $provider = $request->user();
+        if (! $provider->stripe_account_id || ! config('services.stripe.secret')) {
+            return $this->index($request, $gateway);
+        }
+        $wallet = app(\App\Services\ProviderWallet::class);
+        try {
+            $wallet->reconcile((int) $provider->id, $gateway->listPayouts($provider->stripe_account_id, 50));
+            $withdrawals = WithdrawalRequest::query()->where('provider_id', $provider->id)
+                ->whereIn('status', ['awaiting_settlement', 'processing'])
+                ->whereNull('stripe_payout_id')->orderBy('id')->get();
+            foreach ($withdrawals as $withdrawal) {
+                $wallet->process($withdrawal, $gateway);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $this->error('Withdrawal status could not be refreshed. Please try again.', 503);
+        }
+
+        // Read fresh Stripe balances after submitting payouts, never subtract
+        // from pending settlement locally or mark a request paid prematurely.
+        return $this->index($request, $gateway);
     }
 
     public function store(Request $request, PayoutGateway $gateway)
@@ -81,7 +112,7 @@ class ProviderPayoutController extends Controller
 
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01', 'max:999999999.99', 'regex:/^\d{1,9}(\.\d{1,2})?$/'],
-            'idempotency_key' => ['required', 'string', 'min:16', 'max:100'],
+            'idempotency_key' => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{16,100}$/'],
         ]);
         $provider = $request->user();
         $amountMinor = $this->moneyToMinor($validated['amount']);
@@ -100,30 +131,6 @@ class ProviderPayoutController extends Controller
             return $this->error('Stripe payouts are not configured.', 503);
         }
 
-        $requestKey = trim($validated['idempotency_key']);
-        $withdrawal = WithdrawalRequest::query()
-            ->where('provider_id', $provider->id)
-            ->where('idempotency_key', $requestKey)
-            ->first();
-
-        if ($withdrawal) {
-            if ($this->moneyToMinor($withdrawal->requested_amount) !== $amountMinor) {
-                return $this->error('This payout request key was already used for another amount.', 409);
-            }
-            if ($withdrawal->stripe_payout_id) {
-                return $this->success([
-                    'payout' => $this->payoutData($withdrawal),
-                ], 'This payout request was already submitted.');
-            }
-            if ($withdrawal->status === WithdrawalRequest::STATUS_FAILED) {
-                return $this->error(
-                    $withdrawal->failure_message ?: 'The payout request failed. Submit a new request.',
-                    422,
-                    ['payout' => $this->payoutData($withdrawal)]
-                );
-            }
-        }
-
         try {
             $account = $gateway->retrieveConnectedAccount($provider->stripe_account_id);
             if (! (bool) data_get($account, 'payouts_enabled', false)) {
@@ -132,59 +139,29 @@ class ProviderPayoutController extends Controller
             if (! $this->defaultDestination($account, $currency)) {
                 return $this->error('Add a payout bank account in Stripe before withdrawing funds.', 422);
             }
-
-            $balance = $gateway->retrieveBalance($provider->stripe_account_id);
-            $availableMinor = $this->balanceAmount($balance, 'available', $currency);
-            if ($amountMinor > $availableMinor) {
-                return $this->error('The requested amount is greater than your available Stripe balance.', 422, [
-                    'available_minor' => $availableMinor,
-                    'available' => $this->minorToMoney($availableMinor),
-                ]);
-            }
-
-            $withdrawal ??= WithdrawalRequest::create([
-                'provider_id' => $provider->id,
-                'requested_amount' => $this->minorToMoney($amountMinor),
-                'currency' => $currency,
-                'status' => WithdrawalRequest::STATUS_PROCESSING,
-                'idempotency_key' => $requestKey,
-                'method' => 'standard',
-            ]);
-
             if (data_get($account, 'settings.payouts.schedule.interval') !== 'manual') {
                 $gateway->setManualPayoutSchedule($provider->stripe_account_id);
             }
-
-            $stripePayout = $gateway->createPayout([
-                'amount' => $amountMinor,
-                'currency' => $currency,
-                'method' => 'standard',
-                'description' => 'Our Bezzie provider withdrawal',
-                'metadata' => [
-                    'provider_id' => (string) $provider->id,
-                    'withdrawal_request_id' => (string) $withdrawal->id,
-                ],
-            ], $this->stripeIdempotencyKey((int) $provider->id, $requestKey), $provider->stripe_account_id);
-
-            $this->applyStripePayout($withdrawal, $stripePayout);
-        } catch (ApiErrorException $exception) {
-            $this->markFailed($withdrawal ?? null, $exception->getStripeCode(), $exception->getMessage());
-            Log::warning('Stripe provider payout failed.', [
-                'provider_id' => $provider->id,
-                'stripe_code' => $exception->getStripeCode(),
-            ]);
-
-            return $this->error($this->safePayoutError($exception), 422);
+            $wallet = app(\App\Services\ProviderWallet::class);
+            $wallet->reconcile((int) $provider->id, $gateway->listPayouts($provider->stripe_account_id, 50));
+            $withdrawal = $wallet->reserve($provider, $currency, $amountMinor, trim($validated['idempotency_key']));
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) {
+            return $this->error($exception->getMessage(), $exception->getStatusCode());
         } catch (Throwable $exception) {
-            $this->markFailed($withdrawal ?? null, 'payout_request_failed', $exception->getMessage());
             report($exception);
 
-            return $this->error('The payout could not be submitted. Please try again.', 500);
+            return $this->error('The withdrawal could not be requested. Please try again.', 503);
         }
 
+        $wallet->process($withdrawal, $gateway);
+        $withdrawal->refresh();
+
         return $this->success([
-            'payout' => $this->payoutData($withdrawal->fresh()),
-        ], 'Your payout is being processed by Stripe.', 201);
+            'payout' => $this->payoutData($withdrawal),
+            'wallet' => $wallet->balance((int) $provider->id, $currency),
+        ], $withdrawal->status === 'awaiting_settlement'
+            ? 'Withdrawal requested. Your amount is reserved until Stripe funds settle.'
+            : 'Withdrawal request retrieved.', $withdrawal->wasRecentlyCreated ? 201 : 200);
     }
 
     public function dashboardLink(Request $request, PayoutGateway $gateway)
@@ -224,49 +201,7 @@ class ProviderPayoutController extends Controller
 
     private function synchronizePayouts(int $providerId, array $stripePayouts): void
     {
-        foreach ($stripePayouts as $stripePayout) {
-            $withdrawal = WithdrawalRequest::query()
-                ->where('provider_id', $providerId)
-                ->where('stripe_payout_id', data_get($stripePayout, 'id'))
-                ->first();
-            if ($withdrawal) {
-                $this->applyStripePayout($withdrawal, $stripePayout);
-            }
-        }
-    }
-
-    private function applyStripePayout(WithdrawalRequest $withdrawal, object $payout): void
-    {
-        $status = $this->normalizeStatus((string) data_get($payout, 'status', 'pending'));
-        $processed = in_array($status, [
-            WithdrawalRequest::STATUS_PAID,
-            WithdrawalRequest::STATUS_FAILED,
-            WithdrawalRequest::STATUS_CANCELED,
-        ], true);
-
-        $withdrawal->update([
-            'stripe_payout_id' => data_get($payout, 'id'),
-            'payment_reference' => data_get($payout, 'id'),
-            'destination' => data_get($payout, 'destination'),
-            'method' => data_get($payout, 'method', 'standard'),
-            'status' => $status,
-            'arrival_at' => data_get($payout, 'arrival_date')
-                ? now()->setTimestamp((int) data_get($payout, 'arrival_date'))
-                : null,
-            'failure_code' => data_get($payout, 'failure_code'),
-            'failure_message' => data_get($payout, 'failure_message'),
-            'processed_at' => $processed ? now() : null,
-        ]);
-    }
-
-    private function markFailed(?WithdrawalRequest $withdrawal, ?string $code, string $message): void
-    {
-        $withdrawal?->update([
-            'status' => WithdrawalRequest::STATUS_FAILED,
-            'failure_code' => $code ?: 'stripe_error',
-            'failure_message' => Str::limit($message, 2000),
-            'processed_at' => now(),
-        ]);
+        app(\App\Services\ProviderWallet::class)->reconcile($providerId, $stripePayouts);
     }
 
     private function accountData(?object $account): array
@@ -344,23 +279,24 @@ class ProviderPayoutController extends Controller
         ];
     }
 
-    private function normalizeStatus(string $status): string
-    {
-        return match ($status) {
-            'paid' => WithdrawalRequest::STATUS_PAID,
-            'failed' => WithdrawalRequest::STATUS_FAILED,
-            'canceled', 'cancelled' => WithdrawalRequest::STATUS_CANCELED,
-            'in_transit' => WithdrawalRequest::STATUS_IN_TRANSIT,
-            default => WithdrawalRequest::STATUS_PENDING,
-        };
-    }
-
     private function totalEarnings(int $providerId): string
     {
         return number_format((float) Payment::query()
             ->where('provider_id', $providerId)
             ->where('status', Payment::STATUS_SUCCEEDED)
             ->sum('provider_earnings'), 2, '.', '');
+    }
+
+    private function paymentMode(): array
+    {
+        $testMode = str_starts_with((string) config('services.stripe.secret'), 'sk_test_');
+
+        return [
+            'test_mode' => $testMode,
+            'platform_test_payments' => $testMode
+                && str_starts_with((string) config('services.stripe.key'), 'pk_test_')
+                && (bool) config('services.stripe.test_platform_payments'),
+        ];
     }
 
     private function moneyToMinor(mixed $amount): int
@@ -379,19 +315,5 @@ class ProviderPayoutController extends Controller
     private function minimumPayoutMinor(): int
     {
         return max(1, (int) config('services.stripe.minimum_payout_minor', 1000));
-    }
-
-    private function stripeIdempotencyKey(int $providerId, string $requestKey): string
-    {
-        return 'provider-payout-'.$providerId.'-'.hash('sha256', $requestKey);
-    }
-
-    private function safePayoutError(ApiErrorException $exception): string
-    {
-        return match ($exception->getStripeCode()) {
-            'balance_insufficient' => 'Your Stripe balance is not yet available for this payout.',
-            'account_invalid' => 'Your Stripe payout account needs attention before withdrawing.',
-            default => 'Stripe could not process this payout. Check your payout account and try again.',
-        };
     }
 }

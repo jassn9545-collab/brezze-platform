@@ -342,3 +342,52 @@ it('rejects hiring a different provider after a provider is selected', function 
     expect($firstBid->fresh()->is_hired)->toBeTrue()
         ->and($secondBid->fresh()->is_hired)->toBeFalse();
 });
+
+it('sends hire notifications before attempting email and does not resend on a retry', function () {
+    $sent = [];
+    $firebase = Mockery::mock(\App\Services\FirebasePushService::class);
+    $firebase->shouldReceive('sendToUser')->twice()->andReturnUsing(function ($userId, $title, $body, $data) use (&$sent) {
+        $sent[] = ['user_id' => $userId, 'type' => $data['type'], 'action_id' => $data['action_id']];
+
+        return ['sent' => 1, 'failed' => 0, 'devices' => 1, 'error' => null];
+    });
+    app()->instance(\App\Services\FirebasePushService::class, $firebase);
+    Mail::shouldReceive('html')->once()->andReturnUsing(function () use (&$sent) {
+        expect($sent)->toHaveCount(2);
+        throw new RuntimeException('Simulated SMTP failure');
+    });
+    $bid = Bid::create([
+        'project_id' => $this->project->id,
+        'user_id' => $this->provider->id,
+        'bid_amount' => '31',
+        'is_hired' => false,
+    ]);
+    Sanctum::actingAs($this->client);
+    $payload = ['job_id' => $this->project->id, 'bid_id' => $bid->id];
+    $this->postJson('/api/client/hire-now', $payload)->assertOk();
+    $this->postJson('/api/client/hire-now', $payload)->assertOk()->assertJsonPath('data.already_hired', true);
+    expect($sent)->toContain(['user_id' => $this->provider->id, 'type' => 'job_in_progress', 'action_id' => $this->project->id]);
+});
+
+it('sends the customer a work submission push even when email fails', function () {
+    $this->project->update(['status' => 'in progress']);
+    $bid = Bid::create([
+        'project_id' => $this->project->id,
+        'user_id' => $this->provider->id,
+        'bid_amount' => '31',
+        'is_hired' => true,
+    ]);
+    $firebase = Mockery::mock(\App\Services\FirebasePushService::class);
+    $firebase->shouldReceive('sendToUser')->once()->withArgs(function ($userId, $title, $body, $data) {
+        return $userId === $this->client->id && $title === 'Work submitted'
+            && $data['type'] === 'work_submitted' && $data['action_id'] === $this->project->id;
+    })->andReturn(['sent' => 1, 'failed' => 0, 'devices' => 1, 'error' => null]);
+    app()->instance(\App\Services\FirebasePushService::class, $firebase);
+    Mail::shouldReceive('html')->once()->andThrow(new RuntimeException('Simulated SMTP failure'));
+    $this->postJson('/api/freelancer/submit-work', [
+        'project_id' => $this->project->id,
+        'work_description' => 'Repair completed for customer review.',
+    ])->assertOk()->assertJsonPath('message', 'Work submitted successfully.');
+    expect($bid->fresh()->work_description)->toBe('Repair completed for customer review.');
+    expect(UserNotification::where('user_id', $this->client->id)->where('type', 'work_submitted')->count())->toBe(1);
+});

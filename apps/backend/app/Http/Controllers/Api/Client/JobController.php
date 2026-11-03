@@ -305,17 +305,6 @@ class JobController extends BaseClientController
                 $jobId,
                 $jobTitle,
             ) {
-                try {
-                    Mail::html(
-                        "Hi {$providerName}, <br/>Congratulations! You have been hired for the job: {$jobTitle}. <br/><br/>Best regards,<br/>The Team Bezzie",
-                        function ($message) use ($providerEmail) {
-                            $message->to($providerEmail)->subject('You have been hired!');
-                        }
-                    );
-                } catch (Throwable $exception) {
-                    report($exception);
-                }
-
                 foreach ([
                     [$providerId, 'You were hired', 'You have been hired for '.$jobTitle.'.'],
                     [$customerId, 'Job in progress', $jobTitle.' is now in progress.'],
@@ -333,6 +322,17 @@ class JobController extends BaseClientController
                     } catch (Throwable $exception) {
                         report($exception);
                     }
+                }
+
+                try {
+                    Mail::html(
+                        "Hi {$providerName}, <br/>Congratulations! You have been hired for the job: {$jobTitle}. <br/><br/>Best regards,<br/>The Team Bezzie",
+                        function ($message) use ($providerEmail) {
+                            $message->to($providerEmail)->subject('You have been hired!');
+                        }
+                    );
+                } catch (Throwable $exception) {
+                    report($exception);
                 }
             });
         }

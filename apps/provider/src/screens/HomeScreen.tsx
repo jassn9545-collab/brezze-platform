@@ -72,8 +72,9 @@ const Home: FC<Props> = props => {
   const insets = useSafeAreaInsets();
   const flatlist = useRef<FlatList>(null);
   const [search, setSearch] = useState('');
-  const searchRef = useRef(search);
-  searchRef.current = search;
+  const [submittedSearch, setSubmittedSearch] = useState('');
+  const searchRef = useRef(submittedSearch);
+  searchRef.current = submittedSearch;
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -88,7 +89,7 @@ const Home: FC<Props> = props => {
   const getData = (
     locationParams = location,
     pageNumber = page,
-    searchTerm = search,
+    searchTerm = submittedSearch,
   ) => {
     if (!locationParams) {
       return;
@@ -200,21 +201,6 @@ const Home: FC<Props> = props => {
     });
   }, [getJobs, location]);
 
-  useEffect(() => {
-    if (!location) {
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      page = 1;
-      flatlist.current?.scrollToOffset({ animated: false, offset: 0 });
-      getData(location, 1, search);
-    }, 400);
-
-    return () => clearTimeout(timeout);
-    // Search is intentionally debounced; location changes are loaded separately.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
 
   useFocusEffect(
     useCallback(() => {
@@ -267,6 +253,8 @@ const Home: FC<Props> = props => {
   }, [refreshJobs]);
 
   const onPressSearch = () => {
+    setSubmittedSearch(search.trim());
+    searchRef.current = search.trim();
     Keyboard.dismiss();
     page = 1;
     flatlist.current?.scrollToOffset({ animated: false, offset: 0 });
@@ -274,7 +262,7 @@ const Home: FC<Props> = props => {
   };
 
   const filteredJobs = useMemo(() => {
-    const terms = search
+    const terms = submittedSearch
       .trim()
       .toLocaleLowerCase()
       .split(/\s+/)
@@ -302,7 +290,7 @@ const Home: FC<Props> = props => {
         searchableWords.some(word => word.startsWith(term)),
       );
     });
-  }, [props.data, search]);
+  }, [props.data, submittedSearch]);
 
   const onPressJob = (data: Job) => {
     props.navigation.navigate('JobDetail', {
@@ -385,7 +373,7 @@ const Home: FC<Props> = props => {
                 containerStyle={styles.flexOne}
                 placeholderTx="home.searchJobs"
                 returnKeyType="search"
-                onSubmitEditing={onPressSearch}
+                onSubmitEditing={Keyboard.dismiss}
               />
               <TouchableOpacity
                 style={styles.wrapSearchIcon}
@@ -393,10 +381,10 @@ const Home: FC<Props> = props => {
                 accessibilityLabel="Search jobs"
                 onPress={onPressSearch}
               >
-                <Image
-                  source={images.search}
-                  style={styles.searchButtonIcon}
-                />
+                <View style={styles.searchButtonIcon} pointerEvents="none" accessible={false}>
+                  <View style={styles.searchIconCircle} />
+                  <View style={styles.searchIconHandle} />
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -447,6 +435,7 @@ const Home: FC<Props> = props => {
 
 type JobCardProps = ListRenderItemInfo<Job> & {
   isSavedIcon?: boolean;
+  isApplied?: boolean;
   onPressJob?: (data: Job) => void;
   onPressSavedJob: (data: Job) => void;
 };
@@ -454,9 +443,11 @@ export const JobCard = ({
   item,
   onPressJob,
   isSavedIcon = true,
+  isApplied = item.job_applied,
   onPressSavedJob,
 }: JobCardProps) => {
-  const statusText = item.status?.trim() || 'active';
+  const jobStatus = item.status?.trim() || 'active';
+  const statusText = isApplied && jobStatus === 'active' ? 'applied' : jobStatus;
   const statusStyle = getStatusStyle(statusText);
 
   return (
@@ -594,7 +585,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   searchButtonIcon: {
-    tintColor: colors.palette.white,
+    width: 22,
+    height: 22,
+  },
+  searchIconCircle: {
+    position: 'absolute',
+    left: 1,
+    top: 1,
+    width: 15,
+    height: 15,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: colors.palette.white,
+  },
+  searchIconHandle: {
+    position: 'absolute',
+    left: 13,
+    top: 16,
+    width: 9,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: colors.palette.white,
+    transform: [{rotate: '45deg'}],
   },
   inputAccessoryStyle: {
     height: 24,

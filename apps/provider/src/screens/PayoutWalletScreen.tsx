@@ -22,6 +22,8 @@ import {
   getStripePayoutDashboard,
   StripePayoutDashboard,
 } from '../apis/stripe';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {payoutAmountMinor, payoutUnavailableReason} from '../utils/payout';
 
 type Props = AppStackScreenProps<'Wallet'>;
 
@@ -40,16 +42,20 @@ type ProviderPayment = {
 };
 
 export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
+  const insets = useSafeAreaInsets();
   const [payments, setPayments] = useState<ProviderPayment[]>([]);
   const [dashboard, setDashboard] = useState<StripePayoutDashboard | null>(null);
-  const [totalEarnings, setTotalEarnings] = useState('0.00');
+  const [totalEarnings, setTotalEarnings] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [openingStripe, setOpeningStripe] = useState(false);
   const requestKey = useRef<string | null>(null);
+  const refreshingWallet = useRef(false);
 
   const loadWallet = useCallback(async () => {
+    if (refreshingWallet.current) return;
+    refreshingWallet.current = true;
     setLoading(true);
     try {
       const response = await api.post(URLs.paymentHistory, {page: 1, per_page: 50});
@@ -62,10 +68,14 @@ export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
     try {
       const payoutDashboard = await getStripePayoutDashboard();
       setDashboard(payoutDashboard);
-      setTotalEarnings(payoutDashboard.total_earnings ?? '0.00');
+      if (payoutDashboard.total_earnings != null) {
+        setTotalEarnings(payoutDashboard.total_earnings);
+      }
     } catch {
+      setDashboard(null);
       // Payment history remains usable if Stripe is temporarily unavailable.
     } finally {
+      refreshingWallet.current = false;
       setLoading(false);
     }
   }, []);
@@ -77,14 +87,24 @@ export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
   );
 
   const currency = (dashboard?.balance.currency ?? Currency.code).toUpperCase();
+  const available = dashboard?.wallet ?? dashboard?.balance;
   const minimum = (dashboard?.minimum_payout_minor ?? 0) / 100;
   const numericAmount = Number(amount);
+  const amountMinor = payoutAmountMinor(amount);
+  const unavailableReason = payoutUnavailableReason(dashboard);
+  const amountError = amount && !unavailableReason
+    ? amountMinor === null
+      ? 'Enter a positive amount with no more than two decimal places.'
+      : amountMinor < (dashboard?.minimum_payout_minor ?? 0)
+        ? `Minimum withdrawal is ${currency} ${minimum.toFixed(2)}.`
+        : amountMinor > (available?.available_minor ?? 0)
+          ? 'This amount exceeds your available balance.'
+          : null
+    : null;
   const canWithdraw = Boolean(
-    dashboard?.account.payouts_enabled &&
-      dashboard.account.destination &&
-      Number.isFinite(numericAmount) &&
-      numericAmount >= minimum &&
-      numericAmount * 100 <= dashboard.balance.available_minor,
+    !loading && dashboard && !unavailableReason && amountMinor !== null &&
+      amountMinor >= dashboard.minimum_payout_minor &&
+      amountMinor <= (available?.available_minor ?? 0),
   );
 
   const updateAmount = (value: string) => {
@@ -97,8 +117,8 @@ export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
     setSubmitting(true);
     requestKey.current ??= `payout-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
     try {
-      await createStripePayout(numericAmount.toFixed(2), requestKey.current);
-      toast.show('Your payout is being processed by Stripe.', {type: 'success'});
+      const payout = await createStripePayout(numericAmount.toFixed(2), requestKey.current);
+      toast.show(payout.status === 'failed' ? 'Withdrawal failed. Your wallet funds were restored.' : payout.status === 'awaiting_settlement' ? 'Withdrawal requested. Your amount is reserved until settlement.' : 'Withdrawal submitted to Stripe.', {type: payout.status === 'failed' ? 'danger' : 'success'});
       requestKey.current = null;
       setAmount('');
       await loadWallet();
@@ -113,7 +133,7 @@ export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
     if (!canWithdraw) return;
     Alert.alert(
       'Confirm withdrawal',
-      `Withdraw ${currency} ${numericAmount.toFixed(2)} to your Stripe payout account?`,
+      `Request ${currency} ${numericAmount.toFixed(2)} to your bank? This amount will be deducted from your wallet and reserved until the bank payout completes.`,
       [
         {text: 'Cancel', style: 'cancel'},
         {text: 'Withdraw', onPress: submitPayout},
@@ -144,17 +164,23 @@ export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
       <FlatList
         data={payments}
         keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.list}
+        style={styles.flatList}
+        contentContainerStyle={[styles.list, {paddingBottom: insets.bottom + spacing.xl}]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         refreshing={loading && payments.length > 0}
-        onRefresh={loadWallet}
+        onRefresh={() => loadWallet()}
         ListHeaderComponent={
           <>
             <View style={styles.balanceCard}>
-              <Text size="xs" weight="medium" text="Available to withdraw" />
-              <Text size="xl" weight="semiBold" text={`${currency} ${Currency.sign}${dashboard?.balance.available ?? '0.00'}`} />
+              <Text size="xs" weight="medium" text="Total earnings" />
+              <Text size="xl" weight="semiBold" text={totalEarnings == null ? (loading ? 'Loading…' : 'Unavailable') : `${currency} ${totalEarnings}`} />
               <View style={styles.balanceDetails}>
-                <Text size="xxs" text={`Pending: ${Currency.sign}${dashboard?.balance.pending ?? '0.00'}`} style={styles.mutedText} />
-                <Text size="xxs" text={`Lifetime earned: ${Currency.sign}${totalEarnings}`} style={styles.mutedText} />
+                <Text size="xs" weight="semiBold" text={`Available wallet balance: ${dashboard ? `${currency} ${available?.available ?? '0.00'}` : loading ? 'Loading…' : 'Unavailable'}`} />
+                <Text size="xxs" text={`Stripe pending settlement: ${dashboard ? `${currency} ${dashboard.balance.pending}` : loading ? 'Loading…' : 'Unavailable'}`} style={styles.mutedText} />
+                {dashboard?.wallet ? <Text size="xxs" text={`Pending withdrawals: ${currency} ${dashboard.wallet.reserved}`} style={styles.mutedText} /> : null}
+                {dashboard?.wallet ? <Text size="xxs" text={`Withdrawn: ${currency} ${dashboard.wallet.withdrawn}`} style={styles.mutedText} /> : null}
+                {dashboard?.payment_mode?.test_mode ? <Text size="xxs" text="Test mode: payouts do not send real money to your bank." style={styles.mutedText} /> : null}
               </View>
             </View>
 
@@ -186,12 +212,13 @@ export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
                   style={styles.amountInput}
                   accessibilityLabel="Withdrawal amount"
                 />
-                <TouchableOpacity onPress={() => updateAmount(dashboard?.balance.available ?? '0.00')} disabled={!dashboard?.balance.available_minor}>
+                <TouchableOpacity onPress={() => updateAmount(available?.available ?? '0.00')} disabled={!available?.available_minor}>
                   <Text size="xxs" weight="semiBold" text="MAX" style={styles.linkText} />
                 </TouchableOpacity>
               </View>
 
-              <Text size="xxs" text={`Minimum ${currency} ${minimum.toFixed(2)}. Standard arrival time is shown after Stripe accepts the payout.`} style={styles.mutedText} />
+              <Text size="xxs" text={`Minimum ${currency} ${minimum.toFixed(2)}. Withdrawal requests reserve wallet funds immediately. Bank payouts wait for Stripe settlement.`} style={styles.mutedText} />
+              {!loading && (unavailableReason || amountError) ? <Text size="xxs" text={unavailableReason || amountError || ''} style={styles.errorText} accessibilityRole="alert" /> : null}
               <TouchableOpacity style={[styles.withdrawButton, (!canWithdraw || submitting) && styles.disabledButton]} onPress={confirmPayout} disabled={!canWithdraw || submitting}>
                 {submitting ? <ActivityIndicator color={colors.palette.white} /> : <Text size="sm" weight="semiBold" text="Withdraw funds" style={styles.buttonText} />}
               </TouchableOpacity>
@@ -200,11 +227,11 @@ export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
             {(dashboard?.payouts.length ?? 0) > 0 && (
               <View style={styles.historySection}>
                 <Text size="sm" weight="semiBold" text="Recent withdrawals" />
-                {dashboard?.payouts.slice(0, 5).map(payout => (
+                {dashboard?.payouts.map(payout => (
                   <View key={payout.id} style={styles.payoutRow}>
                     <View style={styles.flexText}>
                       <Text size="xs" weight="medium" text={`${payout.currency.toUpperCase()} ${Currency.sign}${payout.amount}`} />
-                      <Text size="xxs" text={formatPaymentDate(payout.created_at)} style={styles.mutedText} />
+                      <Text size="xxs" text={formatWithdrawalDate(payout.created_at)} style={styles.mutedText} />
                       {payout.failure_message ? <Text size="xxs" text={payout.failure_message} style={styles.errorText} numberOfLines={2} /> : null}
                     </View>
                     <Text
@@ -247,7 +274,8 @@ export const PayoutWalletScreen: FC<Props> = ({navigation}) => {
 };
 
 const styles = StyleSheet.create({
-  container: {flexGrow: 1},
+  container: {flex: 1},
+  flatList: {flex: 1},
   list: {flexGrow: 1, paddingHorizontal: spacing.md, paddingBottom: spacing.xl},
   balanceCard: {gap: spacing.xxs, padding: spacing.lg, marginTop: spacing.md, borderRadius: spacing.md, backgroundColor: colors.palette.offWhite2},
   balanceDetails: {gap: spacing.xxxs, marginTop: spacing.xs},
@@ -282,4 +310,6 @@ const formatPaymentDate = (value?: string | null) => {
   return Number.isNaN(date.getTime()) ? 'Date unavailable' : date.toLocaleDateString();
 };
 
-const formatStatus = (status: string) => status.replace(/_/g, ' ').replace(/^./, value => value.toUpperCase());
+const formatWithdrawalDate = (value?: string | null) => value ? new Date(value).toLocaleString() : 'Date unavailable';
+
+const formatStatus = (status: string) => status === 'awaiting_settlement' ? 'Pending settlement' : status.replace(/_/g, ' ').replace(/^./, value => value.toUpperCase());

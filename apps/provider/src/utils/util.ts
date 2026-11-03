@@ -186,6 +186,11 @@ export const HITSLOP = {
 
 export const getStatusStyle = (type: string) => {
   switch (type) {
+    case 'applied':
+      return {
+        backgroundColor: colors.palette.offGreen,
+        color: colors.palette.darkGreen,
+      };
     case 'active':
       return {
         backgroundColor: colors.palette.primaryDimmed,

@@ -1,5 +1,5 @@
 import api from './api';
-import URLs from '../config/urls';
+import URLs, {stripeOnboardingCallbacks} from '../config/urls';
 
 export type StripeAccountStatus = {
   connected: boolean;
@@ -22,7 +22,7 @@ export const getStripeAccountStatus = async (): Promise<StripeAccountStatus> => 
 };
 
 export const createStripeOnboardingLink = async (): Promise<string> => {
-  const response = await api.post(URLs.stripeOnboardingLink);
+  const response = await api.post(URLs.stripeOnboardingLink, stripeOnboardingCallbacks);
   return response.data.data.url;
 };
 
@@ -31,7 +31,7 @@ export type StripePayout = {
   stripe_payout_id: string | null;
   amount: string;
   currency: string;
-  status: 'pending' | 'processing' | 'in_transit' | 'paid' | 'failed' | 'canceled';
+  status: 'awaiting_settlement' | 'pending' | 'processing' | 'in_transit' | 'paid' | 'failed' | 'canceled';
   method: string;
   arrival_at: string | null;
   failure_message: string | null;
@@ -39,6 +39,7 @@ export type StripePayout = {
 };
 
 export type StripePayoutDashboard = {
+  wallet_sync_supported?: boolean;
   account: {
     connected: boolean;
     payouts_enabled: boolean;
@@ -60,12 +61,29 @@ export type StripePayoutDashboard = {
     pending: string;
   };
   minimum_payout_minor: number;
+  wallet?: {
+    currency: string;
+    available_minor: number;
+    available: string;
+    reserved_minor: number;
+    reserved: string;
+    withdrawn_minor: number;
+    withdrawn: string;
+  };
   total_earnings: string;
+  payment_mode?: {
+    test_mode: boolean;
+    platform_test_payments: boolean;
+  };
   payouts: StripePayout[];
 };
 
 export const getStripePayoutDashboard = async (): Promise<StripePayoutDashboard> => {
   const response = await api.get(URLs.payouts);
+  if (response.data.data.wallet_sync_supported) {
+    const synced = await api.post(`${URLs.payouts}/sync`);
+    return synced.data.data;
+  }
   return response.data.data;
 };
 

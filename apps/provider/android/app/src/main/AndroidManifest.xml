@@ -32,6 +32,10 @@
       android:name="com.google.android.geo.API_KEY"
       android:value="AIzaSyBSFnamWZn0ZwVlv9zby2DLCOX0zNw5s6E" />
     <meta-data
+      android:name="com.google.firebase.messaging.default_notification_channel_id"
+      android:value="bezzie_updates"
+      tools:replace="android:value" />
+    <meta-data
       android:name="com.google.firebase.messaging.default_notification_icon"
       android:resource="@drawable/ic_notification" />
     <meta-data

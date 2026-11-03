@@ -674,11 +674,6 @@ class FreelancerJobController extends BaseFreelancerController
         $clientEmail = $bid->project->user->email;
         $clientmessage = '<p>Dear '.$bid->project->user->name.',</p>';
         $clientmessage .= '<p>Work has been submitted for project: '.$bid->project->title.'</p>';
-        Mail::html($clientmessage, function ($message) use ($clientEmail) {
-            $message->to($clientEmail)
-                ->subject('Work Submitted for Your Project');
-        });
-
         app(RealtimeNotifier::class)->notify(
             $bid->project->user_id,
             'Work submitted',
@@ -688,6 +683,17 @@ class FreelancerJobController extends BaseFreelancerController
             $bid->project->id,
             ['status' => 'in progress'],
         );
+
+        defer(function () use ($clientEmail, $clientmessage) {
+            try {
+                Mail::html($clientmessage, function ($message) use ($clientEmail) {
+                    $message->to($clientEmail)
+                        ->subject('Work Submitted for Your Project');
+                });
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        });
 
         return $this->success(null, 'Work submitted successfully.');
     }

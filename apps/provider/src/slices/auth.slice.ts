@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FAQ } from '../screens';
 import { Linking } from 'react-native';
 import { handleInviteURL } from '../utils/util';
-import URLs from '../config/urls';
+import URLs, {stripeOnboardingCallbacks} from '../config/urls';
 import {
   BasicUserDetailParams,
   ForgotPasswordParam,
@@ -158,7 +158,7 @@ export const userVerification = createAsyncThunk(
         headers: {
           'Content-Type': 'application/json',
         },
-        data: JSON.stringify(params),
+        data: JSON.stringify({...params, ...stripeOnboardingCallbacks}),
       });
       const data = response.data.data;
       await AsyncStorage.setItem('token', data.token);

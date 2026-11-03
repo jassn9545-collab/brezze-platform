@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class WithdrawalRequest extends Model
 {
+    public const STATUS_AWAITING_SETTLEMENT = 'awaiting_settlement';
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_APPROVED = 'approved';
@@ -23,6 +25,9 @@ class WithdrawalRequest extends Model
     public const STATUS_REJECTED = 'rejected';
 
     protected $fillable = [
+        'stripe_submission_attempt',
+        'created_at',
+        'stripe_submission_started_at',
         'provider_id',
         'requested_amount',
         'currency',
@@ -42,6 +47,7 @@ class WithdrawalRequest extends Model
     ];
 
     protected $casts = [
+        'stripe_submission_started_at' => 'datetime',
         'requested_amount' => 'decimal:2',
         'processed_at' => 'datetime',
         'arrival_at' => 'datetime',

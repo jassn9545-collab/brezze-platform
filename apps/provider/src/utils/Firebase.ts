@@ -1,4 +1,5 @@
 import {getApp} from '@react-native-firebase/app';
+import notifee, {EventType} from '@notifee/react-native';
 import {
   AuthorizationStatus,
   getInitialNotification,
@@ -13,6 +14,7 @@ import {
 import {AppState, DeviceEventEmitter, PermissionsAndroid, Platform} from 'react-native';
 import api from '../apis/api';
 import {openNotificationDestination} from './notificationNavigation';
+import {displayForegroundNotification} from './foregroundNotification';
 
 export const CHAT_PUSH_EVENT = 'bezzie.chat.push';
 export const PUSH_NOTIFICATION_EVENT = 'bezzie.push.received';
@@ -80,47 +82,103 @@ export const startFirebaseNotifications = async () => {
     }
 
     let stopped = false;
+    let syncing = false;
+    let retryDelay = 5000;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const retryToken = () => {
+      if (stopped || retryTimer) return;
+      retryTimer = setTimeout(() => {
+        retryTimer = undefined;
+        syncToken();
+      }, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, 60000);
+    };
     const syncToken = async () => {
+      if (stopped || syncing) return;
+      syncing = true;
       try {
         const token = await getToken(messaging);
-        if (!stopped && token) await registerToken(token);
-      } catch (error) {
-        if (__DEV__) console.warn('Firebase token registration failed', error);
+        if (!stopped && token) {
+          await registerToken(token);
+          retryDelay = 5000;
+          if (retryTimer) clearTimeout(retryTimer);
+          retryTimer = undefined;
+        }
+      } catch {
+        if (__DEV__) console.warn('Firebase token registration failed; retrying.');
+        retryToken();
+      } finally {
+        syncing = false;
       }
     };
 
     const unsubscribeRefresh = onTokenRefresh(messaging, token => {
-      if (!stopped) registerToken(token).catch(() => undefined);
+      if (!stopped) registerToken(token).catch(retryToken);
     });
-    const unsubscribeMessage = onMessage(messaging, message => {
+    const unsubscribeMessage = onMessage(messaging, async message => {
       emitPushEvent(message.data);
       const title = message.notification?.title ?? 'Our Bezzie';
       const body = message.notification?.body;
-      toast.show(body ? `${title}: ${body}` : title, {type: 'normal'});
+      try {
+        await displayForegroundNotification(title, body, message.data, message.messageId);
+      } catch {
+        toast.show(body ? `${title}: ${body}` : title, {type: 'normal'});
+        if (__DEV__) console.warn('Unable to display foreground notification.');
+      }
     });
+    let lastOpenedNotificationId: string | undefined;
+    const openDisplayedNotification = (notification: {
+      id?: string;
+      data?: Record<string, unknown>;
+    }) => {
+      if (notification.id && notification.id === lastOpenedNotificationId) return;
+      lastOpenedNotificationId = notification.id;
+      emitPushEvent(notification.data);
+      openNotificationDestination(notification.data ?? {});
+    };
+    const unsubscribeDisplayed = notifee.onForegroundEvent(({type, detail}) => {
+      if (type === EventType.PRESS && detail.notification) {
+        openDisplayedNotification(detail.notification);
+      }
+    });
+    const consumeDisplayedNotification = async () => {
+      if (Platform.OS !== 'android') return;
+      try {
+        const initial = await notifee.getInitialNotification();
+        if (!stopped && initial) openDisplayedNotification(initial.notification);
+      } catch {
+        if (__DEV__) console.warn('Unable to read opened notification.');
+      }
+    };
+    consumeDisplayedNotification();
     const unsubscribeOpened = onNotificationOpenedApp(messaging, message => {
       emitPushEvent(message.data);
       openNotificationDestination(message.data ?? {});
     });
     if (!initialNotificationHandled) {
       initialNotificationHandled = true;
-      void getInitialNotification(messaging).then(message => {
+      getInitialNotification(messaging).then(message => {
         if (!message) return;
         emitPushEvent(message.data);
         openNotificationDestination(message.data ?? {});
       });
     }
     const appStateSubscription = AppState.addEventListener('change', state => {
-      if (state === 'active') void syncToken();
+      if (state === 'active') {
+        syncToken();
+        consumeDisplayedNotification();
+      }
     });
 
-    void syncToken();
+    syncToken();
 
     return () => {
       stopped = true;
+      if (retryTimer) clearTimeout(retryTimer);
       appStateSubscription.remove();
       unsubscribeRefresh();
       unsubscribeMessage();
+      unsubscribeDisplayed();
       unsubscribeOpened();
     };
   } catch (error) {

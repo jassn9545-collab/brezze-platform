@@ -1,7 +1,9 @@
 import { BackButtom, Screen } from '../components';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
-import React, { FC, useEffect, useRef } from 'react';
-import { AppStackScreenProps } from '../navigators';
+import React, { FC, useCallback, useRef } from 'react';
+import { AppStackParamList } from '../navigators';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import { colors, spacing } from '../theme';
 import { JobCard } from './HomeScreen';
 import { connect, ConnectedProps } from 'react-redux';
@@ -10,41 +12,37 @@ import { addToSavedJob, getApplyJobs, JobSavedParams, removeFromSavedJob } from 
 import ListEmptyComponent from '../components/ListEmptyComponent';
 import { Job } from '../slices/types';
 
-type NavigationProps = AppStackScreenProps<'ApplyJob'>;
 type StoreProps = ConnectedProps<typeof connector>;
-type Props = NavigationProps & StoreProps;
+type Props = StoreProps;
 
-let page = 1
 const ApplyJob: FC<Props> = props => {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const page = useRef(1);
   const flatlist = useRef<FlatList>(null);
-  const fetching = props.loading === 'loading'
+  const fetching = props.loading === 'loading';
+  const {get} = props;
+
+  const getData = useCallback((pageNumber: number) => {
+    get({page: pageNumber, limit: 10});
+  }, [get]);
+
+  const load = useCallback(() => {
+    flatlist.current?.scrollToOffset({animated: true, offset: 0});
+    page.current = 1;
+    getData(1);
+  }, [getData]);
+
+  useFocusEffect(load);
 
   const loadMore = () => {
     if (!fetching && props.totalcount > props.data.length && (props.data.length ?? 0) > 0) {
-      page++;
-      getData();
+      page.current++;
+      getData(page.current);
     }
   };
 
-  const load = () => {
-    flatlist.current?.scrollToOffset({ animated: true, offset: 0 });
-    page = 1;
-    getData();
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(load, []);
-
-  const getData = () => {
-    props.get({
-      page: page,
-      limit: 10,
-    });
-  };
-
-
   const onPressJob = (job: Job) => {
-    props.navigation.navigate('JobDetail', {
+    navigation.navigate('JobDetail', {
       from: 'ApplyJob',
       id: job.id,
     });
@@ -63,17 +61,6 @@ const ApplyJob: FC<Props> = props => {
   };
 
   return (
-    <Screen
-      preset="fixed"
-      safeAreaEdges={['top']}
-      contentContainerStyle={styles.container}
-    >
-      <BackButtom
-        headingTx="drawer.applyJobs"
-        style={{
-          marginHorizontal: spacing.md,
-        }}
-      />
       <FlatList
         ref={flatlist}
         data={props.data}
@@ -83,10 +70,13 @@ const ApplyJob: FC<Props> = props => {
         keyExtractor={item => item?.id?.toString()}
         onEndReached={loadMore}
         onEndReachedThreshold={0.8}
+        refreshing={fetching && page.current === 1}
+        onRefresh={load}
         renderItem={info => (
           <JobCard
             {...info}
             isSavedIcon={false}
+            isApplied
             onPressJob={onPressJob}
             onPressSavedJob={onPressSavedJob}
           />
@@ -97,13 +87,12 @@ const ApplyJob: FC<Props> = props => {
         }
         ListFooterComponent={
           <View style={styles.extaFetch}>
-            {page !== 1 && fetching ? (
+            {page.current !== 1 && fetching ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : null}
           </View>
         }
       />
-    </Screen>
   );
 };
 
@@ -143,4 +132,15 @@ const mapDispatch = {
 
 const connector = connect(mapStateToProps, mapDispatch);
 
-export const ApplyJobScreen = connector(ApplyJob);
+export const AppliedJobsList = connector(ApplyJob);
+
+export const ApplyJobScreen = () => (
+  <Screen
+    preset="fixed"
+    safeAreaEdges={['top']}
+    contentContainerStyle={styles.container}
+  >
+    <BackButtom headingTx="drawer.applyJobs" style={{marginHorizontal: spacing.md}} />
+    <AppliedJobsList />
+  </Screen>
+);

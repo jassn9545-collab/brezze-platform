@@ -255,3 +255,35 @@ test('account status is clear for users without a connected account', function (
         ->assertJsonPath('data.ready_for_payments', false)
         ->assertJsonPath('data.onboarding_required', true);
 });
+
+test('public onboarding recovers from a localhost server setting using the public API deployment path', function () {
+    config()->set('services.stripe.onboarding_base_url', 'http://localhost/bezzie');
+    config()->set('app.api_url', 'https://api.example.com/bezzie/api');
+    $method = new ReflectionMethod(AuthController::class, 'onboardingCallbackUrls');
+    $urls = $method->invoke(new AuthController, \Illuminate\Http\Request::create('https://api.example.com/api/stripe/onboarding-link', 'POST'));
+    expect($urls)->toBe(['https://api.example.com/bezzie/stripe/onboarding/return', 'https://api.example.com/bezzie/stripe/onboarding/refresh']);
+});
+
+test('public onboarding falls back to the public request when all configured origins are local', function () {
+    config()->set('services.stripe.onboarding_base_url', 'http://127.0.0.1:8000');
+    config()->set('app.api_url', 'http://localhost/api');
+    $method = new ReflectionMethod(AuthController::class, 'onboardingCallbackUrls');
+    $urls = $method->invoke(new AuthController, \Illuminate\Http\Request::create('https://api.example.com/api/stripe/onboarding-link', 'POST'));
+    expect($urls[0])->toBe('https://api.example.com/stripe/onboarding/return');
+});
+
+test('public onboarding rejects callbacks that redirect mobile users to local machines', function ($host) {
+    $method = new ReflectionMethod(AuthController::class, 'onboardingCallbackUrls');
+    $request = \Illuminate\Http\Request::create('https://api.example.com/api/stripe/onboarding-link', 'POST', [
+        'return_url' => 'https://'.$host.'/return', 'refresh_url' => 'https://'.$host.'/refresh',
+    ]);
+    expect(fn () => $method->invoke(new AuthController, $request))->toThrow(\Illuminate\Validation\ValidationException::class);
+})->with(['localhost', '127.0.0.1', '192.168.1.5', '10.0.0.2', '[::1]']);
+
+test('public onboarding honors the release apps public HTTPS callbacks', function () {
+    config()->set('services.stripe.onboarding_base_url', 'http://localhost');
+    $callbacks = ['return_url' => 'https://hirephpdeveloperindia.com/bezzie/stripe/onboarding/return', 'refresh_url' => 'https://hirephpdeveloperindia.com/bezzie/stripe/onboarding/refresh'];
+    $method = new ReflectionMethod(AuthController::class, 'onboardingCallbackUrls');
+    $urls = $method->invoke(new AuthController, \Illuminate\Http\Request::create('https://api.example.com/api/stripe/onboarding-link', 'POST', $callbacks));
+    expect($urls)->toBe(array_values($callbacks));
+});

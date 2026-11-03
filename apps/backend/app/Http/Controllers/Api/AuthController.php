@@ -299,11 +299,43 @@ class AuthController extends Controller
     private function onboardingCallbackUrls(Request $request): array
     {
         $baseUrl = rtrim((string) config('services.stripe.onboarding_base_url'), '/');
-
-        return [
-            $request->input('return_url') ?: $baseUrl.route('stripe.onboarding.return', [], false),
-            $request->input('refresh_url') ?: $baseUrl.route('stripe.onboarding.refresh', [], false),
+        $publicRequest = ! $this->isLocalCallbackHost($request->getHost());
+        if ($publicRequest && $this->isLocalCallbackHost((string) parse_url($baseUrl, PHP_URL_HOST))) {
+            // APP_URL may still be localhost in an old hosting environment.
+            // Never pass that machine-local address back to a mobile user.
+            $apiBase = preg_replace('~/api/?$~', '', (string) config('app.api_url'));
+            $baseUrl = ! $this->isLocalCallbackHost((string) parse_url($apiBase, PHP_URL_HOST))
+                ? rtrim($apiBase, '/') : rtrim($request->root(), '/');
+        }
+        if ($publicRequest) {
+            $baseUrl = preg_replace('~^http://~i', 'https://', $baseUrl);
+        }
+        $urls = [
+            $request->input('return_url') ?: $baseUrl.'/stripe/onboarding/return',
+            $request->input('refresh_url') ?: $baseUrl.'/stripe/onboarding/refresh',
         ];
+        if ($publicRequest) {
+            foreach ($urls as $url) {
+                if (parse_url($url, PHP_URL_SCHEME) !== 'https'
+                    || $this->isLocalCallbackHost((string) parse_url($url, PHP_URL_HOST))) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'return_url' => 'Stripe onboarding callbacks must use a public HTTPS address.',
+                    ]);
+                }
+            }
+        }
+
+        return $urls;
+    }
+
+    private function isLocalCallbackHost(string $host): bool
+    {
+        $host = strtolower(trim($host, '[]'));
+
+        return $host === '' || $host === 'localhost' || ! str_contains($host, '.')
+            || str_ends_with($host, '.localhost') || str_ends_with($host, '.local')
+            || (filter_var($host, FILTER_VALIDATE_IP)
+                && ! filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE));
     }
 
     public function stripeOnboardingLink(Request $request, StripeClient $stripe)

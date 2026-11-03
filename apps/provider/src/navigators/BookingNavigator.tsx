@@ -15,8 +15,10 @@ import {
   BottomTabNavigatorParamList,
 } from './BottomTabNavigator';
 import { AppStackParamList } from './AppStack';
+import {AppliedJobsList} from '../screens/ApplyJobScreen';
 
 export type BookingStackParamList = {
+  AppliedJob: undefined;
   ActiveJob: undefined;
   CompleteJob: undefined;
 };
@@ -52,7 +54,7 @@ const screenOptions = ({
     tabBarAllowFontScaling: false,
     tabBarLabelStyle: {
       marginTop: 0,
-      fontSize: 16,
+      fontSize: 14,
       fontFamily: typography.primary.medium,
     },
     tabBarActiveTintColor: colors.palette.white,
@@ -93,7 +95,8 @@ export const BookingTabbar: FC<Props> = () => {
         headingTx="job.hireJob"
       // rightComponent={rightHeaderComponent}
       />
-      <Tab.Navigator screenOptions={screenOptions}>
+      <Tab.Navigator initialRouteName="ActiveJob" screenOptions={screenOptions}>
+        <Tab.Screen name="AppliedJob" component={AppliedJobsList} />
         <Tab.Screen name="ActiveJob" component={Screens.ActiveJobScreen} />
         <Tab.Screen name="CompleteJob" component={Screens.CompleteJobScreen} />
       </Tab.Navigator>

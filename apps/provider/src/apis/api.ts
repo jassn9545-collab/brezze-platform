@@ -32,7 +32,6 @@ api.interceptors.request.use(async request => {
     console.log(
       request.url,
       'request ==>',
-      typeof request.data === 'string' ? JSON.parse(request.data) : request.data,
     );
   }
   return request;

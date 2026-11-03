@@ -8,6 +8,7 @@ const palette = {
   lightYellow: '#FFFBEB',
 
   green: '#14A800',
+  darkGreen: '#166534',
   lightGreen: '#90EE90',
   dimGreen: 'rgba(235, 255, 238, 1)',
   transparentGreen: '#E9FFF2',

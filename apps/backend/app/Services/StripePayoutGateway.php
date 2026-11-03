@@ -45,10 +45,14 @@ class StripePayoutGateway implements PayoutGateway
 
     public function listPayouts(string $connectedAccountId, int $limit = 25): array
     {
-        return $this->stripe->payouts->all(
+        $page = $this->stripe->payouts->all(
             ['limit' => min(max($limit, 1), 100)],
             ['stripe_account' => $connectedAccountId]
-        )->data;
+        );
+
+        // Include historical automatic payouts so wallet funds cannot be spent
+        // again merely because the provider used Stripe before this wallet.
+        return iterator_to_array($page->autoPagingIterator(), false);
     }
 
     public function createLoginLink(string $connectedAccountId): object

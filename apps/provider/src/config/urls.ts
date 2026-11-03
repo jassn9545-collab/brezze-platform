@@ -1,11 +1,15 @@
 
 
 const ASSET_BASE_URL = 'https://hirephpdeveloperindia.com/bezzie/public';
+const PUBLIC_APP_URL = 'https://hirephpdeveloperindia.com/bezzie';
+
+export const stripeOnboardingCallbacks = {
+  return_url: `${PUBLIC_APP_URL}/stripe/onboarding/return`,
+  refresh_url: `${PUBLIC_APP_URL}/stripe/onboarding/refresh`,
+};
 
 const URLs = {
-  base: __DEV__
-    ? 'http://127.0.0.1:8000/api'
-    : 'https://hirephpdeveloperindia.com/bezzie/api',
+  base: 'https://hirephpdeveloperindia.com/bezzie/api',
   assets: ASSET_BASE_URL,
 
   realtime: {

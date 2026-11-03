@@ -27,6 +27,12 @@ class FakeProviderPayoutGateway implements PayoutGateway
 
     public string $schedule = 'daily';
 
+    public bool $loseResponse = false;
+
+    public ?string $rejectCode = null;
+
+    public array $keys = [];
+
     public function retrieveConnectedAccount(string $connectedAccountId): object
     {
         return (object) [
@@ -69,6 +75,12 @@ class FakeProviderPayoutGateway implements PayoutGateway
 
     public function createPayout(array $parameters, string $idempotencyKey, string $connectedAccountId): object
     {
+        if ($this->rejectCode) {
+            throw \Stripe\Exception\InvalidRequestException::factory('Test rejection', 400, null, null, null, $this->rejectCode);
+        }
+        if (isset($this->keys[$idempotencyKey])) {
+            return $this->keys[$idempotencyKey];
+        }
         $this->createCount++;
         $this->lastParameters = $parameters;
         $payout = (object) [
@@ -81,8 +93,14 @@ class FakeProviderPayoutGateway implements PayoutGateway
             'arrival_date' => now()->addDays(2)->timestamp,
             'failure_code' => null,
             'failure_message' => null,
+            'metadata' => (object) ($parameters['metadata'] ?? []),
         ];
         $this->payouts[] = $payout;
+        $this->availableMinor -= $parameters['amount'];
+        $this->keys[$idempotencyKey] = $payout;
+        if ($this->loseResponse) {
+            throw new RuntimeException('Simulated response loss after Stripe accepted payout');
+        }
 
         return $payout;
     }
@@ -143,6 +161,7 @@ beforeEach(function () {
     Schema::create('payments', function (Blueprint $table) {
         $table->id();
         $table->unsignedBigInteger('provider_id')->index();
+        $table->char('currency', 3)->default('aud');
         $table->decimal('provider_earnings', 12, 2)->default(0);
         $table->string('status')->default('pending');
         $table->timestamps();
@@ -156,6 +175,8 @@ beforeEach(function () {
         $table->string('status', 30)->default('pending')->index();
         $table->string('payment_reference')->nullable();
         $table->string('stripe_payout_id')->nullable()->unique();
+        $table->timestamp('stripe_submission_started_at')->nullable();
+        $table->unsignedInteger('stripe_submission_attempt')->default(0);
         $table->string('idempotency_key')->nullable();
         $table->string('destination')->nullable();
         $table->string('method', 20)->default('standard');
@@ -184,6 +205,7 @@ beforeEach(function () {
         'user_type' => 'freelancer',
         'stripe_account_id' => 'acct_provider_payout',
     ]);
+    \App\Models\Payment::create(['provider_id' => $this->provider->id, 'currency' => 'aud', 'provider_earnings' => '125.00', 'status' => 'succeeded']);
     $this->client = User::create([
         'name' => 'Client',
         'email' => 'client-payout@example.test',
@@ -208,6 +230,44 @@ it('returns the connected Stripe balance and masked payout destination', functio
         ->assertJsonPath('data.account.destination.bank_name', 'Test Bank')
         ->assertJsonPath('data.account.destination.last4', '6789')
         ->assertJsonMissingPath('data.account.destination.id');
+});
+
+it('reports platform-only test payments without treating earnings as withdrawable funds', function () {
+    Sanctum::actingAs($this->provider);
+    config()->set('services.stripe.key', 'pk_test_fake');
+    config()->set('services.stripe.test_platform_payments', true);
+    $this->gateway->availableMinor = 0;
+    \App\Models\Payment::query()->delete();
+    \App\Models\Payment::create([
+        'provider_id' => $this->provider->id,
+        'provider_earnings' => '354.60',
+        'currency' => 'aud',
+        'status' => 'succeeded',
+    ]);
+
+    $this->getJson('/api/freelancer/payouts')
+        ->assertOk()
+        ->assertJsonPath('data.total_earnings', '354.60')
+        ->assertJsonPath('data.balance.available_minor', 0)
+        ->assertJsonPath('data.payment_mode.test_mode', true)
+        ->assertJsonPath('data.payment_mode.platform_test_payments', true);
+
+    config()->set('services.stripe.test_platform_payments', false);
+    $this->getJson('/api/freelancer/payouts')
+        ->assertOk()
+        ->assertJsonPath('data.payment_mode.platform_test_payments', false);
+});
+
+it('never labels live payments as platform-only test payments', function () {
+    Sanctum::actingAs($this->provider);
+    config()->set('services.stripe.secret', 'sk_live_fake');
+    config()->set('services.stripe.key', 'pk_live_fake');
+    config()->set('services.stripe.test_platform_payments', true);
+
+    $this->getJson('/api/freelancer/payouts')
+        ->assertOk()
+        ->assertJsonPath('data.payment_mode.test_mode', false)
+        ->assertJsonPath('data.payment_mode.platform_test_payments', false);
 });
 
 it('creates an idempotent standard payout and switches the account to manual payouts', function () {
@@ -237,14 +297,14 @@ it('creates an idempotent standard payout and switches the account to manual pay
     ]);
 });
 
-it('rejects a payout larger than the Stripe available balance', function () {
+it('rejects a withdrawal larger than the wallet balance', function () {
     Sanctum::actingAs($this->provider);
 
     $this->postJson('/api/freelancer/payouts', [
         'amount' => '126.00',
         'idempotency_key' => 'mobile-request-too-large',
     ])->assertStatus(422)
-        ->assertJsonPath('errors.available_minor', 12500);
+        ->assertJsonPath('message', 'The requested amount exceeds your available wallet balance.');
 
     expect($this->gateway->createCount)->toBe(0);
 });
@@ -318,4 +378,154 @@ it('updates a payout from a signed connected-account webhook', function () {
 
     expect($withdrawal->fresh()->status)->toBe(WithdrawalRequest::STATUS_PAID)
         ->and($withdrawal->fresh()->processed_at)->not->toBeNull();
+});
+
+it('credits successful payments immediately and reserves a pending withdrawal exactly once', function () {
+    Sanctum::actingAs($this->provider);
+    $this->gateway->availableMinor = 0;
+    $payload = ['amount' => '40.00', 'idempotency_key' => 'wallet-queued-request-1234'];
+    $this->getJson('/api/freelancer/payouts')->assertOk()
+        ->assertJsonPath('data.wallet.available', '125.00');
+    $this->postJson('/api/freelancer/payouts', $payload)->assertCreated()
+        ->assertJsonPath('data.payout.status', 'awaiting_settlement')
+        ->assertJsonPath('data.wallet.available', '85.00')
+        ->assertJsonPath('data.wallet.reserved', '40.00');
+    $this->postJson('/api/freelancer/payouts', $payload)->assertOk()
+        ->assertJsonPath('data.wallet.available', '85.00');
+    $this->postJson('/api/freelancer/payouts', ['amount' => '90.00', 'idempotency_key' => 'wallet-other-request-1234'])
+        ->assertStatus(422);
+    expect(WithdrawalRequest::count())->toBe(1)->and($this->gateway->createCount)->toBe(0);
+});
+
+it('automatically submits reserved funds after settlement without deducting twice', function () {
+    Sanctum::actingAs($this->provider);
+    $this->gateway->availableMinor = 0;
+    $this->postJson('/api/freelancer/payouts', ['amount' => '40.00', 'idempotency_key' => 'wallet-settlement-1234'])->assertCreated();
+    $this->artisan('wallet:process-withdrawals')->assertSuccessful();
+    expect($this->gateway->createCount)->toBe(0);
+    $this->gateway->availableMinor = 4000;
+    $this->artisan('wallet:process-withdrawals')->assertSuccessful();
+    $this->artisan('wallet:process-withdrawals')->assertSuccessful();
+    $this->getJson('/api/freelancer/payouts')->assertOk()
+        ->assertJsonPath('data.wallet.available', '85.00')
+        ->assertJsonPath('data.wallet.reserved', '40.00')
+        ->assertJsonPath('data.payouts.0.status', 'pending');
+    expect($this->gateway->createCount)->toBe(1);
+});
+
+it('restores a failed or canceled withdrawal and keeps paid funds deducted', function () {
+    $wallet = app(\App\Services\ProviderWallet::class);
+    $request = $wallet->reserve($this->provider, 'aud', 4000, 'wallet-restore-1234');
+    foreach (['paid', 'failed', 'canceled'] as $status) {
+        $wallet->apply($request, (object) ['id' => 'po_restore', 'status' => $status]);
+        $balance = $wallet->balance($this->provider->id, 'aud');
+        expect($balance['available'])->toBe($status === 'paid' ? '85.00' : '125.00')
+            ->and($balance['reserved'])->toBe('0.00');
+    }
+});
+
+it('retains the debit after a lost Stripe response and recovers with the same key', function () {
+    Sanctum::actingAs($this->provider);
+    $this->gateway->loseResponse = true;
+    $payload = ['amount' => '40.00', 'idempotency_key' => 'wallet-response-lost-1234'];
+    $this->postJson('/api/freelancer/payouts', $payload)->assertCreated()
+        ->assertJsonPath('data.payout.status', 'processing')
+        ->assertJsonPath('data.wallet.available', '85.00');
+    $this->gateway->availableMinor = 0;
+    $this->postJson('/api/freelancer/payouts', $payload)->assertOk()
+        ->assertJsonPath('data.payout.status', 'pending')
+        ->assertJsonPath('data.wallet.available', '85.00');
+    expect($this->gateway->createCount)->toBe(1);
+});
+
+it('holds uncertain old submissions for reconciliation instead of paying twice', function () {
+    Sanctum::actingAs($this->provider);
+    $this->gateway->loseResponse = true;
+    $this->postJson('/api/freelancer/payouts', ['amount' => '40.00', 'idempotency_key' => 'wallet-expired-key-1234'])->assertCreated();
+    WithdrawalRequest::query()->update(['stripe_submission_started_at' => now()->subHours(25)]);
+    $this->gateway->payouts = [];
+    $this->artisan('wallet:process-withdrawals')->assertSuccessful();
+    expect($this->gateway->createCount)->toBe(1);
+    expect(app(\App\Services\ProviderWallet::class)->balance($this->provider->id, 'aud')['available'])->toBe('85.00');
+});
+
+it('rejects reused keys for different amounts and excludes other currencies and failed credits', function () {
+    Sanctum::actingAs($this->provider);
+    $this->gateway->availableMinor = 0;
+    \App\Models\Payment::create(['provider_id' => $this->provider->id, 'currency' => 'usd', 'provider_earnings' => '900.00', 'status' => 'succeeded']);
+    \App\Models\Payment::create(['provider_id' => $this->provider->id, 'currency' => 'aud', 'provider_earnings' => '900.00', 'status' => 'failed']);
+    $this->postJson('/api/freelancer/payouts', ['amount' => '40.00', 'idempotency_key' => 'wallet-key-conflict-1234'])->assertCreated();
+    $this->postJson('/api/freelancer/payouts', ['amount' => '41.00', 'idempotency_key' => 'wallet-key-conflict-1234'])->assertStatus(409);
+    expect(app(\App\Services\ProviderWallet::class)->balance($this->provider->id, 'aud')['available'])->toBe('85.00');
+});
+
+it('reconciles automatic Stripe payouts so historical wallet credits cannot be spent twice', function () {
+    $wallet = app(\App\Services\ProviderWallet::class);
+    $payout = (object) ['id' => 'po_automatic', 'amount' => 4000, 'currency' => 'aud', 'status' => 'paid', 'created' => now()->subDay()->timestamp];
+    $wallet->reconcile($this->provider->id, [$payout]);
+    $wallet->reconcile($this->provider->id, [$payout]);
+    expect(WithdrawalRequest::count())->toBe(1);
+    expect($wallet->balance($this->provider->id, 'aud')['available'])->toBe('85.00');
+    expect($wallet->balance($this->provider->id, 'aud')['withdrawn'])->toBe('40.00');
+});
+
+it('does not reopen a completed withdrawal on a delayed pending event', function () {
+    $wallet = app(\App\Services\ProviderWallet::class);
+    $withdrawal = $wallet->reserve($this->provider, 'aud', 4000, 'wallet-late-webhook-1234');
+    $wallet->apply($withdrawal, (object) ['id' => 'po_late', 'status' => 'paid']);
+    $wallet->apply($withdrawal, (object) ['id' => 'po_late', 'status' => 'pending']);
+    expect($withdrawal->fresh()->status)->toBe('paid');
+    expect($wallet->balance($this->provider->id, 'aud')['available'])->toBe('85.00');
+});
+
+it('restores wallet funds when Stripe definitively rejects a payout', function () {
+    Sanctum::actingAs($this->provider);
+    $this->gateway->rejectCode = 'account_invalid';
+    $this->postJson('/api/freelancer/payouts', ['amount' => '40.00', 'idempotency_key' => 'wallet-rejection-1234'])->assertCreated()
+        ->assertJsonPath('data.payout.status', 'failed')
+        ->assertJsonPath('data.wallet.available', '125.00')
+        ->assertJsonPath('data.wallet.reserved', '0.00');
+});
+
+it('keeps a reservation after insufficient Stripe funds and can submit a fresh rejected-attempt key later', function () {
+    Sanctum::actingAs($this->provider);
+    $this->gateway->rejectCode = 'balance_insufficient';
+    $this->postJson('/api/freelancer/payouts', ['amount' => '40.00', 'idempotency_key' => 'wallet-balance-race-1234'])->assertCreated()
+        ->assertJsonPath('data.payout.status', 'awaiting_settlement')
+        ->assertJsonPath('data.wallet.available', '85.00');
+    expect(WithdrawalRequest::first()->stripe_submission_attempt)->toBe(1);
+    $this->gateway->rejectCode = null;
+    $this->artisan('wallet:process-withdrawals')->assertSuccessful();
+    expect(WithdrawalRequest::first()->status)->toBe('pending');
+    expect($this->gateway->createCount)->toBe(1);
+});
+
+it('migrates legacy uncertain withdrawals without authorizing a duplicate payout', function () {
+    Schema::table('withdrawal_requests', function (Blueprint $table) {
+        $table->dropColumn(['stripe_submission_started_at', 'stripe_submission_attempt']);
+    });
+    $withdrawal = WithdrawalRequest::create(['provider_id' => $this->provider->id, 'requested_amount' => '40.00', 'currency' => 'aud', 'status' => 'processing']);
+    $migration = require database_path('migrations/2026_11_02_000001_add_submission_time_to_withdrawal_requests.php');
+    $migration->up();
+    expect($withdrawal->fresh()->stripe_submission_started_at->lt(now()->subHours(23)))->toBeTrue();
+    expect($withdrawal->fresh()->stripe_submission_attempt)->toBe(0);
+    $migration->down();
+    expect(Schema::hasColumn('withdrawal_requests', 'stripe_submission_started_at'))->toBeFalse();
+});
+
+it('wallet sync processes only the signed-in providers settled withdrawal and reads updated balances', function () {
+    Sanctum::actingAs($this->provider);
+    $this->gateway->availableMinor = 0;
+    $this->postJson('/api/freelancer/payouts', ['amount' => '40.00', 'idempotency_key' => 'wallet-screen-sync-1234'])->assertCreated();
+    $this->postJson('/api/freelancer/payouts/sync')->assertOk()
+        ->assertJsonPath('data.payouts.0.status', 'awaiting_settlement');
+    $this->gateway->availableMinor = 4590;
+    $this->postJson('/api/freelancer/payouts/sync')->assertOk()
+        ->assertJsonPath('data.payouts.0.status', 'pending')
+        ->assertJsonPath('data.balance.available_minor', 590)
+        ->assertJsonPath('data.wallet.available', '85.00');
+    $this->postJson('/api/freelancer/payouts/sync')->assertOk();
+    expect($this->gateway->createCount)->toBe(1);
+    Sanctum::actingAs($this->client);
+    $this->postJson('/api/freelancer/payouts/sync')->assertForbidden();
 });

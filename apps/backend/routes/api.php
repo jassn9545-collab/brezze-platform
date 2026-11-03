@@ -119,6 +119,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('submit-work', [FreelancerJobController::class, 'submitWork']);
         Route::post('payments', [PaymentController::class, 'providerHistory']);
         Route::get('payouts', [ProviderPayoutController::class, 'index']);
+        Route::post('payouts/sync', [ProviderPayoutController::class, 'sync'])
+            ->middleware('throttle:30,1');
         Route::post('payouts', [ProviderPayoutController::class, 'store'])
             ->middleware('throttle:5,1');
         Route::post('payouts/dashboard-link', [ProviderPayoutController::class, 'dashboardLink'])

@@ -3,7 +3,7 @@
 return [
 
     'firebase' => [
-        'credentials' => env('FIREBASE_CREDENTIALS'),
+        'credentials' => env('FIREBASE_CREDENTIALS', 'storage/app/private/firebase-service-account.json'),
     ],
 
     /*
@@ -45,10 +45,9 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'currency' => strtolower(env('STRIPE_CURRENCY', 'aud')),
         'onboarding_base_url' => env('STRIPE_ONBOARDING_BASE_URL', env('APP_URL')),
-        // Test-mode charges stay on the platform so QA is not blocked while a
-        // provider's Connect account is unfinished. Live-mode payments still
-        // require a fully enabled connected account in PaymentController.
-        'test_platform_payments' => env('STRIPE_TEST_PLATFORM_PAYMENTS', true),
+        // Opt-in onboarding-only QA fallback. Keep disabled for end-to-end
+        // payment/payout testing so charges fund the provider's Stripe balance.
+        'test_platform_payments' => env('STRIPE_TEST_PLATFORM_PAYMENTS', false),
         // Amount is in the currency's smallest unit (1000 = AUD 10.00).
         'minimum_payout_minor' => (int) env('STRIPE_MINIMUM_PAYOUT_MINOR', 1000),
     ],

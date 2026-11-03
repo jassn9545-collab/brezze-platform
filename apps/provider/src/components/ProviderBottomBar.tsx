@@ -40,7 +40,7 @@ export const ProviderBottomBar = ({
       accessibilityState={activeTab === tab.name ? { selected: true } : undefined}
       accessibilityLabel={
         accessibilityLabels?.[tab.name] ??
-        (tab.name === 'HireJobs' ? 'Hire Jobs' : tab.name)
+        (tab.name === 'HireJobs' ? 'My Jobs' : tab.name)
       }
       onPress={() => onTabPress(tab.name)}
       onLongPress={() => onTabLongPress?.(tab.name)}
