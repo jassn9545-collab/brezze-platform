@@ -11,3 +11,13 @@ __MACOSX/
 /apps/backend/bezzie (1).sql
 /artifacts/apk/
 /apps/backend/public/downloads/
+
+# Generated client releases and temporary build exports
+/deliverables/
+/builds/
+
+# Local credentials; retain the configuration templates needed for setup
+.env
+.env.*
+!.env.example
+!.env.*.example

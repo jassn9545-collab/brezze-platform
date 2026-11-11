@@ -87,3 +87,29 @@ it('reports an account without devices as a registration problem', function () {
     expect($result['devices'])->toBe(0)->and($result['error'])->toContain('No enabled devices');
     Http::assertNothingSent();
 });
+
+it('only pushes events from hire through work submission', function (string $type, bool $push) {
+    $firebase = Mockery::mock(FirebasePushService::class);
+    if ($push) {
+        $firebase->shouldReceive('sendToUser')->once()->with(
+            15, 'Job update', 'Job status changed.',
+            ['type' => $type, 'action_type' => 'project', 'action_id' => 26],
+        )->andReturn(['sent' => 1, 'failed' => 0, 'devices' => 1, 'error' => null]);
+    } else {
+        $firebase->shouldNotReceive('sendToUser');
+    }
+    app()->instance(FirebasePushService::class, $firebase);
+
+    app(\App\Services\RealtimeNotifier::class)->notify(15, 'Job update', 'Job status changed.', $type, 'project', 26);
+})->with([
+    ['job_in_progress', true],
+    ['work_submitted', true],
+    ['new_job', false],
+    ['job_application', false],
+    ['chat_message', false],
+    ['job_completed', false],
+    ['payment_succeeded', false],
+    ['review_received', false],
+    ['service_booking_created', false],
+    ['service_booking_rejected', false],
+]);

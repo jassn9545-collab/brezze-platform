@@ -1,0 +1,25 @@
+{
+  "apiBaseUrl": "https://hirephpdeveloperindia.com/bezzie/api",
+  "apps": {
+    "customer": {
+      "directory": "apps/our-bezzie-provider",
+      "displayName": "Our Bezzie Provider",
+      "moduleName": "OurBezzieProvider",
+      "androidApplicationId": "com.bezzie",
+      "iosBundleId": "com.bezzie",
+      "metroPort": 8081,
+      "apkPrefix": "Our-Bezzie-Provider-Customer",
+      "logo": "src/assets/branding/our-bezzie-provider.png"
+    },
+    "provider": {
+      "directory": "apps/our-bezzie",
+      "displayName": "Our Bezzie",
+      "moduleName": "OurBezzie",
+      "androidApplicationId": "com.bezzieprovider",
+      "iosBundleId": "com.bezzieprovider",
+      "metroPort": 8082,
+      "apkPrefix": "Our-Bezzie-Professional",
+      "logo": "src/assets/branding/our-bezzie.png"
+    }
+  }
+}

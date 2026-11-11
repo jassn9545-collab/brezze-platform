@@ -90,6 +90,49 @@ test('the installed Stripe SDK dispatches connected account creation to Accounts
     expect($account->id)->toBe('acct_test_123');
 });
 
+test('connected account creation normalizes saved phone numbers for both Stripe phone fields', function ($country, $phone, $expected) {
+    $user = connectedUser(null);
+    $user->phone = $phone;
+    $accounts = Mockery::mock(V2AccountService::class);
+    $accounts->shouldReceive('create')->once()->with(
+        Mockery::on(function ($params) use ($expected) {
+            if ($expected === null) {
+                return ! array_key_exists('contact_phone', $params)
+                    && ! array_key_exists('phone', $params['identity']['individual']);
+            }
+
+            return $params['contact_phone'] === $expected
+                && $params['identity']['individual']['phone'] === $expected;
+        }),
+        Mockery::on(fn ($options) => $options['idempotency_key'] === 'user_42_stripe_connected_account_v2')
+    )->andReturn(V2Account::constructFrom(['id' => 'acct_test_123']));
+
+    $method = new ReflectionMethod(AuthController::class, 'createStripeConnectedAccount');
+    $account = $method->invoke(new AuthController, $user, $country, mockV2AccountService($accounts));
+
+    expect($account->id)->toBe('acct_test_123');
+    expect($user->phone)->toBe($phone);
+})->with([
+    'Australian mobile' => ['AU', '0412 345 678', '+61412345678'],
+    'Australian national number' => ['AU', '412345678', '+61412345678'],
+    'Australian landline' => ['AU', '(02) 1234-5678', '+61212345678'],
+    'Australian country code' => ['AU', '61412345678', '+61412345678'],
+    'Indian mobile' => ['IN', '98765 43210', '+919876543210'],
+    'Indian trunk prefix' => ['IN', '09876543210', '+919876543210'],
+    'Indian country code' => ['IN', '919876543210', '+919876543210'],
+    'international prefix' => ['AU', '0061 412 345 678', '+61412345678'],
+    'formatted international number' => ['IN', '+91 (98765) 43210', '+919876543210'],
+    'explicit foreign country code' => ['AU', '+919876543210', '+919876543210'],
+    'missing number' => ['AU', null, null],
+    'empty number' => ['AU', ' ', null],
+    'short legacy value' => ['AU', '12345', null],
+    'letters' => ['IN', 'not a phone', null],
+    'extension' => ['AU', '0412345678 ext 12', null],
+    'invalid international prefix' => ['AU', '+0123456789', null],
+    'too long' => ['IN', '+1234567890123456', null],
+    'ambiguous foreign number' => ['AU', '9876543210', null],
+]);
+
 test('signup onboarding link uses the saved connected account and mobile callback URLs', function () {
     $links = Mockery::mock(AccountLinkService::class);
     $stripe = mockStripeService('accountLinks', $links);
@@ -145,8 +188,10 @@ test('onboarding defaults to the server callback routes', function () {
 });
 
 test('Stripe callback pages direct mobile users back to the app', function () {
-    $this->get('/stripe/onboarding/return')->assertOk()->assertSee('check your Stripe account status');
-    $this->get('/stripe/onboarding/refresh')->assertOk()->assertSee('Continue Stripe setup');
+    $this->get('/stripe/onboarding/return')->assertOk()->assertSee('check your Stripe account status')
+        ->assertSee('bezzieprovider://stripe/onboarding/return')->assertSee('Open Bezzie app');
+    $this->get('/stripe/onboarding/refresh')->assertOk()->assertSee('Continue Stripe setup')
+        ->assertSee('bezzieprovider://stripe/onboarding/refresh')->assertSee('Open Bezzie app');
 });
 
 test('an authenticated user can receive a Stripe onboarding link', function () {

@@ -1,11 +1,11 @@
-# Brezze Product Requirements
+# Our Bezzie Product Requirements
 
 ## Purpose
 
-Brezze is a two-sided services marketplace made of two mobile applications:
+Our Bezzie is a two-sided services marketplace made of two mobile applications:
 
-- **Brezzee** lets customers create and manage service jobs.
-- **Provider** lets freelancers/service providers find and complete those jobs.
+- **Our Bezzie Provider** lets customers create and manage service jobs.
+- **Our Bezzie** lets freelancers/service providers find and complete those jobs.
 
 This baseline is derived from the current React Native screens, navigation, Redux slices, Laravel controllers, and API route definitions. Items marked **Decision required** need product confirmation before their implementation is completed.
 
@@ -34,7 +34,7 @@ This baseline is derived from the current React Native screens, navigation, Redu
 - Real-time chat architecture; the current socket URL is not configured.
 - FAQ/help/support and static policy content.
 
-## Brezzee customer app requirements
+## Our Bezzie Provider — customer app requirements
 
 The current app contains 43 screen files and approximately 30 reusable component files.
 
@@ -65,7 +65,7 @@ The current app contains 43 screen files and approximately 30 reusable component
 - Chat with a provider in the context of a job.
 - Referral/invite and earnings-related screens are present but require business-rule confirmation.
 
-## Provider app requirements
+## Our Bezzie — professional app requirements
 
 The current app contains 39 screen files and approximately 34 reusable component files.
 

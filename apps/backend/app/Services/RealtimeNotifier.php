@@ -53,12 +53,14 @@ class RealtimeNotifier
             report($exception);
         }
 
-        $this->firebase->sendToUser($userId, $title, $pushMessage ?? $message, [
-            ...$data,
-            'type' => $type,
-            'action_type' => $actionType ?? '',
-            'action_id' => $actionId ?? '',
-        ]);
+        if (in_array($type, config('services.firebase.push_types', ['job_in_progress', 'work_submitted']), true)) {
+            $this->firebase->sendToUser($userId, $title, $pushMessage ?? $message, [
+                ...$data,
+                'type' => $type,
+                'action_type' => $actionType ?? '',
+                'action_id' => $actionId ?? '',
+            ]);
+        }
 
         return $notification;
     }

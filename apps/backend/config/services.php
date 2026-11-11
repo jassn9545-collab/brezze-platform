@@ -4,6 +4,12 @@ return [
 
     'firebase' => [
         'credentials' => env('FIREBASE_CREDENTIALS', 'storage/app/private/firebase-service-account.json'),
+        // System pushes cover the hired-job lifecycle through work submission.
+        // Other events remain in the in-app feed and realtime channel.
+        'push_types' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('FIREBASE_PUSH_TYPES', 'job_in_progress,work_submitted'))
+        ))),
     ],
 
     /*

@@ -1,13 +1,13 @@
-# Brezze Platform
+# Our Bezzie Platform
 
-Brezze is a two-sided services marketplace maintained as a monorepo. It contains the customer app, provider app, Laravel API/admin panel, and shared product documentation.
+Our Bezzie is a two-sided services marketplace maintained as a monorepo. It contains the customer app, provider app, Laravel API/admin panel, and shared product documentation.
 
 ## Repository structure
 
 | Path | Purpose |
 | --- | --- |
-| `apps/customer/` | React Native customer app (`Bezzie`) |
-| `apps/provider/` | React Native service-provider app (`BezzieProvider`) |
+| `apps/our-bezzie-provider/` | **Our Bezzie Provider** — customer app (`OurBezzieProvider`) |
+| `apps/our-bezzie/` | **Our Bezzie** — professional/freelancer app (`OurBezzie`) |
 | `apps/backend/` | Laravel 12 REST API and admin panel |
 | `docs/requirements/` | Functional and non-functional requirements |
 | `docs/design-system/` | Shared design-system guidance |
@@ -15,16 +15,18 @@ Brezze is a two-sided services marketplace maintained as a monorepo. It contains
 
 ## Local development
 
+App names and roles are defined in `mobile-apps.json` and explained in [the mobile naming guide](docs/mobile-app-names.md). **Our Bezzie Provider is the customer app; Our Bezzie is the professional app.** Run `node scripts/check-mobile-branding.cjs` before building. Standalone live Android testing APKs can be generated with `bash scripts/build-live-apks.sh` when Java 17 and the Android SDK are configured.
+
 Use Node 22.13 or newer in the Node 22 series, or another version allowed by the app package.json engines. Node 21 is incompatible with the locked mobile dependencies. Run commands from the relevant app folder.
 
 ```powershell
-# Customer app
-cd apps/customer
+# Our Bezzie Provider — customer app
+cd apps/our-bezzie-provider
 corepack yarn install --frozen-lockfile
 corepack yarn start --port 8081
 
-# Provider app
-cd apps/provider
+# Our Bezzie — professional app
+cd apps/our-bezzie
 corepack yarn install --frozen-lockfile
 corepack yarn start --port 8082
 
@@ -48,7 +50,7 @@ Enable USB debugging on the phone, connect a data-capable USB cable, and accept 
 powershell -ExecutionPolicy Bypass -File .\scripts\run-device.ps1
 ```
 
-The script builds both debug APKs, starts the backend and Metro servers, forwards ports 8000/8081/8082 over USB, installs both apps, and launches them. Provider is launched last; select Bezzie from the phone launcher to use the customer app. Use `-SkipBuild` to reuse existing APKs, `-DeviceId SERIAL` when multiple devices are connected, or `-BuildOnly` to prepare ARM64 APKs without a phone. Build-only mode accepts `-Architecture` for other Android ABIs.
+The script builds both debug APKs, starts the backend and Metro servers, forwards ports 8000/8081/8082 over USB, installs both apps, and launches them. The professional app, Our Bezzie, is launched last; select Our Bezzie Provider from the phone launcher for the customer app. Use `-SkipBuild` to reuse existing APKs, `-DeviceId SERIAL` when multiple devices are connected, or `-BuildOnly` to prepare ARM64 APKs without a phone. Build-only mode accepts `-Architecture` for other Android ABIs.
 
 Server logs are stored under `.tools/`. Local mail uses the log mailer; Stripe payments and provider Stripe onboarding require valid credentials in `.env`.
 

@@ -366,10 +366,18 @@ it('sends hire notifications before attempting email and does not resend on a re
     $payload = ['job_id' => $this->project->id, 'bid_id' => $bid->id];
     $this->postJson('/api/client/hire-now', $payload)->assertOk();
     $this->postJson('/api/client/hire-now', $payload)->assertOk()->assertJsonPath('data.already_hired', true);
-    expect($sent)->toContain(['user_id' => $this->provider->id, 'type' => 'job_in_progress', 'action_id' => $this->project->id]);
+    expect($sent)
+        ->toContain(['user_id' => $this->provider->id, 'type' => 'job_in_progress', 'action_id' => $this->project->id])
+        ->toContain(['user_id' => $this->client->id, 'type' => 'job_in_progress', 'action_id' => $this->project->id]);
+    foreach ([$this->provider->id, $this->client->id] as $recipientId) {
+        expect(UserNotification::where('user_id', $recipientId)
+            ->where('type', 'job_in_progress')
+            ->where('action_id', $this->project->id)
+            ->count())->toBe(1);
+    }
 });
 
-it('sends the customer a work submission push even when email fails', function () {
+it('pushes work submission to both job participants before email even if SMTP fails', function () {
     $this->project->update(['status' => 'in progress']);
     $bid = Bid::create([
         'project_id' => $this->project->id,
@@ -378,16 +386,45 @@ it('sends the customer a work submission push even when email fails', function (
         'is_hired' => true,
     ]);
     $firebase = Mockery::mock(\App\Services\FirebasePushService::class);
-    $firebase->shouldReceive('sendToUser')->once()->withArgs(function ($userId, $title, $body, $data) {
-        return $userId === $this->client->id && $title === 'Work submitted'
-            && $data['type'] === 'work_submitted' && $data['action_id'] === $this->project->id;
-    })->andReturn(['sent' => 1, 'failed' => 0, 'devices' => 1, 'error' => null]);
+    $sent = [];
+    $firebase->shouldReceive('sendToUser')->twice()->andReturnUsing(function ($userId, $title, $body, $data) use (&$sent) {
+        $sent[] = ['user_id' => $userId, 'type' => $data['type'], 'action_type' => $data['action_type'], 'action_id' => $data['action_id']];
+
+        return ['sent' => 1, 'failed' => 0, 'devices' => 1, 'error' => null];
+    });
     app()->instance(\App\Services\FirebasePushService::class, $firebase);
-    Mail::shouldReceive('html')->once()->andThrow(new RuntimeException('Simulated SMTP failure'));
+    Mail::shouldReceive('html')->once()->andReturnUsing(function () use (&$sent) {
+        expect($sent)->toHaveCount(2);
+        throw new RuntimeException('Simulated SMTP failure');
+    });
     $this->postJson('/api/freelancer/submit-work', [
         'project_id' => $this->project->id,
         'work_description' => 'Repair completed for customer review.',
     ])->assertOk()->assertJsonPath('message', 'Work submitted successfully.');
     expect($bid->fresh()->work_description)->toBe('Repair completed for customer review.');
-    expect(UserNotification::where('user_id', $this->client->id)->where('type', 'work_submitted')->count())->toBe(1);
+    foreach ([$this->client->id, $this->provider->id] as $recipientId) {
+        expect($sent)->toContain([
+            'user_id' => $recipientId, 'type' => 'work_submitted',
+            'action_type' => 'project', 'action_id' => $this->project->id,
+        ]);
+        expect(UserNotification::where('user_id', $recipientId)
+            ->where('type', 'work_submitted')->where('action_id', $this->project->id)->count())->toBe(1);
+    }
+});
+
+it('does not notify or submit work for a provider who was not hired', function () {
+    $this->project->update(['status' => 'in progress']);
+    Bid::create([
+        'project_id' => $this->project->id, 'user_id' => $this->provider->id,
+        'bid_amount' => '31', 'is_hired' => false,
+    ]);
+    $firebase = Mockery::mock(\App\Services\FirebasePushService::class);
+    $firebase->shouldNotReceive('sendToUser');
+    app()->instance(\App\Services\FirebasePushService::class, $firebase);
+
+    $this->postJson('/api/freelancer/submit-work', [
+        'project_id' => $this->project->id, 'work_description' => 'Unauthorized submission',
+    ])->assertStatus(400);
+
+    expect(UserNotification::where('type', 'work_submitted')->count())->toBe(0);
 });

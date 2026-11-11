@@ -48,7 +48,8 @@
         @forelse ($devices ?? [] as $device)
             <tr>
                 <td>{{ $device->user?->name ?? 'Unknown user' }} (#{{ $device->user_id }})</td>
-                <td>{{ $device->app_type }}</td><td>{{ $device->platform }}</td>
+                <td>{{ config('mobile_apps.'.$device->app_type.'.name', $device->app_type) }}
+                    <small>({{ $device->app_type }})</small></td><td>{{ $device->platform }}</td>
                 <td>{{ $device->enabled ? 'Yes' : 'No' }}</td><td>{{ $device->last_seen_at ?? 'Unknown' }}</td>
                 <td>@if ($device->enabled)
                     <form method="post" action="{{ route('admin.push-diagnostics.test') }}">

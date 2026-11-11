@@ -44,6 +44,10 @@ it('shows device registration and configuration without exposing credentials or 
         'user_id' => $admin->id, 'token' => 'must-not-display-token', 'platform' => 'android',
         'app_type' => 'provider', 'enabled' => true, 'last_seen_at' => now(),
     ]);
+    UserDevice::create([
+        'user_id' => $admin->id, 'token' => 'customer-token-must-stay-private', 'platform' => 'android',
+        'app_type' => 'customer', 'enabled' => true, 'last_seen_at' => now(),
+    ]);
     $firebase = Mockery::mock(FirebasePushService::class);
     $firebase->shouldReceive('diagnostics')->once()->andReturn([
         'configured' => true, 'project_id' => 'our-bezzie-42461',
@@ -52,7 +56,9 @@ it('shows device registration and configuration without exposing credentials or 
     app()->instance(FirebasePushService::class, $firebase);
     $this->actingAs($admin)->get('/admin/push-diagnostics')->assertOk()
         ->assertSee('our-bezzie-42461')->assertSee('Registered devices')
-        ->assertSee('provider')->assertDontSee('must-not-display-token');
+        ->assertSee('Our Bezzie Provider')->assertSee('Our Bezzie')
+        ->assertSee('(customer)')->assertSee('(provider)')
+        ->assertDontSee('must-not-display-token')->assertDontSee('customer-token-must-stay-private');
 });
 
 it('only sends an explicitly requested test and exposes the delivery result to the admin', function () {

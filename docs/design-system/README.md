@@ -1,14 +1,14 @@
-# Brezze Design System
+# Our Bezzie Design System
 
 ## Scope
 
-This page documents the existing UI foundation shared by the customer **Brezzee** app and the **Provider** app. It is derived from both projects' `src/theme`, `src/components`, and navigator files. It describes the current implementation; it does not replace product or accessibility review.
+This page documents the existing UI foundation shared by the customer **Our Bezzie Provider** app and the **Provider** app. It is derived from both projects' `src/theme`, `src/components`, and navigator files. It describes the current implementation; it does not replace product or accessibility review.
 
 ## Product roles
 
 | App | Primary role | Core journeys |
 | --- | --- | --- |
-| Brezzee | Customer/client | Discover services, post a job, hire a provider, track work, release payment, review |
+| Our Bezzie Provider | Customer/client | Discover services, post a job, hire a provider, track work, release payment, review |
 | Provider | Freelancer/service provider | Discover jobs, filter/save/apply, manage active work, submit work, manage wallet and catalog |
 
 Both apps use a white, blue-led interface with Montserrat typography, rounded controls, cards, modal sheets, drawer navigation, and bottom tabs.
@@ -32,7 +32,7 @@ Both apps use a white, blue-led interface with Montserrat typography, rounded co
 
 ### App-specific color differences
 
-| Usage | Brezzee | Provider |
+| Usage | Our Bezzie Provider | Provider |
 | --- | --- | --- |
 | Positive green | `#27AE60` | `#14A800` |
 | Primary dim surface | `#EBF4FF` | `#92CEFF` |
@@ -74,7 +74,7 @@ Before creating a new screen-level control, check `src/components` in both apps 
 
 ## Navigation patterns
 
-### Brezzee
+### Our Bezzie Provider
 
 - Bottom tabs: Home, Service, Job action, Chat, Profile.
 - Job action opens the job-post flow instead of rendering a normal tab screen.
@@ -101,12 +101,12 @@ Before creating a new screen-level control, check `src/components` in both apps 
 
 - Several screens still use inline colors, inline styles, and direct `fontWeight` values.
 - Some tokens have overlapping names or different values between apps.
-- Brezzee includes screen-specific blue/job-post tokens that are not yet normalized.
+- Our Bezzie Provider includes screen-specific blue/job-post tokens that are not yet normalized.
 - Provider includes additional catalog, slider, and image-viewer patterns that are not shared.
 
 New work should reduce this drift instead of introducing more app-local tokens.
 
 ## Implementation sources
 
-- Brezzee: `apps/customer/src/theme`, `apps/customer/src/components`, `apps/customer/src/navigators`
-- Provider: `apps/provider/src/theme`, `apps/provider/src/components`, `apps/provider/src/navigators`
+- Our Bezzie Provider (customer): `apps/our-bezzie-provider/src/theme`, `apps/our-bezzie-provider/src/components`, `apps/our-bezzie-provider/src/navigators`
+- Our Bezzie (professional): `apps/our-bezzie/src/theme`, `apps/our-bezzie/src/components`, `apps/our-bezzie/src/navigators`

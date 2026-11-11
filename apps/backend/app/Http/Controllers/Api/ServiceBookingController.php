@@ -216,15 +216,21 @@ class ServiceBookingController extends BaseClientController
             : 'Service request rejected.';
 
         if ($booking->status === 'accepted') {
-            app(RealtimeNotifier::class)->notify(
-                $booking->client_id,
-                'Service request accepted',
-                ($booking->catalog?->heading ?: 'Your job').' is now in progress.',
-                'job_in_progress',
-                'project',
-                $booking->project_id,
-                ['status' => 'in progress', 'booking_id' => $booking->id],
-            );
+            foreach ([$booking->client_id, $booking->provider_id] as $recipientId) {
+                try {
+                    app(RealtimeNotifier::class)->notify(
+                        $recipientId,
+                        'Service request accepted',
+                        ($booking->catalog?->heading ?: 'Your job').' is now in progress.',
+                        'job_in_progress',
+                        'project',
+                        $booking->project_id,
+                        ['status' => 'in progress', 'booking_id' => $booking->id],
+                    );
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
+            }
         } else {
             app(RealtimeNotifier::class)->notify(
                 $booking->client_id,

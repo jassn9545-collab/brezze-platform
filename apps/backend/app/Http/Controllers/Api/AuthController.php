@@ -26,11 +26,13 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:20|unique:users,phone',
             'confirm_password' => 'required|same:password',
             'user_type' => 'nullable|string|in:client,freelancer',
             'country' => 'nullable|string',
             'country_code' => 'nullable|string',
+        ], [
+            'phone.unique' => 'This phone number is already registered. Sign in to your existing account or use a different number.',
         ]);
 
         if ($validator->fails()) {
@@ -76,6 +78,8 @@ class AuthController extends Controller
             'longitude' => 'nullable|string|max:191',
             'return_url' => 'required_with:refresh_url|url:http,https',
             'refresh_url' => 'required_with:return_url|url:http,https',
+        ], [
+            'phone.unique' => 'This phone number is already registered. Sign in to your existing account or use a different number.',
         ]);
 
         if ($validator->fails()) {
@@ -237,10 +241,10 @@ class AuthController extends Controller
 
     private function createStripeConnectedAccount(User $user, string $country, StripeClient $stripe)
     {
-        return $stripe->v2->core->accounts->create([
+        $phone = $this->normalizeStripePhone($user->phone, $country);
+        $params = [
             'display_name' => $user->name,
             'contact_email' => $user->email,
-            'contact_phone' => $user->phone,
             'dashboard' => 'express',
             'defaults' => [
                 'currency' => strtolower((string) config('services.stripe.currency', 'aud')),
@@ -257,7 +261,6 @@ class AuthController extends Controller
                 'entity_type' => 'individual',
                 'individual' => [
                     'email' => $user->email,
-                    'phone' => $user->phone,
                 ],
             ],
             'configuration' => [
@@ -278,9 +281,51 @@ class AuthController extends Controller
                 'user_id' => (string) $user->id,
                 'user_type' => (string) $user->user_type,
             ],
-        ], [
+        ];
+
+        // Stripe Accounts v2 requires international phone numbers. Leave ambiguous
+        // legacy values for hosted onboarding to collect rather than blocking setup.
+        if ($phone !== null) {
+            $params['contact_phone'] = $phone;
+            $params['identity']['individual']['phone'] = $phone;
+        }
+
+        return $stripe->v2->core->accounts->create($params, [
             'idempotency_key' => 'user_'.$user->id.'_stripe_connected_account_v2',
         ]);
+    }
+
+    private function normalizeStripePhone(?string $phone, string $country): ?string
+    {
+        $phone = preg_replace('/[\s().-]+/', '', trim((string) $phone));
+
+        if (str_starts_with($phone, '00')) {
+            $phone = '+'.substr($phone, 2);
+        }
+
+        if (str_starts_with($phone, '+')) {
+            return preg_match('/^\+[1-9][0-9]{7,14}$/D', $phone) ? $phone : null;
+        }
+
+        if ($country === 'AU') {
+            if (preg_match('/^61[23478][0-9]{8}$/D', $phone)) {
+                return '+'.$phone;
+            }
+            if (preg_match('/^0?([23478][0-9]{8})$/D', $phone, $matches)) {
+                return '+61'.$matches[1];
+            }
+        }
+
+        if ($country === 'IN') {
+            if (preg_match('/^91[1-9][0-9]{9}$/D', $phone)) {
+                return '+'.$phone;
+            }
+            if (preg_match('/^0?([1-9][0-9]{9})$/D', $phone, $matches)) {
+                return '+91'.$matches[1];
+            }
+        }
+
+        return null;
     }
 
     private function createStripeOnboardingLink(User $user, string $returnUrl, string $refreshUrl, StripeClient $stripe)

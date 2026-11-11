@@ -674,15 +674,24 @@ class FreelancerJobController extends BaseFreelancerController
         $clientEmail = $bid->project->user->email;
         $clientmessage = '<p>Dear '.$bid->project->user->name.',</p>';
         $clientmessage .= '<p>Work has been submitted for project: '.$bid->project->title.'</p>';
-        app(RealtimeNotifier::class)->notify(
-            $bid->project->user_id,
-            'Work submitted',
-            ($request->user()->name ?: 'Your provider').' submitted work for '.$bid->project->title.'.',
-            'work_submitted',
-            'project',
-            $bid->project->id,
-            ['status' => 'in progress'],
-        );
+        foreach ([
+            [$bid->project->user_id, 'Work submitted', ($request->user()->name ?: 'Your provider').' submitted work for '.$bid->project->title.'.'],
+            [$bid->user_id, 'Work submission confirmed', 'Your work for '.$bid->project->title.' was submitted for customer review.'],
+        ] as [$recipientId, $title, $message]) {
+            try {
+                app(RealtimeNotifier::class)->notify(
+                    $recipientId,
+                    $title,
+                    $message,
+                    'work_submitted',
+                    'project',
+                    $bid->project->id,
+                    ['status' => 'in progress'],
+                );
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
 
         defer(function () use ($clientEmail, $clientmessage) {
             try {

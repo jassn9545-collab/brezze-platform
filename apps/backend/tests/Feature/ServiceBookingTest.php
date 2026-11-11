@@ -145,6 +145,14 @@ it('creates one pending request and exposes it as a freelancer notification', fu
 });
 
 it('starts a hired job and enables chat when the freelancer accepts', function () {
+    $firebase = Mockery::mock(\App\Services\FirebasePushService::class);
+    $firebase->shouldReceive('sendToUser')->once()->withArgs(fn ($userId, $title, $body, $data) =>
+        $userId === $this->client->id && $data['type'] === 'job_in_progress' && $data['action_type'] === 'project'
+    )->andReturn(['sent' => 1]);
+    $firebase->shouldReceive('sendToUser')->once()->withArgs(fn ($userId, $title, $body, $data) =>
+        $userId === $this->provider->id && $data['type'] === 'job_in_progress' && $data['action_type'] === 'project'
+    )->andReturn(['sent' => 1]);
+    app()->instance(\App\Services\FirebasePushService::class, $firebase);
     Sanctum::actingAs($this->client);
     $bookingId = $this->postJson('/api/client/service-bookings', [
         'catalog_id' => $this->catalog->id,

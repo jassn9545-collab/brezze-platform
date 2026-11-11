@@ -1,3 +1,5 @@
+App branding (9 November 2026): **Our Bezzie Provider** is the customer/job-poster app (`customer`, `com.bezzie`); **Our Bezzie** is the professional app (`provider`, `com.bezzieprovider`). Persisted roles and Firebase identities remain attached to the same accounts. Admin display labels are defined in `config/mobile_apps.php`.
+
 # Push delivery troubleshooting
 
 The mobile apps register Firebase tokens through authenticated `POST /api/devices`. Both apps use Firebase project `our-bezzie-42461`. The backend sends notification and data payloads through the FCM HTTP v1 API, independently of the in-app notification list and email. A notification appearing in that list does not establish that FCM accepted or displayed it.
@@ -13,7 +15,9 @@ After deploying the changed backend files and clearing the application cache, si
 - `UNREGISTERED`: the server disables the expired token; reopen the app to register its current token.
 - FCM accepted but no display: check system notification permission, the Bezzie updates channel, background/battery restrictions and that the receiving app has been opened since installation. The app must be reopened after a force stop. FCM acceptance alone does not prove device delivery.
 
-The updated mobile apps create the notification channel during startup, display foreground notifications using Notifee, and use the OS for background notification payloads. Verify a test with the app open, in the background and launched from a notification tap. Job-flow tests should include application, hire, submission and payment with the correct receiving account.
+System pushes start when a provider is hired (`job_in_progress`) and include work submission (`work_submitted`). Both the customer and hired provider receive each event. Set `FIREBASE_PUSH_TYPES=job_in_progress,work_submitted` on existing deployments and clear cached configuration. New-job broadcasts, applications, chat, payment and review events remain in-app notifications. Work submission notifies the customer to review and confirms submission to the provider; it does not mark the job complete.
+
+The mobile apps create the notification channel during startup, display foreground notifications using Notifee, and use the OS for background notification payloads. Verify hire and submission with each app open, in the background and launched from a notification tap. Confirm unrelated events do not produce system pushes.
 
 The CLI alternative is `php artisan push:diagnose USER_ID --send`. Automated tests mock Firebase and do not establish production delivery. Live diagnosis still requires the deployed server result and the receiving phone.
 

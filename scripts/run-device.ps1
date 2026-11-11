@@ -7,6 +7,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
+$mobileApps = (Get-Content (Join-Path $repoRoot 'mobile-apps.json') -Raw | ConvertFrom-Json).apps
 $toolsRoot = Join-Path $repoRoot '.tools'
 $bundledSdkRoot = Join-Path $toolsRoot 'android-sdk'
 $systemSdkRoot = Join-Path $env:LOCALAPPDATA 'Android/Sdk'
@@ -51,6 +52,9 @@ $env:GRADLE_USER_HOME = if ($cachedGradle) { $userGradleHome } else { $repoGradl
 $env:PATH = "$(Split-Path $node);$(Split-Path $adb);$env:PATH"
 $env:DEBUG = ''
 
+& $node "$repoRoot/scripts/check-mobile-branding.cjs"
+if ($LASTEXITCODE -ne 0) { throw 'Mobile app brand/role mapping is inconsistent.' }
+
 function Invoke-Adb {
     & $adb @script:deviceArgs @args
     if ($LASTEXITCODE -ne 0) { throw "ADB failed: $args" }
@@ -91,8 +95,9 @@ if (!$BuildOnly) {
 }
 
 foreach ($app in @('customer', 'provider')) {
-    $port = if ($app -eq 'customer') { 8081 } else { 8082 }
-    $androidDir = Join-Path $repoRoot "apps/$app/android"
+    $appConfig = $mobileApps.$app
+    $port = $appConfig.metroPort
+    $androidDir = Join-Path $repoRoot "$($appConfig.directory)/android"
     Set-Content "$androidDir/local.properties" ('sdk.dir=' + $sdkRoot.Replace('\', '/')) -Encoding ascii
     if (!$SkipBuild) {
         Push-Location $androidDir
@@ -105,7 +110,7 @@ foreach ($app in @('customer', 'provider')) {
 }
 
 # Release Gradle memory before starting the two JavaScript servers.
-Push-Location "$repoRoot/apps/customer/android"
+Push-Location "$repoRoot/$($appConfig.directory)/android"
 try { & ./gradlew.bat --stop | Out-Null } finally { Pop-Location }
 
 if ($BuildOnly) { Write-Host 'Both debug APKs are ready.'; return }
@@ -117,12 +122,13 @@ $settings = Invoke-RestMethod -Uri 'http://127.0.0.1:8000/api/setting' -Method P
 if ($settings.status -ne 'success') { throw 'Backend settings API did not return success.' }
 
 foreach ($app in @('customer', 'provider')) {
-    $port = if ($app -eq 'customer') { 8081 } else { 8082 }
-    $package = if ($app -eq 'customer') { 'com.bezzie' } else { 'com.bezzieprovider' }
-    Start-DevServer "$app-metro" $node @('node_modules/react-native/cli.js', 'start', '--port', "$port", '--host', '127.0.0.1', '--max-workers', '1') "$repoRoot/apps/$app" $port
+    $appConfig = $mobileApps.$app
+    $port = $appConfig.metroPort
+    $package = $appConfig.androidApplicationId
+    Start-DevServer "$app-metro" $node @('node_modules/react-native/cli.js', 'start', '--port', "$port", '--host', '127.0.0.1', '--max-workers', '1') "$repoRoot/$($appConfig.directory)" $port
     Invoke-Adb reverse "tcp:$port" "tcp:$port"
     Invoke-Adb reverse tcp:8000 tcp:8000
-    Invoke-Adb install -r "$repoRoot/apps/$app/android/app/build/outputs/apk/debug/app-debug.apk"
+    Invoke-Adb install -r "$repoRoot/$($appConfig.directory)/android/app/build/outputs/apk/debug/app-debug.apk"
     Invoke-Adb shell am start -n "$package/.MainActivity"
 }
-Write-Host 'Both apps launched. Provider is in the foreground; open Bezzie from the phone launcher for the customer app.'
+Write-Host 'Both apps launched. Our Bezzie (professional) is in the foreground; open Our Bezzie Provider for the customer app.'

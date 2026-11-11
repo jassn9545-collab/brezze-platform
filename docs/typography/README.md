@@ -1,4 +1,4 @@
-# Brezze Typography
+# Our Bezzie Typography
 
 ## Font family
 
@@ -47,7 +47,7 @@ The same scale is implemented by both apps in `src/components/Text.tsx`.
 
 ## App-specific guidance
 
-### Brezzee customer app
+### Our Bezzie Provider customer app
 
 - Job titles and provider names should use `lg` or `md` with `semiBold`.
 - Job metadata, hire status, and pricing labels should use `xs` or `xxs`.
@@ -83,8 +83,8 @@ The same scale is implemented by both apps in `src/components/Text.tsx`.
 ## Known inconsistencies to resolve
 
 - Some screens bypass the shared `Text` component with direct `fontSize`/`fontWeight` values.
-- Brezzee `ServiceListScreen` contains a direct `Roboto` reference although Montserrat is the documented family.
+- Our Bezzie Provider `ServiceListScreen` contains a direct `Roboto` reference although Montserrat is the documented family.
 - Several screen styles hard-code sizes already available in the shared scale.
 - Typography tokens are duplicated between the two repositories and can drift.
 
-Treat each app's `src/theme/typography.ts` and `src/components/Text.tsx` as implementation sources, and this page as the shared usage contract. The apps live under `apps/customer` and `apps/provider`.
+Treat each app's `src/theme/typography.ts` and `src/components/Text.tsx` as implementation sources, and this page as the shared usage contract. The apps live under `apps/our-bezzie-provider` and `apps/our-bezzie`.
